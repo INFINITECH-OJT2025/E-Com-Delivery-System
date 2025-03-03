@@ -24,6 +24,9 @@ class User extends Authenticatable
         'password',
         'phone_number',
         'role',
+        'email_verified_at', // ✅ Added email verification field
+        'otp_code',        // ✅ Added OTP field
+        'otp_expires_at',  // ✅ Added OTP expiration field
     ];
 
     /**
@@ -34,6 +37,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'otp_code', // ✅ Hide OTP for security
     ];
 
     /**
