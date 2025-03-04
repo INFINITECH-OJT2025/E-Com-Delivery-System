@@ -31,7 +31,7 @@ export const authService = {
     // ✅ Register a New User
     async register(userData: Record<string, any>) {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(userData),
@@ -47,7 +47,7 @@ export const authService = {
     // ✅ Resend Verification (Supports OTP & Email)
     async resendVerification({ email, type }: { email: string; type: "otp" | "email_verification" }) {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/resend-verification`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/resend-verification`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, type }),
@@ -63,7 +63,7 @@ export const authService = {
     // ✅ Verify Email with OTP
     async verifyOtp({ email, otp }: { email: string; otp: string }) {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify-otp`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-otp`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, otp }),
@@ -79,7 +79,7 @@ export const authService = {
     // ✅ Login User
     async login(credentials: { email: string; password: string }) {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(credentials),
@@ -95,7 +95,7 @@ export const authService = {
     // ✅ Logout User (Requires Auth Token)
     async logout(token: string) {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -113,7 +113,7 @@ export const authService = {
     // ✅ Get Authenticated User Data
     async getAuthenticatedUser(token: string) {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",

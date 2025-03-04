@@ -5,33 +5,33 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Form, Input, 
 import { Lock, LogIn } from "lucide-react";
 import { signIn } from "next-auth/react"; // ✅ NextAuth integration
 import { authService } from "@/services/authService";
+import { useRouter } from "next/navigation";
 
 export default function LoginModal({ isOpen, email, onClose }) {
     const [password, setPassword] = useState("");
     const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
     const [loading, setLoading] = useState(false);
+    const router = useRouter();
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
         setErrors({});
-
+    
         try {
             const response = await authService.login({ email, password });
-
+    
             if (!response.success) {
-                if (response.data) {
-                    // ✅ Set inline errors and remove them after 5 seconds
-                    setErrors(response.data);
-                    setTimeout(() => setErrors({}), 5000);
-                    return;
-                }
+                setErrors(response.data);
+                setTimeout(() => setErrors({}), 5000);
+                return;
             }
-
-            // ✅ If Sanctum login is successful, proceed with NextAuth sign-in
+    
             await signIn("credentials", { email, password, redirect: false });
-
-            onClose(); // Close modal after successful login
+    
+            // ✅ Redirect to dashboard after successful login
+            router.push("/dashboard");
+            onClose();
         } catch (err) {
             setErrors({ password: "Invalid credentials. Please try again." });
             setTimeout(() => setErrors({}), 5000);

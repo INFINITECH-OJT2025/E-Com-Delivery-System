@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
+  images: {
+    domains: ["127.0.0.1", "localhost"], // ✅ Allow your local backend
+  },
     experimental: {
       metadata: {
         manifest: true, // Ensure Next.js serves the manifest
