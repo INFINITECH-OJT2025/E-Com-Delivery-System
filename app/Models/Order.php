@@ -13,9 +13,10 @@ class Order extends Model
         'customer_id',
         'restaurant_id',
         'delivery_rider_id',
+        'customer_address_id',
         'total_price',
-        'payment_status',
         'order_status',
+        'payment_status',
         'scheduled_time'
     ];
 
@@ -27,5 +28,35 @@ class Order extends Model
     public function restaurant()
     {
         return $this->belongsTo(Restaurant::class);
+    }
+
+    public function rider()
+    {
+        return $this->belongsTo(User::class, 'delivery_rider_id');
+    }
+
+    public function address()
+    {
+        return $this->belongsTo(CustomerAddress::class, 'customer_address_id');
+    }
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasOne(Payment::class);
+    }
+
+    public function dispute()
+    {
+        return $this->hasOne(Dispute::class);
+    }
+
+    public function refund()
+    {
+        return $this->hasOne(Refund::class);
     }
 }

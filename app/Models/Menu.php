@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Menu extends Model
 {
@@ -11,13 +12,23 @@ class Menu extends Model
 
     protected $fillable = [
         'restaurant_id',
-        'category_id',
+        'menu_category_id',
         'name',
+        'slug',
         'description',
         'price',
         'image',
-        'availability',
+        'availability'
     ];
+
+    public static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($menu) {
+            $menu->slug = Str::slug($menu->name) . "-" . uniqid();
+        });
+    }
 
     public function restaurant()
     {
@@ -26,6 +37,11 @@ class Menu extends Model
 
     public function category()
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(MenuCategory::class, 'menu_category_id');
+    }
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
     }
 }

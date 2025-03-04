@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\RestaurantCategory;
+use App\Models\MenuCategory;
+use Illuminate\Support\Str;
 
 class CategorySeeder extends Seeder
 {
@@ -13,8 +14,46 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        Category::create(['restaurant_id' => 1, 'name' => 'Burgers']);
-        Category::create(['restaurant_id' => 1, 'name' => 'Pizzas']);
-        Category::create(['restaurant_id' => 1, 'name' => 'Drinks']);
+        // Seed restaurant categories
+        $restaurantCategories = [
+            'Fast Food',
+            'Fine Dining',
+            'Café',
+            'Bakery',
+            'Casual Dining',
+            'Buffet',
+            'Food Truck',
+            'Vegetarian/Vegan',
+            'Barbecue',
+            'Seafood'
+        ];
+
+        foreach ($restaurantCategories as $category) {
+            RestaurantCategory::updateOrCreate(
+                ['name' => $category],
+                ['slug' => Str::slug($category)] // ✅ Generate unique slug
+            );
+        }
+
+        // Seed menu categories
+        $menuCategories = [
+            'Burgers',
+            'Pizzas',
+            'Desserts',
+            'Beverages',
+            'Appetizers',
+            'Main Course',
+            'Salads',
+            'Pasta',
+            'Seafood Dishes',
+            'Vegetarian Options'
+        ];
+
+        foreach ($menuCategories as $category) {
+            MenuCategory::updateOrCreate(
+                ['name' => $category],
+                ['slug' => Str::slug($category)] // ✅ Generate unique slug
+            );
+        }
     }
 }

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('owner_id')->constrained('users')->onDelete('cascade');
             $table->string('name');
+            $table->foreignId('restaurant_category_id')->nullable()->constrained('restaurant_categories')->onDelete('set null');
             $table->text('description')->nullable();
             $table->string('logo')->nullable();
             $table->string('banner_image')->nullable();

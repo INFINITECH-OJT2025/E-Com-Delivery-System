@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -14,35 +13,39 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::create([
-            'name' => 'Admin User',
+        User::firstOrCreate([
             'email' => 'admin@example.com',
+        ], [
+            'name' => 'Admin User',
             'password' => Hash::make('password'),
-            'phone_number' => '09123456789',
+            'phone_number' => '09120000001',
             'role' => 'admin'
         ]);
 
-        User::create([
-            'name' => 'Restaurant Owner',
+        User::firstOrCreate([
             'email' => 'owner@example.com',
+        ], [
+            'name' => 'Restaurant Owner',
             'password' => Hash::make('password'),
-            'phone_number' => '09123456789',
+            'phone_number' => '09120000002',
             'role' => 'restaurant_owner'
         ]);
 
-        User::create([
-            'name' => 'Customer User',
+        User::firstOrCreate([
             'email' => 'customer@example.com',
+        ], [
+            'name' => 'Customer User',
             'password' => Hash::make('password'),
-            'phone_number' => '09123456789',
+            'phone_number' => '09120000003',
             'role' => 'customer'
         ]);
 
-        User::create([
-            'name' => 'Delivery Rider',
+        User::firstOrCreate([
             'email' => 'rider@example.com',
+        ], [
+            'name' => 'Delivery Rider',
             'password' => Hash::make('password'),
-            'phone_number' => '09123456789',
+            'phone_number' => '09120000004',
             'role' => 'rider'
         ]);
     }
