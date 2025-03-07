@@ -13,7 +13,6 @@ interface AddressEditorModalProps {
 }
 
 export default function AddressEditorModal({ isOpen, onClose, addressId }: AddressEditorModalProps) {
-    const { fetchUser } = useUser();
     const [loading, setLoading] = useState(false);
     const [form, setForm] = useState({
         label: "Home",
@@ -28,6 +27,7 @@ export default function AddressEditorModal({ isOpen, onClose, addressId }: Addre
     const mapRef = useRef<HTMLDivElement | null>(null);
     const markerRef = useRef<google.maps.Marker | null>(null);
     const mapInstance = useRef<google.maps.Map | null>(null);
+    const { fetchUser, setSelectedAddress } = useUser();
 
     // ✅ **Load Address Data when Modal Opens**
     useEffect(() => {
@@ -175,33 +175,36 @@ export default function AddressEditorModal({ isOpen, onClose, addressId }: Addre
         }
     };
 
-    // ✅ **Save Address (Add or Update)**
-    const handleSaveAddress = async () => {
-        setLoading(true);
-        const addressData = {
-            label: form.label,
-            address: form.address,
-            latitude: form.latitude,
-            longitude: form.longitude,
-            notes: form.notes,
-            is_default: form.is_default,
-        };
-
-        try {
-            if (addressId) {
-                await addressService.updateAddress(Number(addressId), addressData);
-            } else {
-                await addressService.addAddress(addressData);
-            }
-
-            await fetchUser();
-            onClose();
-        } catch (error) {
-            console.error("Failed to save address:", error);
-        } finally {
-            setLoading(false);
-        }
+  // ✅ **Save Address (Add or Update)**
+const handleSaveAddress = async () => {
+    setLoading(true);
+    const addressData = {
+        label: form.label,
+        address: form.address,
+        latitude: form.latitude,
+        longitude: form.longitude,
+        notes: form.notes,
+        is_default: form.is_default,
     };
+
+    try {
+        let response;
+        if (addressId) {
+            response = await addressService.updateAddress(Number(addressId), addressData);
+        } else {
+            response = await addressService.addAddress(addressData);
+            setSelectedAddress(response.data); // ✅ Update selected address globally when adding a new one
+            await fetchUser(); // ✅ Fetch user only when adding a new address
+        }
+
+        onClose();
+    } catch (error) {
+        console.error("Failed to save address:", error);
+    } finally {
+        setLoading(false);
+    }
+};
+
 
 
     // 🔻 **STOP HERE FOR NOW - RETURN STATEMENT IN NEXT MESSAGE**

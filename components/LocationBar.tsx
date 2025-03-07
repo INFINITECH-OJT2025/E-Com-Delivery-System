@@ -7,35 +7,54 @@ import AddressSelectionModal from "@/components/AddressSelectionModal";
 import { googleMapsService } from "@/services/googleMapsService";
 
 export default function LocationBar() {
-    const { user, fetchUser } = useUser();
+    const { selectedAddress, setSelectedAddress, user } = useUser();
     const router = useRouter();
     const [location, setLocation] = useState<string>("Fetching location...");
     const [modalOpen, setModalOpen] = useState(false);
 
     useEffect(() => {
+        // ✅ If an address is already selected, just display it
+        if (selectedAddress) {
+            setLocation(selectedAddress.address);
+            return;
+        }
+
+        // ✅ Check localStorage for last selected address
+        const cachedAddress = localStorage.getItem("selected_address");
+        if (cachedAddress) {
+            const parsedAddress = JSON.parse(cachedAddress);
+            if (!selectedAddress || selectedAddress.address !== parsedAddress.address) {
+                setSelectedAddress(parsedAddress);
+            }
+            setLocation(parsedAddress.address);
+            return;
+        }
+
+        // ✅ Use default user address
         if (user?.default_address) {
+            setSelectedAddress(user.default_address);
             setLocation(user.default_address.address);
             return;
         }
 
-        const cachedLocation = localStorage.getItem("user_location");
-        if (cachedLocation) {
-            setLocation(cachedLocation);
-            return;
-        }
-
-        if ("geolocation" in navigator) {
+        // ✅ Only fetch GPS location if no address is set
+        if (!selectedAddress && "geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
                 async ({ coords }) => {
                     const { latitude, longitude } = coords;
                     const address = await googleMapsService.getAddressFromCoords(latitude, longitude);
-                    setLocation(address || "Location not found");
-                    localStorage.setItem("user_location", address || "Unknown location");
+                    if (address) {
+                        setSelectedAddress({ address, latitude, longitude });
+                        localStorage.setItem("selected_address", JSON.stringify({ address, latitude, longitude }));
+                        setLocation(address);
+                    } else {
+                        setLocation("Location not found");
+                    }
                 },
                 () => setLocation("Location permission denied")
             );
         }
-    }, [user?.default_address]); // ✅ React to changes in `default_address`
+    }, [selectedAddress, user?.default_address]); // ✅ Only run when `selectedAddress` or `user.default_address` changes
 
     return (
         <>
@@ -51,6 +70,13 @@ export default function LocationBar() {
                 onClose={() => setModalOpen(false)}
                 onOpenEditor={(address) => router.push(`/addresses/edit?addressId=${address?.id || ""}`)}
                 addresses={user?.addresses || []}
+                onSelect={(address) => {
+                    if (!selectedAddress || selectedAddress.address !== address.address) {
+                        setSelectedAddress(address);
+                        localStorage.setItem("selected_address", JSON.stringify(address));
+                    }
+                    setModalOpen(false);
+                }}
             />
         </>
     );

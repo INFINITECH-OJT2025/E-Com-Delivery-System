@@ -1,27 +1,31 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Button, Input, Textarea, Checkbox } from "@heroui/react";
-import { MapPin, Edit, Home, Briefcase, Heart, PlusCircle, ArrowLeft, CreditCard } from "lucide-react";
+import { MapPin, Edit, ArrowLeft, CreditCard, Ticket } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { userService } from "@/services/userService";
 import { addressService } from "@/services/addressService";
 import { checkoutService } from "@/services/checkoutService";
 import { useCart } from "@/context/cartContext";
 import AlertModal from "@/components/AlertModal";
+import VoucherModal from "@/components/VoucherModal"; // ✅ Import voucher modal
 
 export default function CheckoutPage() {
     const router = useRouter();
-    const { cart } = useCart(); // ✅ Use cart context instead of re-fetching
+    const { cart } = useCart(); // ✅ Use cart context
 
     // 🔥 State Management
     const [user, setUser] = useState(null);
     const [addresses, setAddresses] = useState([]);
     const [selectedAddress, setSelectedAddress] = useState(null);
-    const [selectedLabel, setSelectedLabel] = useState("Home");
     const [contactlessDelivery, setContactlessDelivery] = useState(true);
     const [agreedTerms, setAgreedTerms] = useState(false);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
+
+    // 🏷️ Voucher State
+    const [isVoucherModalOpen, setVoucherModalOpen] = useState(false);
+    const [selectedVoucher, setSelectedVoucher] = useState(null);
 
     // ✅ Fetch User & Addresses on Load
     useEffect(() => {
@@ -29,7 +33,6 @@ export default function CheckoutPage() {
         fetchAddresses();
     }, []);
 
-    // ✅ Fetch User Info (Ensures name & phone exist)
     const fetchUser = async () => {
         const response = await userService.fetchUser();
         if (response.success) {
@@ -38,16 +41,14 @@ export default function CheckoutPage() {
         }
     };
 
-    // ✅ Fetch Addresses
     const fetchAddresses = async () => {
-        const response = await addressService.fetchAddresses(); // ✅ Use Address Service
+        const response = await addressService.fetchAddresses();
         if (response.success) {
             setAddresses(response.data);
             setSelectedAddress(response.data.find(addr => addr.is_default) || response.data[0]);
         }
     };
 
-    // ✅ Check if User is Missing Required Info
     const checkMissingInfo = (user) => {
         if (!user?.name || !user?.phone_number) {
             setAlertMessage("Please complete your profile (Name & Phone) before placing an order.");
@@ -55,7 +56,7 @@ export default function CheckoutPage() {
         }
     };
 
-    // ✅ Handle Checkout (Ensure Address is Selected)
+    // ✅ Handle Checkout (Ensure Address is Selected & Voucher Applied)
     const handlePlaceOrder = async () => {
         if (!selectedAddress) {
             setAlertMessage("Please select a delivery address.");
@@ -63,7 +64,10 @@ export default function CheckoutPage() {
             return;
         }
 
-        const response = await checkoutService.placeOrder(selectedAddress.id);
+        const response = await checkoutService.placeOrder({
+            address_id: selectedAddress.id,
+            voucher_code: selectedVoucher?.code || null, // ✅ Include voucher if selected
+        });
 
         if (!response.success) {
             setAlertMessage(response.message || "Failed to place order.");
@@ -97,37 +101,6 @@ export default function CheckoutPage() {
                         </button>
                     </div>
                 )}
-
-                {/* 🏡 Floor & Notes */}
-                <div className="mt-3 space-y-2">
-                    <Input placeholder="Floor (optional)" />
-                    <Textarea placeholder="Note to rider - e.g. building, landmark" rows={2} />
-                </div>
-
-                {/* 🏷️ Address Labels */}
-                <div className="flex gap-2 mt-3">
-                    {["Home", "Work", "Partner"].map((label) => (
-                        <button 
-                            key={label} 
-                            className={`px-3 py-1 rounded-full border ${selectedLabel === label ? "bg-primary text-white" : "border-gray-300"}`}
-                            onClick={() => setSelectedLabel(label)}
-                        >
-                            {label}
-                        </button>
-                    ))}
-                    <button className="px-3 py-1 rounded-full border border-gray-300 flex items-center">
-                        <PlusCircle className="w-4 h-4 mr-1" /> Other
-                    </button>
-                </div>
-
-                {/* ✅ Submit Address */}
-                <Button className="w-full bg-primary text-white mt-4">Submit</Button>
-
-                {/* 🔄 Contactless Delivery Toggle (✅ FIXED `onChange`) */}
-                <div className="flex items-center mt-3">
-                    <Checkbox checked={contactlessDelivery} onChange={() => setContactlessDelivery(!contactlessDelivery)} />
-                    <p className="ml-2 text-sm text-gray-700">Contactless delivery <span className="font-semibold">{contactlessDelivery ? "On" : "Off"}</span></p>
-                </div>
             </div>
 
             {/* 🛍️ Order Summary */}
@@ -142,23 +115,39 @@ export default function CheckoutPage() {
                         </div>
                     ))}
 
-                    <div className="flex justify-between text-sm mt-2">
-                        <span>Subtotal</span>
-                        <span>₱{cart?.subtotal || 0}</span>
+                    {/* 🏷️ Apply Voucher Section */}
+                    <div className="flex justify-between items-center mt-2">
+                        <span className="text-sm">Apply Voucher</span>
+                        <button
+                            onClick={() => setVoucherModalOpen(true)}
+                            className="flex items-center text-primary text-sm"
+                        >
+                            <Ticket className="w-4 h-4 mr-1" /> {selectedVoucher ? selectedVoucher.code : "Apply"}
+                        </button>
                     </div>
-                    <div className="flex justify-between text-sm">
-                        <span>Standard delivery</span>
-                        <span className="text-green-600">Free</span>
+
+                    {/* 🏷️ Discount Display */}
+                    {selectedVoucher && (
+                        <div className="flex justify-between text-sm text-green-500">
+                            <span>Discount ({selectedVoucher.code})</span>
+                            <span>-₱{selectedVoucher.discount}</span>
+                        </div>
+                    )}
+
+                    {/* Final Total */}
+                    <div className="flex justify-between text-sm font-semibold mt-2">
+                        <span>Total</span>
+                        <span>₱{selectedVoucher ? cart.subtotal - selectedVoucher.discount : cart.subtotal}</span>
                     </div>
                 </div>
+            </div>
 
-                {/* 🏦 Payment Method (COD Only for Now) */}
-                <div className="mt-4">
-                    <h2 className="text-lg font-semibold text-gray-900">Payment Method</h2>
-                    <div className="flex items-center mt-2">
-                        <CreditCard className="w-5 h-5 text-primary mr-2" />
-                        <p className="text-sm">Cash on Delivery</p>
-                    </div>
+            {/* 🏦 Payment Method */}
+            <div className="bg-white p-4 rounded-lg shadow-md mt-4">
+                <h2 className="text-lg font-semibold text-gray-900">Payment Method</h2>
+                <div className="flex items-center mt-2">
+                    <CreditCard className="w-5 h-5 text-primary mr-2" />
+                    <p className="text-sm">Cash on Delivery</p>
                 </div>
             </div>
 
@@ -177,6 +166,17 @@ export default function CheckoutPage() {
                     Place Order
                 </Button>
             </div>
+
+            {/* 🎟️ Voucher Selection Modal */}
+            <VoucherModal
+                isOpen={isVoucherModalOpen}
+                onClose={() => setVoucherModalOpen(false)}
+                onSelectVoucher={(voucher) => {
+                    setSelectedVoucher(voucher);
+                    setVoucherModalOpen(false);
+                }}
+                orderTotal={cart.subtotal}
+            />
 
             {/* 🚨 Alert Modal */}
             <AlertModal 

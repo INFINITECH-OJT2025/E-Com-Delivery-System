@@ -11,7 +11,10 @@ export default function ServiceDetails({ restaurant }) {
                     : "🏃 Pickup Only"}
             </p>
             <p className="text-gray-600">
-                📍 {restaurant.address} • Free delivery over ₱{restaurant.minimum_order}
+                📍 {restaurant.address} • 🚚 Shipping Fee: 
+                {restaurant.delivery_fee !== undefined
+                    ? ` ₱${restaurant.delivery_fee} (${restaurant.distance_km} km)`
+                    : " Not Available"}
             </p>
         </div>
     );
