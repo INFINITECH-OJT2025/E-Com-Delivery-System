@@ -94,7 +94,7 @@ class CustomerAddressController extends Controller
             CustomerAddress::where('user_id', $user->id)->update(['is_default' => false]);
         }
 
-        $address->update($request->only(['label', 'address', 'latitude', 'longitude', 'is_default']));
+        $address->update($request->only(['label', 'address', 'latitude', 'longitude', 'is_default', 'notes']));
 
         return ResponseHelper::success("Address updated successfully", $address);
     }

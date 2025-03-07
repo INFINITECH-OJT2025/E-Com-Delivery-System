@@ -17,7 +17,9 @@ class Order extends Model
         'total_price',
         'order_status',
         'payment_status',
-        'scheduled_time'
+        'scheduled_time',
+        'rider_tip',
+        'order_type',
     ];
 
     public function customer()

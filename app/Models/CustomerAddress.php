@@ -15,7 +15,8 @@ class CustomerAddress extends Model
         'address',
         'latitude',
         'longitude',
-        'is_default'
+        'is_default',
+        'notes'
     ];
 
     public function user()

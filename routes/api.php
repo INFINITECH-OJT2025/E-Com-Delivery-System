@@ -5,9 +5,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CustomerAddressController;
+use App\Http\Controllers\DeliveryFeeController;
 use App\Http\Controllers\GoogleMapsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PromoController;
 use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\UserController;
 
@@ -48,6 +50,7 @@ Route::prefix('restaurants')->group(function () {
     Route::get('/{slug}', [RestaurantController::class, 'show'])->name('restaurants.show');
     Route::get('/{slug}/menu', [RestaurantController::class, 'menu'])->name('restaurants.menu');
     Route::get('/{slug}/reviews', [RestaurantController::class, 'reviews'])->name('restaurants.reviews');
+    Route::get('/{restaurantId}/delivery-fee', [DeliveryFeeController::class, 'calculateFee']);
 });
 
 // ✅ Protected Routes (Require Authentication)
@@ -60,4 +63,17 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware('auth:sanctum')->prefix('user')->group(function () {
     Route::apiResource('addresses', CustomerAddressController::class)->except(['create', 'edit']);
     Route::patch('addresses/{id}/set-default', [CustomerAddressController::class, 'setDefault']);
+});
+
+// ✅ Public routes (Customers can fetch vouchers)
+Route::get('/vouchers', [PromoController::class, 'index']); // List all available vouchers
+
+// ✅ Authenticated routes (Customers must be logged in to apply a voucher)
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/vouchers/apply', [PromoController::class, 'applyPromo']); // Apply a voucher
+
+    // ✅ Admin routes (Manage vouchers)
+    Route::middleware(['admin'])->prefix('admin')->group(function () {
+        Route::apiResource('vouchers', PromoController::class)->except(['show']);
+    });
 });
