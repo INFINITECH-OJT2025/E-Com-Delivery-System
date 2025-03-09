@@ -8,21 +8,43 @@ export const homeService = {
      * ✅ Fetch home data (promos, categories, only nearby restaurants)
      * @param {number} latitude - User's latitude
      * @param {number} longitude - User's longitude
+     * @param {object} filters - Active filters selected by the user
      */
-    async fetchHomeData(latitude?: number, longitude?: number) {
+    async fetchHomeData(latitude?: number, longitude?: number, filters: Record<string, any> = {}) {
         try {
-            let url = `${API_URL}/api/home`;
+            const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
 
-            // ✅ Append location params if available
-            if (latitude && longitude) {
-                url += `?lat=${latitude}&lng=${longitude}`;
+            let url = `${API_URL}/api/home?lat=${latitude}&lng=${longitude}`;
+
+            // ✅ Append filters dynamically
+            Object.keys(filters).forEach((key) => {
+                if (filters[key]) {
+                    url += `&${key}=${filters[key]}`;
+                }
+            });
+
+            const headers = {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            };
+
+            if (token) {
+                headers["Authorization"] = `Bearer ${token}`;
             }
 
-            const res = await fetch(url);
+            const res = await fetch(url, {
+                method: "GET",
+                headers: headers,
+            });
+
             return await apiHelper.handleResponse(res);
         } catch (error) {
             console.error("Error fetching home data:", error);
-            return { success: false, data: { promos: [], categories: [], restaurants: [] }, message: "Failed to fetch home data" };
+            return {
+                success: false,
+                data: { promos: [], categories: [], restaurants: [] },
+                message: "Failed to fetch home data",
+            };
         }
     },
 };

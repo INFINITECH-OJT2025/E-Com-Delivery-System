@@ -32,8 +32,8 @@ const bgColors = [
 export default function Categories({ categories }: CategoriesProps) {
     const router = useRouter();
 
-    const handleClick = (slug: string) => {
-        router.push(`/category/${slug}`); // ✅ Navigate to category page
+    const handleCategoryClick = (category: string) => {
+        router.push(`/search?category=${encodeURIComponent(category)}`); // ✅ Navigate with category as filter
     };
 
     return (
@@ -45,7 +45,7 @@ export default function Categories({ categories }: CategoriesProps) {
                 return (
                     <button
                         key={category.id}
-                        onClick={() => handleClick(category.slug)}
+                        onClick={() => handleCategoryClick(category.name)}
                         className={`relative px-6 py-4 rounded-xl shadow-md transition-all duration-300 
                             hover:shadow-lg active:shadow-sm hover:-translate-y-1 active:translate-y-0 border border-gray-200
                             flex items-center justify-center min-w-[140px] md:min-w-[160px] ${bgColor}`}

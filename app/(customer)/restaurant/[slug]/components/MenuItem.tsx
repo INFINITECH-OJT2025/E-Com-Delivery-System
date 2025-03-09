@@ -24,41 +24,46 @@ export default function MenuItem({ menuItem }: MenuItemProps) {
     
     const [isOpen, setIsOpen] = useState(false);
     const [quantity, setQuantity] = useState(1);
-    const [isWarningOpen, setIsWarningOpen] = useState(false); // ✅ Warning modal state
+    const [isWarningOpen, setIsWarningOpen] = useState(false);
     const { cart, addToCart, fetchCart, removeFromCart } = useCart();
 
-    const handleOpen = () => setIsOpen(true);
+    const handleOpen = () => {
+        if (menuItem.availability === "out_of_stock") return; // Prevent modal opening
+        setIsOpen(true);
+    };
+
     const handleClose = () => setIsOpen(false);
     const increaseQuantity = () => setQuantity((prev) => prev + 1);
     const decreaseQuantity = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
 
-    const handleAddToCart = async () => {
-        if (quantity < 1) return;
+   const handleAddToCart = async () => {
+    if (quantity < 1) return;
 
-        // ✅ Check if cart contains items from a different restaurant
-        if (cart && cart.restaurant_id !== menuItem.restaurant_id) {
-            setIsWarningOpen(true);
-            return;
-        }
+    // ✅ Only show warning if the cart is NOT empty
+    if (cart && cart.cart_items?.[0] && cart.restaurant_id !== menuItem.restaurant_id) {
+        setIsWarningOpen(true);
+        return;
+    }
 
-        // ✅ Proceed with adding to cart
-        const response = await addToCart(menuItem.id, quantity, menuItem.restaurant_id);
-        if (!response.success) {
-            alert(response.message || "Failed to add item to cart.");
-            return;
-        }
+    const response = await addToCart(menuItem.id, quantity, menuItem.restaurant_id);
+    if (!response.success) {
+        alert(response.message || "Failed to add item to cart.");
+        return;
+    }
 
-        await fetchCart();
-        handleClose();
-    };
+    await fetchCart();
+    handleClose();
+};
+
 
     return (
         <>
-            {/* ✅ Menu Item Card */}
+            {/* ✅ Menu Item Card - Disable click if unavailable */}
             <div 
                 onClick={handleOpen}
-                className="relative flex items-center bg-white rounded-xl shadow-md overflow-hidden p-3 transform transition-all duration-300 
-                        hover:-translate-y-1 hover:shadow-2xl cursor-pointer border border-gray-200"
+                className={`relative flex items-center bg-white rounded-xl shadow-md overflow-hidden p-3 transition-all duration-300 
+                        ${menuItem.availability === "out_of_stock" ? "opacity-50 cursor-not-allowed" : "hover:-translate-y-1 hover:shadow-2xl cursor-pointer"} 
+                        border border-gray-200`}
             >
                 <div className="flex-1">
                     <h3 className="text-sm font-semibold text-gray-900">{menuItem.name}</h3>
@@ -68,6 +73,13 @@ export default function MenuItem({ menuItem }: MenuItemProps) {
                 <div className="w-20 h-20 ml-3 rounded-lg overflow-hidden flex-shrink-0">
                     <Image src={imageUrl} alt={menuItem.name} width={80} height={80} className="object-cover w-full h-full" unoptimized />
                 </div>
+
+                {/* 🛑 Out of Stock Label */}
+                {menuItem.availability === "out_of_stock" && (
+                    <div className="absolute top-0 right-0 bg-red-600 text-white text-xs px-2 py-1 rounded-bl-lg">
+                        Out of Stock
+                    </div>
+                )}
             </div>
 
             {/* ✅ Modal */}
@@ -76,9 +88,7 @@ export default function MenuItem({ menuItem }: MenuItemProps) {
                     {/* ✅ Modal Header */}
                     <ModalHeader className="flex items-center justify-between p-3">
                         <h2 className="text-sm font-bold text-gray-900">{menuItem.name}</h2>
-                        <button onClick={handleClose} className="p-2 bg-gray-100 rounded-full">
-                            <X className="w-5 h-5 text-gray-600" />
-                        </button>
+                        
                     </ModalHeader>
 
                     {/* ✅ Modal Body */}
@@ -118,12 +128,9 @@ export default function MenuItem({ menuItem }: MenuItemProps) {
                 isOpen={isWarningOpen}
                 onClose={() => setIsWarningOpen(false)}
                 onConfirm={async () => {
-                    // ✅ Clear cart first
                     for (const item of cart?.cart_items || []) {
                         await removeFromCart(item.id);
                     }
-
-                    // ✅ Add new item after clearing cart
                     await addToCart(menuItem.id, quantity, menuItem.restaurant_id);
                     await fetchCart();
                     setIsWarningOpen(false);

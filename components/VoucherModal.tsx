@@ -47,20 +47,20 @@ export default function VoucherModal({ isOpen, onClose, onSelectVoucher, orderTo
             return;
         }
 
-        // ✅ Apply voucher by type (allow multiple voucher types)
+        // ✅ Apply voucher by type & send to CheckoutModal
         setAppliedVouchers((prev) => ({ ...prev, [voucher.type]: voucher }));
         onSelectVoucher(voucher, voucher.type);
         onClose();
     };
 
-    // ✅ Remove an applied voucher
-    const removeVoucher = (type: string) => {
-        setAppliedVouchers((prev) => {
-            const newVouchers = { ...prev };
-            delete newVouchers[type];
-            return newVouchers;
-        });
-    };
+    // // ✅ Remove an applied voucher
+    // const removeVoucher = (type: string) => {
+    //     setAppliedVouchers((prev) => {
+    //         const newVouchers = { ...prev };
+    //         delete newVouchers[type];
+    //         return newVouchers;
+    //     });
+    // };
 
     return (
         <Modal isOpen={isOpen} onOpenChange={onClose} placement="bottom" size="full" isDismissable={true}>
@@ -78,18 +78,18 @@ export default function VoucherModal({ isOpen, onClose, onSelectVoucher, orderTo
                             onChange={(e) => setVoucherCode(e.target.value)}
                             className="flex-1"
                         />
-                        <Button onPress={applyVoucherCode} className="px-4 py-2">Apply</Button>
+                        <Button onPress={applyVoucherCode} className="px-4 py-2" color="primary">Apply</Button>
                     </div>
 
                     {error && <p className="text-red-500 text-sm">{error}</p>}
 
                     {/* ✅ Applied Vouchers (Categorized) */}
-                    {Object.keys(appliedVouchers).length > 0 && (
+                    {/* {Object.keys(appliedVouchers).length > 0 && (
                         <div className="space-y-2">
                             {Object.entries(appliedVouchers).map(([type, voucher]) => (
                                 <div key={voucher.id} className="p-3 bg-green-100 text-green-700 rounded-md text-sm flex justify-between">
                                     <span>
-                                        {voucher.code} - 
+                                        <strong>{voucher.code}</strong> - 
                                         {voucher.discount_percentage ? ` ${voucher.discount_percentage}% Off` : ` ₱${voucher.discount_amount} Off`}
                                     </span>
                                     <button className="text-red-500 text-xs" onClick={() => removeVoucher(type)}>
@@ -98,7 +98,7 @@ export default function VoucherModal({ isOpen, onClose, onSelectVoucher, orderTo
                                 </div>
                             ))}
                         </div>
-                    )}
+                    )} */}
 
                     {/* 🏷️ Available Vouchers List (Categorized) */}
                     <h3 className="font-bold text-gray-900 mt-4">Available Vouchers</h3>
@@ -121,19 +121,23 @@ export default function VoucherModal({ isOpen, onClose, onSelectVoucher, orderTo
                                                 key={voucher.id}
                                                 className={`p-3 mt-2 border rounded-lg transition ${
                                                     isSelected
-                                                        ? "border-primary bg-primary/10" // ✅ Highlight only if selected
-                                                        : isEligible
-                                                            ? "border-gray-300 cursor-pointer"
-                                                            : "border-gray-300 bg-gray-100 opacity-50 cursor-not-allowed"
+                                                        ? "border-primary bg-primary/10" // ✅ Highlight if selected
+                                                        : isEligible && !voucher.used
+                                                            ? "border-gray-300 cursor-pointer" // ✅ Selectable if eligible & not used
+                                                            : "border-gray-300 bg-gray-100 opacity-50 cursor-not-allowed" // ❌ Disable if not eligible or already used
                                                 }`}
+                                                
                                                 onClick={() => {
-                                                    if (isEligible) {
+                                                    if (isEligible && !voucher.used) { // ✅ Prevent selecting if already used
                                                         onSelectVoucher(voucher, category);
-                                                        onClose();  // ✅ Close modal after selecting a voucher
+                                                        onClose();
                                                     }
                                                 }}
-                                                                                            >
-                                                <p className="font-semibold">{voucher.code}</p>
+                                            >
+                                                <p className="font-semibold flex items-center">
+                                                    {voucher.code} 
+                                                    {voucher.used && <span className="ml-2 text-xs text-red-500">(Already Used)</span>} {/* ✅ Show if used */}
+                                                </p>
                                                 <p className="text-sm text-gray-600">
                                                     {voucher.discount_percentage 
                                                         ? `${voucher.discount_percentage}% Off`

@@ -26,7 +26,8 @@ export default function CheckoutModal({ isOpen, onClose }) {
     const [riderTip, setRiderTip] = useState(0);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
-
+    const { fetchCart } = useCart(); // ✅ Import fetchCart to refetch cart after order
+    const [loading, setLoading] = useState(false); // ✅ Loading state for button
     // ✅ Fetch Addresses on Load
     useEffect(() => {
         async function fetchAddresses() {
@@ -89,6 +90,8 @@ export default function CheckoutModal({ isOpen, onClose }) {
             return;
         }
     
+        setLoading(true); // ✅ Show loading animation
+
         // ✅ Extract Cart Items
         const cartItems = cart?.cart_items?.map(item => ({
             menu_id: item.menu_id,
@@ -97,17 +100,18 @@ export default function CheckoutModal({ isOpen, onClose }) {
             subtotal: parseFloat(item.subtotal)
         }));
     
+        // ✅ Fix Payload (No nesting in `address_id`)
         const payload = {
-            customer_id: user.id,  // ✅ Ensure logged-in user is sending this
             restaurant_id: cart.restaurant_id,
             cart_items: cartItems,
             delivery_address_id: selectedAddress.id,
-            order_type: "delivery", // or "pickup"
-            total_price: totalPrice,  // ✅ Correct total after discounts & tip
+            order_type: "delivery",
+            total_price: totalPrice,
             rider_tip: riderTip,
-            voucher_codes: Object.keys(appliedVouchers), // ✅ Fix voucher codes
-            payment_method: "cod"
+            voucher_codes: Object.values(appliedVouchers).map(voucher => voucher.code),
+            payment_method: "cash"
         };
+        
     
         console.log("🔹 Checkout Payload:", payload);
     
@@ -117,11 +121,17 @@ export default function CheckoutModal({ isOpen, onClose }) {
         if (!response.success) {
             setAlertMessage(response.message || "Failed to place order.");
             setIsAlertOpen(true);
+            setLoading(false); // ✅ Stop loading animation if error occurs
             return;
         }
     
+        setAppliedVouchers({}); // ✅ Remove applied vouchers on success
+        setLoading(false); // ✅ Stop loading animation
+        await fetchCart(); // ✅ Clear cart after successful order
         onClose(); // ✅ Close modal after placing order
     };
+    
+    
     
     return (
         <Modal isOpen={isOpen} onOpenChange={onClose} placement="bottom" size="full">
@@ -129,9 +139,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
                 {/* ✅ Header */}
                 <ModalHeader className="flex items-center justify-between p-4 border-b shadow-sm bg-white">
                     <h2 className="text-lg font-bold">Checkout</h2>
-                    <button onClick={onClose} className="text-gray-600">
-                        <X className="w-6 h-6" />
-                    </button>
+          
                 </ModalHeader>
 
                 {/* ✅ Scrollable Body */}
@@ -228,10 +236,15 @@ export default function CheckoutModal({ isOpen, onClose }) {
 
                 {/* ✅ Fixed Footer */}
                 <ModalFooter className="p-4 border-t bg-white shadow-lg flex justify-between">
-                    <span className="text-lg font-bold">Total: ₱{totalPrice.toFixed(2)}</span>
-                    <Button className="bg-primary text-white px-6" onPress={handlePlaceOrder} disabled={!agreedTerms}>
-                        Place Order
-                    </Button>
+                    <h1 className="text-lg font-bold">Total: ₱{totalPrice.toFixed(2)}</h1>
+                    <Button 
+    className="bg-primary text-white px-6" 
+    onPress={handlePlaceOrder} 
+    disabled={!agreedTerms || loading} // ✅ Disable button while loading
+>
+    {loading ? "Placing Order..." : "Place Order"} {/* ✅ Show loading text */}
+</Button>
+
                 </ModalFooter>
             </ModalContent>
 

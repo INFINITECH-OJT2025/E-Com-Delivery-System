@@ -15,11 +15,12 @@ interface RestaurantProps {
         total_reviews: number;
         is_open: boolean;
         distance_km?: number;
+        delivery_fee?: number;
+        estimated_time?: string;
     };
-    deliveryFee: number | null; // ✅ Receive preloaded delivery fee
 }
 
-export default function RestaurantCard({ restaurant, deliveryFee }: RestaurantProps) {
+export default function RestaurantCard({ restaurant }: RestaurantProps) {
     const router = useRouter();
 
     const imageUrl = restaurant.banner_image?.startsWith("http")
@@ -64,14 +65,23 @@ export default function RestaurantCard({ restaurant, deliveryFee }: RestaurantPr
             <div className="p-4">
                 <h3 className="text-lg font-bold text-gray-900">{restaurant.name}</h3>
                 <p className="text-sm text-gray-600">
-                    {restaurant.rating} ⭐ ({restaurant.total_reviews} reviews)
+                    {restaurant.rating} ⭐ ({restaurant.total_reviews ?? 0} reviews)
                 </p>
+
+                {/* 📍 Show Distance Only If Available */}
                 {restaurant.distance_km !== undefined && (
-                    <p className="text-sm text-gray-700">📍 {restaurant.distance_km} km away</p>
+                    <p className="text-sm text-gray-700">📍 {restaurant.distance_km.toFixed(2)} km away</p>
                 )}
+
+                {/* 🚚 Delivery Fee */}
                 <p className="text-sm text-gray-700 font-bold">
-                    🚚 Delivery Fee: {deliveryFee !== null ? `₱${deliveryFee}` : "Calculating..."}
+                    🚚 Delivery Fee: {restaurant.delivery_fee !== undefined ? `₱${restaurant.delivery_fee}` : "N/A"}
                 </p>
+
+                {/* ⏳ Estimated Time */}
+                {restaurant.estimated_time && (
+                    <p className="text-sm text-gray-700">⏳ ETA: {restaurant.estimated_time}</p>
+                )}
             </div>
         </div>
     );

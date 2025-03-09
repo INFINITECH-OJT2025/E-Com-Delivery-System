@@ -94,7 +94,7 @@ export default function Deals({ promos }: DealsProps) {
                         </ModalBody>
 
                         <ModalFooter>
-                            <Button onClick={() => setIsOpen(false)} className="w-full bg-blue-500 text-white">
+                            <Button onPress={() => setIsOpen(false)} className="w-full bg-blue-500 text-white">
                                 Close
                             </Button>
                         </ModalFooter>

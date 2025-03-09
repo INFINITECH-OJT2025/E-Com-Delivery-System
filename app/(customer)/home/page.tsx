@@ -1,56 +1,54 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useMemo } from "react";
 import { homeService } from "@/services/homeService";
-import { deliveryFeeService } from "@/services/deliveryFeeService";
 import { useUser } from "@/context/userContext";
-import Navbar from "@/components/Navbar";
+import { IoChevronForwardOutline } from "react-icons/io5";
 import LocationBar from "@/components/LocationBar";
-import TabsSection from "@/components/TabsSection";
+import FilterComponent from "./components/filterComponent";
 import SearchBar from "@/components/SearchBar";
 import Deals from "./components/deals";
 import Categories from "./components/categories";
 import RestaurantCard from "./components/restaurantCard";
+import RestaurantModal from "./components/restaurantModal";
+import HorizontalScrollList from "./components/horizontalScrollList";
+import CircleScrollList from "./components/circleScrollList";
 import { Spinner } from "@heroui/react";
 
 export default function HomePage() {
-    const { selectedAddress } = useUser(); // ✅ Get selected address from context
-    const [data, setData] = useState({ promos: [], categories: [], restaurants: [] });
-    const [deliveryFees, setDeliveryFees] = useState<Record<number, number>>({}); // ✅ Store delivery fees by restaurant ID
-    const [selectedTab, setSelectedTab] = useState("all");
+    const { selectedAddress } = useUser();
+    const [data, setData] = useState({
+        promos: [],
+        categories: [],
+        order_again: [],
+        top_restaurants: [],
+        fast_delivery: [],
+        explore_restaurants: []
+    });
+
+    const [filters, setFilters] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [modalData, setModalData] = useState(null);
 
     useEffect(() => {
         async function fetchData() {
             setLoading(true);
             try {
-                let latitude, longitude;
-
-                // ✅ Use selected address first, fallback to localStorage
-                if (selectedAddress) {
-                    latitude = selectedAddress.latitude;
-                    longitude = selectedAddress.longitude;
-                } else {
-                    const storedAddress = localStorage.getItem("selected_address");
-                    if (storedAddress) {
-                        const parsedAddress = JSON.parse(storedAddress);
-                        latitude = parsedAddress.latitude;
-                        longitude = parsedAddress.longitude;
-                    }
+                const { latitude, longitude } = selectedAddress || getStoredAddress();
+                
+                // ✅ Ensure valid lat/lng before calling API
+                if (!latitude || !longitude) {
+                    setError("Location not found. Please set your address.");
+                    setLoading(false);
+                    return;
                 }
 
-                // ✅ Fetch home data with user location
-                const response = await homeService.fetchHomeData(latitude, longitude);
-                if (!response.success || !response.data) {
-                    throw new Error(response.message || "Invalid home data response");
-                }
+                const response = await homeService.fetchHomeData(latitude, longitude, filters);
+
+                if (!response.success || !response.data) throw new Error(response.message || "Invalid home data response");
 
                 setData(response.data);
-
-                // ✅ Fetch delivery fees for all restaurants
-                if (latitude && longitude) {
-                    fetchDeliveryFees(response.data.restaurants, latitude, longitude);
-                }
             } catch (err) {
                 console.error("API Error:", err.message);
                 setError("Failed to load homepage data.");
@@ -60,61 +58,130 @@ export default function HomePage() {
         }
 
         fetchData();
-    }, [selectedAddress]); // ✅ Re-fetch when selected address changes
+    }, [selectedAddress, filters]); // ✅ Refresh when address or filters change
 
-    /**
-     * ✅ Fetch delivery fees for multiple restaurants at once
-     */
-    async function fetchDeliveryFees(restaurants, latitude, longitude) {
-        const fees = await Promise.all(
-            restaurants.map(async (restaurant) => {
-                const response = await deliveryFeeService.fetchDeliveryFee(restaurant.id, latitude, longitude);
-                return { id: restaurant.id, fee: response.success ? response.data.delivery_fee : null };
-            })
-        );
-
-        // ✅ Store fees in state
-        const feesMap = fees.reduce((acc, { id, fee }) => ({ ...acc, [id]: fee }), {});
-        setDeliveryFees(feesMap);
+    function getStoredAddress() {
+        const stored = localStorage.getItem("selected_address");
+        return stored ? JSON.parse(stored) : { latitude: null, longitude: null };
     }
 
-    /**
-     * ✅ Filter restaurants based on selected service type
-     */
-    const filteredRestaurants = data.restaurants.filter((restaurant) =>
-        selectedTab === "both" ? true : restaurant.service_type === selectedTab
-    );
+    const filteredRestaurants = useMemo(() => {
+        return Array.isArray(data?.explore_restaurants) ? data.explore_restaurants : [];
+    }, [data?.explore_restaurants, filters]);
+    
 
     if (loading) return <div className="flex justify-center py-10"><Spinner size="lg" /></div>;
     if (error) return <div className="text-center text-red-500 py-10">{error}</div>;
 
     return (
         <div className="w-full h-screen flex flex-col overflow-y-auto bg-white">
-            {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto">
                 <LocationBar />
-                <TabsSection selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
                 <SearchBar />
+                <FilterComponent
+                    selectedFilters={filters}
+                    categories={data.categories}
+                    onApplyFilters={setFilters}
+                />
 
                 <div className="px-3 md:px-6">
-                    <h2 className="text-sm font-bold mt-4 mb-2 md:text-base">Your Daily Deals</h2>
-                    <Deals promos={data.promos} />
+                    {/* ✅ Only Show If Promos Exist */}
+                    {data.promos?.length > 0 && (
+                        <>
+                            <h2 className="text-sm font-bold mt-4 mb-2 md:text-base">Your Daily Deals</h2>
+                            <Deals promos={data.promos} />
+                        </>
+                    )}
 
-                    <h2 className="text-sm font-bold mt-4 mb-2 md:text-base">Your Favorite Cuisines</h2>
-                    <Categories categories={data.categories} />
+                    {/* ✅ Only Show If Categories Exist */}
+                    {data.categories?.length > 0 && (
+                        <>
+                            <h2 className="text-sm font-bold mt-4 mb-2 md:text-base">Your Favorite Cuisines</h2>
+                            <Categories categories={data.categories} />
+                        </>
+                    )}
 
-                    <h2 className="text-sm font-bold mt-4 mb-2 md:text-base">Restaurants</h2>
-                    <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                        {filteredRestaurants.map((restaurant) => (
-                            <RestaurantCard 
-                                key={restaurant.id} 
-                                restaurant={restaurant} 
-                                deliveryFee={deliveryFees[restaurant.id] ?? null} // ✅ Pass pre-fetched delivery fee
+                    {/* ✅ Only Show If Order Again Exists */}
+                    {data.order_again?.length > 0 && (
+                        <div className="mt-5">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-sm font-bold md:text-base">Order Again</h2>
+                                <button className="text-primary text-sm flex items-center" 
+                                    onClick={() => setModalData({ title: "Order Again", restaurants: data.order_again })}>
+                                    View All <IoChevronForwardOutline className="ml-1" />
+                                </button>
+                            </div>
+                            <HorizontalScrollList 
+                                items={data.order_again.map((restaurant) => ({
+                                    ...restaurant,
+                                    total_reviews: restaurant.total_reviews ?? 0
+                                }))}
                             />
-                        ))}
-                    </div>
+                        </div>
+                    )}
+
+                    {/* ✅ Only Show If Top Restaurants Exist */}
+                    {data.top_restaurants?.length > 0 && (
+                        <div className="mt-5">
+                            <h2 className="text-sm font-bold md:text-base">Top Restaurants</h2>
+                            <CircleScrollList items={data.top_restaurants} />
+                        </div>
+                    )}
+
+                    {/* ✅ Only Show If Fast Delivery Exists */}
+                    {data.fast_delivery?.length > 0 && (
+                        <div className="mt-5">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-sm font-bold md:text-base">Fast Delivery</h2>
+                                <button className="text-primary text-sm flex items-center" 
+                                    onClick={() => setModalData({ title: "Fast Delivery", restaurants: data.fast_delivery })}>
+                                    View All <IoChevronForwardOutline className="ml-1" />
+                                </button>
+                            </div>
+                            <HorizontalScrollList 
+                                items={data.fast_delivery.map((restaurant) => ({
+                                    ...restaurant,
+                                    total_reviews: restaurant.total_reviews ?? 0
+                                }))}
+                            />
+                        </div>
+                    )}
+
+{filteredRestaurants.length > 0 ? (
+    <div className="mt-5">
+        <h2 className="text-sm font-bold mt-4 mb-2 md:text-base">Explore Restaurants</h2>
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {filteredRestaurants.map((restaurant) => (
+                <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+            ))}
+        </div>
+    </div>
+) : (
+    /* 🚨 No Restaurants Found Message */
+    (filteredRestaurants.length === 0 &&
+     (data?.order_again?.length ?? 0) === 0 &&
+     (data?.top_restaurants?.length ?? 0) === 0 &&
+     (data?.fast_delivery?.length ?? 0) === 0) && (
+        <div className="flex flex-col items-center justify-center text-center py-10 text-gray-500">
+            <img src="/images/restaurant_not_found.png" alt="No Restaurants" className="w-32 h-42 mb-4" />
+            <p className="text-lg font-semibold">No restaurants available in your area.</p>
+            <p className="text-sm text-gray-600">Try searching in another location.</p>
+        </div>
+    )
+)}
+
                 </div>
             </div>
+
+            {/* ✅ Modal for View All */}
+            {modalData && (
+                <RestaurantModal
+                    isOpen={!!modalData}
+                    title={modalData.title}
+                    restaurants={modalData.restaurants}
+                    onClose={() => setModalData(null)}
+                />
+            )}
         </div>
     );
 }

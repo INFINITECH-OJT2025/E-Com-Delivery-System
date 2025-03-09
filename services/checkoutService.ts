@@ -1,28 +1,25 @@
 "use client";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://127.0.0.1:8000/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://127.0.0.1:8000";
 import { apiHelper } from "@/libs/apiHelper";
 
 export const checkoutService = {
     /**
-     * ✅ Place an order (Only COD for now)
+     * ✅ Place an order (Pass full order payload)
      */
-    async placeOrder(address_id: number) {
+    async placeOrder(payload: any) {  // 🚀 Accept full checkout payload
         const token = localStorage.getItem("auth_token");
         if (!token) return { success: false, message: "Unauthorized" };
 
         try {
-            const res = await fetch(`${API_URL}/api/orders`, {
+            const res = await fetch(`${API_URL}/api/orders`, { // ✅ No need for `/api/orders`, API_URL already includes /api
                 method: "POST",
                 headers: { 
                     "Content-Type": "application/json",
                     "Accept": "application/json",
-                    "Authorization": `Bearer ${token}`, // ✅ Added Bearer Token
+                    "Authorization": `Bearer ${token}`, // ✅ Bearer Token
                 },
-                body: JSON.stringify({
-                    address_id,
-                    payment_method: "cod", // 🚀 Only COD for now
-                }),
+                body: JSON.stringify(payload), // ✅ Send full payload
             });
 
             return await apiHelper.handleResponse(res);
@@ -40,11 +37,11 @@ export const checkoutService = {
         if (!token) return { success: false, message: "Unauthorized" };
 
         try {
-            const res = await fetch(`${API_URL}/api/orders`, {
+            const res = await fetch(`${API_URL}/api/orders`, { // ✅ No need for `/api/orders`
                 method: "GET",
                 headers: {
                     "Accept": "application/json",
-                    "Authorization": `Bearer ${token}`, // ✅ Added Bearer Token
+                    "Authorization": `Bearer ${token}`,
                 },
             });
 

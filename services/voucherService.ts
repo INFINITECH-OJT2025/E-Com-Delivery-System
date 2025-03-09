@@ -4,18 +4,27 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://1
 import { apiHelper } from "@/libs/apiHelper";
 
 export const voucherService = {
-    /**
-     * ✅ Fetch all available vouchers (Public, No Auth Required)
-     */
-    async getAvailableVouchers() {
-        try {
-            const res = await fetch(`${API_URL}/api/vouchers`);
-            return await apiHelper.handleResponse(res);
-        } catch (error) {
-            console.error("Error fetching vouchers:", error);
-            return { success: false, data: null, message: "Failed to fetch vouchers" };
-        }
-    },
+ /**
+ * ✅ Fetch all available vouchers 
+ */
+async getAvailableVouchers() {
+    try {
+        const token = localStorage.getItem("auth_token"); // ✅ Fetch Token
+        
+        const res = await fetch(`${API_URL}/api/vouchers`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`, // ✅ Include Auth Token
+            },
+        });
+
+        return await apiHelper.handleResponse(res);
+    } catch (error) {
+        console.error("Error fetching vouchers:", error);
+        return { success: false, data: null, message: "Failed to fetch vouchers" };
+    }
+},
 
     /**
      * ✅ Apply a voucher (Authenticated Request)

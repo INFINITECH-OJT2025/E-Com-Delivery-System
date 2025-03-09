@@ -32,13 +32,7 @@ export default function SearchBar() {
              />
             </div>
 
-            {/* Filter Button (Outside the Search Bar) */}
-            <button
-                className="ml-3 p-3 rounded-lg bg-gray-100 hover:bg-gray-200 transition-all shadow-sm hover:shadow-md"
-                onClick={() => setIsFilterOpen(true)}
-            >
-                <IoFilter className="text-gray-600 text-2xl" />
-            </button>
+
 
             {/* Filter Modal */}
             <EmptyModal isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
