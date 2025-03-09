@@ -39,11 +39,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ✅ User Management (Only for Admins)
     Route::apiResource('users', UserController::class)->except(['create', 'edit']);
+    Route::get('/home', [HomeController::class, 'index'])->name('home.index');
 });
 
 
 // ✅ Public Routes
-Route::get('/home', [HomeController::class, 'index'])->name('home.index');
+
 
 // ✅ Restaurant Routes
 Route::prefix('restaurants')->group(function () {
@@ -66,14 +67,23 @@ Route::middleware('auth:sanctum')->prefix('user')->group(function () {
 });
 
 // ✅ Public routes (Customers can fetch vouchers)
-Route::get('/vouchers', [PromoController::class, 'index']); // List all available vouchers
 
 // ✅ Authenticated routes (Customers must be logged in to apply a voucher)
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/vouchers', [PromoController::class, 'index']); // List all available vouchers
+
     Route::post('/vouchers/apply', [PromoController::class, 'applyPromo']); // Apply a voucher
 
     // ✅ Admin routes (Manage vouchers)
     Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::apiResource('vouchers', PromoController::class)->except(['show']);
     });
+});
+// ✅ Secure API with middleware
+Route::middleware(['auth:sanctum'])->group(function () {
+    // 🚀 Place an order (Checkout API)
+    Route::post('/orders', [OrderController::class, 'store']);
+
+    // 🚀 Fetch user orders
+    Route::get('/orders', [OrderController::class, 'index']);
 });

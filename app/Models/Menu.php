@@ -18,7 +18,9 @@ class Menu extends Model
         'description',
         'price',
         'image',
-        'availability'
+        'availability',
+        'stock' // ✅ Allow mass assignment for stock
+
     ];
 
     public static function boot()
@@ -28,6 +30,11 @@ class Menu extends Model
         static::creating(function ($menu) {
             $menu->slug = Str::slug($menu->name) . "-" . uniqid();
         });
+    }
+    public function setStockAttribute($value)
+    {
+        $this->attributes['stock'] = $value;
+        $this->attributes['availability'] = ($value > 0) ? 'in_stock' : 'out_of_stock';
     }
 
     public function restaurant()

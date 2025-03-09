@@ -9,6 +9,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Menu;
 use App\Helpers\ResponseHelper;
+use App\Models\Restaurant;
 
 class CartController extends Controller
 {
@@ -36,6 +37,7 @@ class CartController extends Controller
             'user_id' => $cart->user_id,
             'restaurant_id' => $cart->restaurant_id,
             'restaurant_name' => $cart->restaurant->name ?? "Unknown", // ✅ Include restaurant name
+            'restaurant_status' => $cart->restaurant->status,
             'cart_items' => $cart->cartItems
         ]);
     }
@@ -66,13 +68,29 @@ class CartController extends Controller
                 return ResponseHelper::error("Your cart contains items from another restaurant. Please clear your cart before adding new items.", 400);
             }
 
+            // ✅ Fetch restaurant details
+            $restaurant = Restaurant::findOrFail($request->restaurant_id);
+
+            // ❌ Prevent adding items if restaurant is closed
+            if ($restaurant->status === 'closed') {
+                DB::rollBack();
+                return ResponseHelper::error("This restaurant is currently closed. You cannot add items to the cart.", 403);
+            }
+
             // ✅ Find or create a new cart for this restaurant
             $cart = Cart::firstOrCreate([
                 'user_id' => $userId,
-                'restaurant_id' => $request->restaurant_id
+                'restaurant_id' => $restaurant->id
             ]);
 
-            $menuItem = Menu::findOrFail($request->menu_id);
+            // ✅ Lock the menu row to prevent race conditions
+            $menuItem = Menu::lockForUpdate()->findOrFail($request->menu_id);
+
+            // ❌ Prevent adding out-of-stock items
+            if ($menuItem->availability === 'out_of_stock' || $menuItem->stock < $request->quantity) {
+                DB::rollBack();
+                return ResponseHelper::error("This item is out of stock or does not have enough stock available.", 403);
+            }
 
             // ✅ Check if the item already exists in the cart
             $cartItem = CartItem::where('cart_id', $cart->id)
@@ -81,6 +99,14 @@ class CartController extends Controller
 
             if ($cartItem) {
                 // ✅ If the item exists, update the quantity and subtotal
+                $newQuantity = $cartItem->quantity + $request->quantity;
+
+                // ❌ Prevent exceeding available stock
+                if ($newQuantity > $menuItem->stock) {
+                    DB::rollBack();
+                    return ResponseHelper::error("Not enough stock available for this item.", 403);
+                }
+
                 $cartItem->increment('quantity', $request->quantity);
                 $cartItem->update([
                     'subtotal' => $cartItem->quantity * $cartItem->price
@@ -109,6 +135,7 @@ class CartController extends Controller
         }
     }
 
+
     /**
      * ✅ Show a single cart item.
      */
@@ -127,7 +154,9 @@ class CartController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $request->validate(['quantity' => 'required|integer|min:1']);
+        $request->validate([
+            'quantity' => 'required|integer|min:1',
+        ]);
 
         DB::beginTransaction();
         try {
@@ -135,6 +164,22 @@ class CartController extends Controller
                 ->whereHas('cart', fn($query) => $query->where('user_id', Auth::id()))
                 ->firstOrFail();
 
+            $menu = Menu::lockForUpdate()->findOrFail($cartItem->menu_id);
+            $restaurant = $menu->restaurant;
+
+            // ❌ Prevent updating quantity if restaurant is closed
+            if ($restaurant->status === 'closed') {
+                DB::rollBack();
+                return ResponseHelper::error("This restaurant is currently closed. You cannot update the cart.", 403);
+            }
+
+            // ❌ Prevent updating if stock is insufficient
+            if ($menu->availability === 'out_of_stock' || $menu->stock < $request->quantity) {
+                DB::rollBack();
+                return ResponseHelper::error("Insufficient stock for this item.", 403);
+            }
+
+            // ✅ Update cart item quantity and subtotal
             $cartItem->update([
                 'quantity' => $request->quantity,
                 'subtotal' => $cartItem->price * $request->quantity
@@ -147,6 +192,7 @@ class CartController extends Controller
             return ResponseHelper::error("Failed to update cart item. Please try again.", 500);
         }
     }
+
 
     /**
      * ✅ Remove an item from the cart.

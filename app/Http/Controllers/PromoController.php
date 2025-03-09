@@ -9,6 +9,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use App\Helpers\ResponseHelper;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PromoController extends Controller
 {
@@ -17,22 +18,40 @@ class PromoController extends Controller
      */
     public function index()
     {
+        $userId = Auth::id(); // ✅ Get authenticated user ID (nullable for guests)
+
         $promos = Promo::where('valid_until', '>=', Carbon::now()) // ✅ Only return valid promos
             ->orderBy('valid_until', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($promo) use ($userId) {
+                $promo->used = $userId
+                    ? PromoUsage::where('user_id', $userId)
+                    ->where('promo_id', $promo->id)
+                    ->exists()
+                    : false; // ✅ Check if user has used this promo
+
+                Log::info("Promo Check", [
+                    'promo_id' => $promo->id,
+                    'user_id' => $userId,
+                    'used' => $promo->used
+                ]);
+
+                return $promo;
+            });
 
         return ResponseHelper::success("Active promos retrieved successfully", $promos);
     }
 
+
     /**
-     * ✅ POST: Apply a voucher (Customer use, Requires Auth)
+     * ✅ POST: Check if a voucher is valid (No Tracking, Just Lookup)
      */
     public function applyPromo(Request $request)
     {
         // ✅ Validate required fields
         $request->validate([
             'code' => 'required|string',
-            'order_total' => 'required|numeric|min:1', // ✅ Ensure order_total is always provided
+            'order_total' => 'required|numeric|min:1', // ✅ Ensure order_total is provided
         ]);
 
         $promo = Promo::where('code', $request->code)->first();
@@ -52,17 +71,6 @@ class PromoController extends Controller
             return ResponseHelper::error("Minimum order amount required: ₱{$promo->minimum_order}", 400);
         }
 
-        $userId = Auth::id(); // ✅ Get authenticated user ID
-
-        // ❌ Prevent reusing one-time use vouchers
-        $alreadyUsed = PromoUsage::where('user_id', $userId)
-            ->where('promo_id', $promo->id)
-            ->exists();
-
-        if ($alreadyUsed) {
-            return ResponseHelper::error("You have already used this promo.", 400);
-        }
-
         // ✅ Calculate discount
         $discount = $promo->discount_percentage
             ? ($request->order_total * ($promo->discount_percentage / 100))
@@ -72,26 +80,18 @@ class PromoController extends Controller
         $discount = min($discount, $request->order_total);
         $finalTotal = max(0, $request->order_total - $discount);
 
-        // ✅ Use transactions for database integrity
-        DB::beginTransaction();
-        try {
-            // ✅ Mark the promo as used
-            PromoUsage::create([
-                'user_id' => $userId,
-                'promo_id' => $promo->id,
-            ]);
-
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return ResponseHelper::error("Failed to apply promo. Please try again.", 500);
-        }
-
-        return ResponseHelper::success("Promo applied successfully.", [
+        // ✅ Simply return voucher details, no database updates
+        return ResponseHelper::success("Promo verified successfully.", [
+            'code' => $promo->code,
             'discount' => round($discount, 2),
             'final_total' => round($finalTotal, 2),
+            'discount_percentage' => $promo->discount_percentage,
+            'discount_amount' => $promo->discount_amount,
+            'minimum_order' => $promo->minimum_order,
+            'valid_until' => $promo->valid_until,
         ]);
     }
+
 
     /**
      * ✅ POST: Create a new voucher (Admin only)
