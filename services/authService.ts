@@ -76,23 +76,44 @@ export const authService = {
     },
 
     // ✅ Verify OTP
-    verifyOtp: async (email: string, otp: string) => {
-        try {
-            const response = await fetch(`${API_URL}/api/verify-otp`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, otp }),
-            });
+// ✅ FIXED: Ensure correct JSON structure before sending the request
+verifyOtp: async (email: string, otp: string) => {
+    try {
+        const payload = {
+            email: email, // ✅ Ensure it's a string, not an object
+            otp: otp
+        };
 
-            const result = await apiHelper.handleResponse(res);
-            return result.success
-                ? { success: true, exists: result.data?.exists ?? false, verified: result.data?.verified ?? false }
-                : { success: false, message: result.message || "Error checking email." };
-        } catch (error) {
-            console.error("OTP Verification Error:", error);
-            return { success: false, message: "Something went wrong. Please try again." };
+        console.log("Sending payload:", payload); // Debugging - check console to verify payload
+
+        const response = await fetch(`${API_URL}/api/verify-otp`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload), // ✅ Flat JSON structure
+        });
+
+        const result = await apiHelper.handleResponse(response); // ✅ Handle API response properly
+
+        if (result.success) {
+            return {
+                success: true,
+                exists: result.data?.exists ?? false,
+                verified: result.data?.verified ?? false,
+            };
+        } else {
+            return {
+                success: false,
+                message: result?.message || "OTP verification failed.",
+            };
         }
-    },
+    } catch (error) {
+        console.error("OTP Verification Error:", error);
+        return {
+            success: false,
+            message: "Something went wrong. Please try again.",
+        };
+    }
+},
 
     // ✅ Logout
     logout: async () => {

@@ -35,7 +35,7 @@ export default function LoginModal({ isOpen, email, onClose }: LoginModalProps) 
             }
 
             // ✅ Redirect after successful login
-            router.push("/dashboard");
+            router.push("/home");
             onClose();
         } catch (err) {
             setErrors({ password: "Invalid credentials. Please try again." });
