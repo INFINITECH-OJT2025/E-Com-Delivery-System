@@ -202,12 +202,31 @@ class AuthController extends Controller
             $verificationLink = url('/auth/verify/' . base64_encode($user->email));
             $otp = $user->otp_code;
 
-            $mail->Body = view('emails.verification', compact('user', 'otp', 'verificationLink'))->render();
+            // ✅ Directly use an HTML string instead of `view()`
+            $mail->Body = "
+                <html>
+                <head>
+                    <title>Verify Your Email</title>
+                </head>
+                <body style='font-family: Arial, sans-serif;'>
+                    <h2>Hello, {$user->name}!</h2>
+                    <p>Thank you for signing up! Use the OTP below to verify your email:</p>
+                    <h3 style='background: #007C3D; color: white; padding: 10px; display: inline-block;'>{$otp}</h3>
+                    <p>Or click the button below to verify your email:</p>
+                    <p>
+                        <a href='{$verificationLink}' style='padding: 12px; background: #007C3D; color: white; text-decoration: none; border-radius: 5px;'>Verify Email</a>
+                    </p>
+                    <p>If you did not sign up, please ignore this email.</p>
+                </body>
+                </html>
+            ";
+
             $mail->send();
         } catch (Exception $e) {
             Log::error("Email sending failed: " . $mail->ErrorInfo);
         }
     }
+
     /**
      * ✅ Get Authenticated User Details
      */
