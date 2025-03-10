@@ -78,7 +78,13 @@ class AuthController extends Controller
     // ✅ Verify OTP
     public function verifyOtp(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        // ✅ Check if email is nested and extract it
+        $data = $request->all();
+        if (isset($data['email']) && is_array($data['email'])) {
+            $data = $data['email']; // Extract the actual values
+        }
+
+        $validator = Validator::make($data, [
             'email' => 'required|email',
             'otp' => 'required|digits:6',
         ]);
@@ -87,9 +93,9 @@ class AuthController extends Controller
             return ResponseHelper::error("Validation error", 422, $validator->errors());
         }
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $data['email'])->first();
 
-        if (!$user || $user->otp_code !== $request->otp) {
+        if (!$user || $user->otp_code !== $data['otp']) {
             return ResponseHelper::error("Invalid OTP", 400);
         }
 
@@ -105,6 +111,7 @@ class AuthController extends Controller
 
         return ResponseHelper::success("Email verified successfully.");
     }
+
 
     // ✅ Resend OTP
     public function resendVerification(Request $request)

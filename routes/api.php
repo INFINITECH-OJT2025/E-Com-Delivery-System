@@ -28,6 +28,7 @@ Route::prefix('google-maps')->group(function () {
 Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
 Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum')->name('auth.logout');
+Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->name('auth.verify');
 
 // ✅ Check Email (Throttled to prevent abuse)
 Route::post('/email-check', [AuthController::class, 'checkEmail'])
