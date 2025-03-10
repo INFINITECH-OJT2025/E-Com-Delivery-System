@@ -33,12 +33,33 @@ export default function FilterModal({
             ? "Select Cuisine"
             : activeFilter === "offers"
             ? "Offers"
+            : activeFilter === "service_type"
+            ? "Service Type"
             : "Filters"}
-      
         </ModalHeader>
 
         {/* 🔥 Modal Body */}
         <ModalBody className="p-4 space-y-6">
+          {/* ✅ Service Type Section (All - Delivery - Pickup) */}
+          {(activeFilter === "service_type" || activeFilter === "all") && (
+            <div className="border-b pb-4">
+              <h3 className="text-md font-bold mb-2">Service Type</h3>
+              {["all", "delivery", "pickup"].map((option) => (
+                <label key={option} className="flex items-center gap-2 py-2">
+                  <input
+                    type="radio"
+                    name="service_type"
+                    value={option}
+                    checked={filters.service_type === option}
+                    onChange={() => setFilters((prev: any) => ({ ...prev, service_type: option }))}
+                    className="w-5 h-5 accent-primary"
+                  />
+                  {option.charAt(0).toUpperCase() + option.slice(1)}
+                </label>
+              ))}
+            </div>
+          )}
+
           {/* ✅ Sort By Section */}
           {(activeFilter === "sort_by" || activeFilter === "all") && (
             <div className="border-b pb-4">
@@ -121,15 +142,14 @@ export default function FilterModal({
             Clear All
           </Button>
           <Button
-  className="bg-primary text-white px-6 py-2 rounded-full"
-  onPress={() => {
-    onApplyFilters(filters); // ✅ Apply filters
-    setActiveFilter(null);   // ✅ Close modal
-  }}
->
-  Apply Filters
-</Button>
-
+            className="bg-primary text-white px-6 py-2 rounded-full"
+            onPress={() => {
+              onApplyFilters(filters); // ✅ Apply filters
+              setActiveFilter(null);   // ✅ Close modal
+            }}
+          >
+            Apply Filters
+          </Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

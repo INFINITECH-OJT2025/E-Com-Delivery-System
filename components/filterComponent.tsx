@@ -20,6 +20,7 @@ export default function FilterComponent({
   const [filters, setFilters] = useState({
     sort_by: selectedFilters?.sort_by || "relevance",
     category: selectedFilters?.category || [],
+    service_type: selectedFilters?.service_type || "all",
     free_delivery: selectedFilters?.free_delivery || false,
     accepts_vouchers: selectedFilters?.accepts_vouchers || false,
     deal: selectedFilters?.deal || false,
@@ -39,7 +40,7 @@ export default function FilterComponent({
 
   // 🔥 Calculate Active Filters Count
   const activeFiltersCount = useMemo(() => {
-    return Object.values(filters).filter(value => value && value !== "relevance" && value.length !== 0).length;
+    return Object.values(filters).filter(value => value && value !== "relevance" && value !== "all" && value.length !== 0).length;
   }, [filters]);
 
   // 🔥 Selected Categories Display
@@ -57,6 +58,7 @@ export default function FilterComponent({
     setFilters({
       sort_by: "relevance",
       category: [],
+      service_type: "all",
       free_delivery: false,
       accepts_vouchers: false,
       deal: false,
@@ -67,7 +69,7 @@ export default function FilterComponent({
   return (
     <>
       {/* 🔥 Horizontally Scrollable Filter Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar p-3 bg-white shadow-md whitespace-nowrap no-scrollbar w-full">
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar p-3 bg-white whitespace-nowrap no-scrollbar w-full">
         
         {/* 🛠️ Main Filter Icon (Round Button with Badge) */}
         <button
@@ -76,45 +78,54 @@ export default function FilterComponent({
         >
           <IoFilterOutline size={22} />
           {activeFiltersCount > 0 && (
-            <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow">
+            <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
               {activeFiltersCount}
             </span>
           )}
         </button>
 
         {/* 🔥 Quick Access Buttons (Scrollable, No Forced Fitting) */}
-   
-          {/* 🔽 Sort By Button */}
-          <Button
-            onPress={() => setActiveFilter("sort_by")}
-            className={`flex items-center justify-between px-4 py-2 min-w-[140px] rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-200
-              ${filters.sort_by === "relevance" ? "bg-white text-gray-800" : "bg-primary text-white"}`}
-          >
-            {filters.sort_by.replace("_", " ")}
-            <IoChevronDown size={16} />
-          </Button>
 
-          {/* 🔽 Cuisines Button */}
-          <Button
-            onPress={() => setActiveFilter("category")}
-            className={`flex items-center justify-between px-4 py-2 min-w-[140px] rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-200
-              ${filters.category.length === 0 ? "bg-white text-gray-800" : "bg-primary text-white"}`}
-          >
-            {selectedCategories}
-            <IoChevronDown size={16} />
-          </Button>
+        {/* 🔽 Service Type Button (All - Delivery - Pickup) */}
+        <Button
+          onPress={() => setActiveFilter("service_type")}
+          className={`flex items-center justify-between px-4 py-2 min-w-[140px] rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-200
+            ${filters.service_type === "all" ? "bg-white text-gray-800" : "bg-primary text-white"}`}
+        >
+          {filters.service_type.charAt(0).toUpperCase() + filters.service_type.slice(1)}
+          <IoChevronDown size={16} />
+        </Button>
 
-          {/* 🔽 Offers Button */}
-          <Button
-            onPress={() => setActiveFilter("offers")}
-            className={`flex items-center justify-between px-4 py-2 min-w-[140px] rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-200
-              ${!filters.free_delivery && !filters.accepts_vouchers && !filters.deal && !filters.rating_4_plus ? "bg-white text-gray-800" : "bg-primary text-white"}`}
-          >
-            Offers
-            <IoChevronDown size={16} />
-          </Button>
-        </div>
-      
+        {/* 🔽 Sort By Button */}
+        <Button
+          onPress={() => setActiveFilter("sort_by")}
+          className={`flex items-center justify-between px-4 py-2 min-w-[140px] rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-200
+            ${filters.sort_by === "relevance" ? "bg-white text-gray-800" : "bg-primary text-white"}`}
+        >
+          {filters.sort_by.replace("_", " ")}
+          <IoChevronDown size={16} />
+        </Button>
+
+        {/* 🔽 Cuisines Button */}
+        <Button
+          onPress={() => setActiveFilter("category")}
+          className={`flex items-center justify-between px-4 py-2 min-w-[140px] rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-200
+            ${filters.category.length === 0 ? "bg-white text-gray-800" : "bg-primary text-white"}`}
+        >
+          {selectedCategories}
+          <IoChevronDown size={16} />
+        </Button>
+
+        {/* 🔽 Offers Button */}
+        <Button
+          onPress={() => setActiveFilter("offers")}
+          className={`flex items-center justify-between px-4 py-2 min-w-[140px] rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-200
+            ${!filters.free_delivery && !filters.accepts_vouchers && !filters.deal && !filters.rating_4_plus ? "bg-white text-gray-800" : "bg-primary text-white"}`}
+        >
+          Offers
+          <IoChevronDown size={16} />
+        </Button>
+      </div>
 
       {/* ✅ Filters Modal (Now Categorized with All Clickable Sections) */}
       {activeFilter && (

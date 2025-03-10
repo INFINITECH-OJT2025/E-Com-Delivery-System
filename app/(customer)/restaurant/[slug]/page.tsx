@@ -2,26 +2,29 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { restaurantService } from "@/services/restaurantService";
-import { deliveryFeeService } from "@/services/deliveryFeeService"; // ✅ Fetch delivery fee dynamically
+import { deliveryFeeService } from "@/services/deliveryFeeService";
 import { useUser } from "@/context/userContext";
 import RestaurantHeader from "./components/RestaurantHeader";
 import Breadcrumbs from "./components/Breadcrumbs";
 import ServiceDetails from "./components/ServiceDetails";
 import MenuTabs from "./components/MenuTabs";
 import MenuItem from "./components/MenuItem";
-import SearchBar from "@/components/SearchBar";
+import MenuSearchBar from "./components/MenuSearchBar";
 import { Spinner } from "@heroui/react";
+import { IoSearch } from "react-icons/io5";
+import { Button } from "@heroui/react";
 
 export default function RestaurantPage() {
     const { slug } = useParams();
-    const { selectedAddress } = useUser(); // ✅ Get user location
+    const { selectedAddress } = useUser();
     const [restaurant, setRestaurant] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isSearchOpen, setIsSearchOpen] = useState(false); // ✅ Add state for search modal
     const menuRefs = useRef({});
 
     useEffect(() => {
-        if (!selectedAddress) return; // ✅ Ensure user location is available before fetching
+        if (!selectedAddress) return;
 
         async function fetchData() {
             try {
@@ -48,10 +51,10 @@ export default function RestaurantPage() {
                 );
 
                 if (feeResponse.success && feeResponse.data) {
-                    restaurantData.delivery_fee = feeResponse.data.delivery_fee; // ✅ Assign delivery fee
-                    restaurantData.distance_km = feeResponse.data.distance_km; // ✅ Store distance
+                    restaurantData.delivery_fee = feeResponse.data.delivery_fee;
+                    restaurantData.distance_km = feeResponse.data.distance_km;
                 } else {
-                    restaurantData.delivery_fee = undefined; // ✅ Set undefined if not available
+                    restaurantData.delivery_fee = undefined;
                     restaurantData.distance_km = "Unknown";
                 }
 
@@ -64,12 +67,11 @@ export default function RestaurantPage() {
             }
         }
         fetchData();
-    }, [slug, selectedAddress]); // ✅ Fetch only when slug or user location changes
+    }, [slug, selectedAddress]);
 
     if (loading) return <div className="flex justify-center py-10"><Spinner size="lg" /></div>;
     if (error) return <div className="text-center text-red-500 py-10">{error}</div>;
 
-    // ✅ Get unique categories with item counts
     const categories = [
         { name: "Best Sellers", count: restaurant.best_sellers.length },
         ...restaurant.menu_categories.map(cat => ({
@@ -78,7 +80,6 @@ export default function RestaurantPage() {
         }))
     ];
 
-    // ✅ Scroll to category when tab is clicked
     const handleScrollToCategory = (category) => {
         const ref = menuRefs.current[category];
         if (ref) {
@@ -88,21 +89,43 @@ export default function RestaurantPage() {
 
     return (
         <div className="w-full h-screen flex flex-col bg-gray-50">
-            {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto">
-                {/* Breadcrumbs, Header, and Details */}
                 <Breadcrumbs restaurant={restaurant} />
                 <RestaurantHeader restaurant={restaurant} />
                 <ServiceDetails restaurant={restaurant} />
 
-                {/* Sticky SearchBar & MenuTabs */}
+                {/* 🛑 Closed Banner */}
+                {restaurant.status === "closed" && (
+                    <div className="bg-red-600 text-white text-center py-2 font-semibold">
+                        This restaurant is currently closed.
+                    </div>
+                )}
+
+                {/* ✅ Sticky Search Button & Tabs */}
                 <div className="sticky top-0 z-50 bg-white shadow-md">
-                    <SearchBar />
+                <div
+    onClick={() => {
+        if (restaurant.status !== "closed") setIsSearchOpen(true);
+    }}
+    className={`flex items-center bg-gray-100 rounded-full px-4 py-3 transition-all cursor-pointer mx-4 my-4 
+        ${restaurant.status === "closed" ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-200"}
+    `}
+>
+    <IoSearch className="text-gray-500 text-xl" />
+    <input
+        type="text"
+        placeholder="Search..."
+        readOnly
+        className="px-2 text-sm bg-transparent border-none focus:ring-0 outline-none md:text-base"
+    />
+</div>
+
+                    
                     <MenuTabs categories={categories} onSelectCategory={handleScrollToCategory} />
                 </div>
 
-                {/* Menu Items Section */}
-                <div className="px-4 py-6 space-y-6">
+                {/* ✅ Menu Items Section - Disabled if Closed */}
+                <div className={`px-4 py-6 space-y-6 ${restaurant.status === "closed" ? "opacity-50 pointer-events-none" : ""}`}>
                     {categories.map(({ name }) => (
                         <div key={name} ref={(el) => (menuRefs.current[name] = el)}>
                             <h3 className="text-lg font-bold text-gray-800 mt-6">{name}</h3>
@@ -119,6 +142,13 @@ export default function RestaurantPage() {
                     ))}
                 </div>
             </div>
+
+            {/* ✅ Search Modal */}
+            <MenuSearchBar 
+                isOpen={isSearchOpen} 
+                onClose={() => setIsSearchOpen(false)} 
+                menuItems={restaurant?.menus || []} 
+            />
         </div>
     );
 }
