@@ -36,12 +36,16 @@ class Menu extends Model
         $this->attributes['stock'] = $value;
         $this->attributes['availability'] = ($value > 0) ? 'in_stock' : 'out_of_stock';
     }
-
+    /**
+     * Get the restaurant that owns the menu item.
+     */
     public function restaurant()
     {
         return $this->belongsTo(Restaurant::class);
     }
-
+    /**
+     * Get the category of the menu item.
+     */
     public function category()
     {
         return $this->belongsTo(MenuCategory::class, 'menu_category_id');
@@ -50,5 +54,12 @@ class Menu extends Model
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
+    }
+    /**
+     * Scope search for menu items using full-text search.
+     */
+    public function scopeSearch($query, $searchTerm)
+    {
+        return $query->whereFullText(['name', 'description'], $searchTerm);
     }
 }

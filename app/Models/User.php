@@ -57,4 +57,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(CustomerAddress::class);
     }
+
+    /**
+     * Get the restaurants owned by the user.
+     */
+    public function restaurants()
+    {
+        return $this->hasMany(Restaurant::class, 'owner_id');
+    }
 }

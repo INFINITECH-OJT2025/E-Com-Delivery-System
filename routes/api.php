@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CustomerAddressController;
 use App\Http\Controllers\DeliveryFeeController;
 use App\Http\Controllers\GoogleMapsController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PromoController;
 use App\Http\Controllers\RestaurantController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\UserController;
 
 
@@ -86,4 +88,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // 🚀 Fetch user orders
     Route::get('/orders', [OrderController::class, 'index']);
+});
+Route::prefix('search')->group(function () {
+    Route::get('/', [SearchController::class, 'search'])->middleware('auth:sanctum'); // 🔎 Search Restaurants (With Location & Similar Results)
+    Route::get('/recent', [SearchController::class, 'recentSearches'])->middleware('auth:sanctum'); // 🕵️‍♂️ Recent Searches (Auth Required)
+    Route::get('/popular', [SearchController::class, 'popularSearches']); // 🔥 Popular Searches
+    Route::delete('/recent/{query}', [SearchController::class, 'deleteRecentSearch'])->middleware('auth:sanctum');; // ✅ Deletes specific search
+    Route::delete('/recent', [SearchController::class, 'clearAllRecentSearches'])->middleware('auth:sanctum');; // ✅ Clears all searches
+});
+Route::prefix('categories')->group(function () {
+    Route::get('/restaurants', [CategoryController::class, 'getRestaurantCategories']); // ✅ Fetch Restaurant Categories
+    Route::get('/menus', [CategoryController::class, 'getMenuCategories']); // ✅ Fetch Menu Categories
+    Route::get('/all', [CategoryController::class, 'getAllCategories']); // ✅ Fetch Both Categories
 });

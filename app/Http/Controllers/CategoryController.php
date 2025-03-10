@@ -2,47 +2,41 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
+use App\Models\RestaurantCategory;
+use App\Models\MenuCategory;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * ✅ Get All Restaurant Categories
      */
-    public function index()
+    public function getRestaurantCategories()
     {
-        //
+        return ResponseHelper::success("Restaurant categories retrieved", [
+            'categories' => RestaurantCategory::select('id', 'name', 'slug')->get()
+        ]);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * ✅ Get All Menu Categories
      */
-    public function store(Request $request)
+    public function getMenuCategories()
     {
-        //
+        return ResponseHelper::success("Menu categories retrieved", [
+            'categories' => MenuCategory::select('id', 'name', 'slug')->get()
+        ]);
     }
 
     /**
-     * Display the specified resource.
+     * ✅ Get Both Restaurant & Menu Categories (For Global Use)
      */
-    public function show(string $id)
+    public function getAllCategories()
     {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return ResponseHelper::success("All categories retrieved", [
+            'restaurant_categories' => RestaurantCategory::select('id', 'name', 'slug')->get(),
+            'menu_categories' => MenuCategory::select('id', 'name', 'slug')->get(),
+        ]);
     }
 }

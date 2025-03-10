@@ -24,9 +24,10 @@ class HomeController extends Controller
         $sortBy = $request->query('sort_by', 'relevance'); // Default sorting: relevance
         $categoryId = $request->query('category'); // Category filter
         $rating4Plus = $request->query('rating_4_plus', false) === "true"; // ✅ Filter for rating 4+
+        $serviceType = $request->query('service_type', 'all'); // ✅ Service type filter (delivery, pickup, or both)
 
         // ✅ Fetch Nearby Restaurants (Only If No Extra Filters Applied)
-        if (!$categoryId && !$rating4Plus && $sortBy === 'relevance') {
+        if (!$categoryId && !$rating4Plus && $sortBy === 'relevance' && $serviceType === 'all') {
             $baseRestaurantsQuery = Restaurant::selectRaw("
                     id, name, slug, logo, banner_image, rating, status, service_type, restaurant_category_id, latitude, longitude,
                     (6371 * acos(cos(radians(?)) * cos(radians(latitude)) 
@@ -100,6 +101,11 @@ class HomeController extends Controller
         if ($categoryId) {
             $categoryIds = explode(',', $categoryId);
             $exploreQuery->whereIn('restaurant_category_id', $categoryIds);
+        }
+
+        // ✅ Apply Service Type Filter (Delivery, Pickup, or Both)
+        if ($serviceType !== 'all') {
+            $exploreQuery->where('service_type', $serviceType);
         }
 
         // ✅ Apply Rating Filter (4+)
