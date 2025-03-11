@@ -5,18 +5,18 @@ import { homeService } from "@/services/homeService";
 import { useUser } from "@/context/userContext";
 import { IoChevronForwardOutline } from "react-icons/io5";
 import LocationBar from "@/components/LocationBar";
-import FilterComponent from "../../../components/filterComponent";
+import FilterComponent from "@/components/filterComponent";
 import SearchBar from "@/components/SearchBar";
-import Deals from "./components/deals";
-import Categories from "./components/categories";
-import RestaurantCard from "../../../components/restaurantCard";
-import RestaurantModal from "../../../components/restaurantModal";
-import HorizontalScrollList from "./components/horizontalScrollList";
-import CircleScrollList from "./components/circleScrollList";
+import Deals from "@/components/deals";
+import Categories from "@/components/categories";
+import RestaurantCard from "@/components/restaurantCard";
+import RestaurantModal from "@/components/restaurantModal";
+import HorizontalScrollList from "@/components/horizontalScrollList";
+import CircleScrollList from "@/components/circleScrollList";
 import { Spinner } from "@heroui/react";
 
 export default function HomePage() {
-    const { selectedAddress } = useUser();
+    const { selectedAddress, fetchUser } = useUser();
     const [data, setData] = useState({
         promos: [],
         categories: [],
@@ -33,13 +33,19 @@ export default function HomePage() {
 
     useEffect(() => {
         async function fetchData() {
+            if (!selectedAddress) {
+                setLoading(true);
+                await fetchUser(); // ✅ Ensure we fetch user before trying API calls
+                return;
+            }
+
             setLoading(true);
             try {
                 const { latitude, longitude } = selectedAddress || getStoredAddress();
                 
                 // ✅ Ensure valid lat/lng before calling API
                 if (!latitude || !longitude) {
-                    setError("Location not found. Please set your address.");
+                    setError("Location not found. Please set your address or refresh the page.");
                     setLoading(false);
                     return;
                 }
@@ -68,14 +74,13 @@ export default function HomePage() {
     const filteredRestaurants = useMemo(() => {
         return Array.isArray(data?.explore_restaurants) ? data.explore_restaurants : [];
     }, [data?.explore_restaurants, filters]);
-    
 
     if (loading) return <div className="flex justify-center py-10"><Spinner size="lg" /></div>;
     if (error) return <div className="text-center text-red-500 py-10">{error}</div>;
 
     return (
-        <div className="w-full h-screen flex flex-col overflow-y-auto bg-white">
-            <div className="flex-1 overflow-y-auto">
+        <div className="w-full h-screen flex flex-col bg-white">
+            <div className="">
                 <LocationBar />
                 <SearchBar />
                 <FilterComponent
@@ -147,29 +152,27 @@ export default function HomePage() {
                         </div>
                     )}
 
-{filteredRestaurants.length > 0 ? (
-    <div className="mt-5">
-        <h2 className="text-sm font-bold mt-4 mb-2 md:text-base">Explore Restaurants</h2>
-        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {filteredRestaurants.map((restaurant) => (
-                <RestaurantCard key={restaurant.id} restaurant={restaurant} />
-            ))}
-        </div>
-    </div>
-) : (
-    /* 🚨 No Restaurants Found Message */
-    (filteredRestaurants.length === 0 &&
-     (data?.order_again?.length ?? 0) === 0 &&
-     (data?.top_restaurants?.length ?? 0) === 0 &&
-     (data?.fast_delivery?.length ?? 0) === 0) && (
-        <div className="flex flex-col items-center justify-center text-center py-10 text-gray-500">
-            <img src="/images/restaurant_not_found.png" alt="No Restaurants" className="w-32 h-42 mb-4" />
-            <p className="text-lg font-semibold">No restaurants available in your area.</p>
-            <p className="text-sm text-gray-600">Try searching in another location.</p>
-        </div>
-    )
-)}
-
+                    {filteredRestaurants.length > 0 ? (
+                        <div className="mt-5">
+                            <h2 className="text-sm font-bold mt-4 mb-2 md:text-base">Explore Restaurants</h2>
+                            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                                {filteredRestaurants.map((restaurant) => (
+                                    <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        (filteredRestaurants.length === 0 &&
+                        (data?.order_again?.length ?? 0) === 0 &&
+                        (data?.top_restaurants?.length ?? 0) === 0 &&
+                        (data?.fast_delivery?.length ?? 0) === 0) && (
+                            <div className="flex flex-col items-center justify-center text-center py-10 text-gray-500">
+                                <img src="/images/restaurant_not_found.png" alt="No Restaurants" className="w-32 h-42 mb-4" />
+                                <p className="text-lg font-semibold">No restaurants available in your area.</p>
+                                <p className="text-sm text-gray-600">Try searching in another location.</p>
+                            </div>
+                        )
+                    )}
                 </div>
             </div>
 

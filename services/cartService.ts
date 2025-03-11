@@ -5,27 +5,43 @@ import { apiHelper } from "@/libs/apiHelper";
 
 export const cartService = {
     /**
-     * ✅ Fetch the user's cart (with auth token)
-     */
-    async fetchCart() {
-        const token = localStorage.getItem("auth_token");
-        if (!token) return { success: false, message: "Unauthorized" };
+ * ✅ Fetch the user's cart (with auth token & stored address)
+ */
+async fetchCart() {
+    const token = localStorage.getItem("auth_token");
+    if (!token) return { success: false, message: "Unauthorized" };
 
+    try {
+        // ✅ Get latitude & longitude from selected address (stored in UserContext)
+        const selectedAddress = localStorage.getItem("selected_address");
+        if (!selectedAddress) return { success: false, message: "No selected address found" };
+
+        let latitude, longitude;
         try {
-            const res = await fetch(`${API_URL}/api/cart`, { // ✅ Fixed URL
-                method: "GET",
-                headers: {
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${token}`,
-                },
-            });
-
-            return await apiHelper.handleResponse(res);
+            const addressData = JSON.parse(selectedAddress);
+            latitude = addressData?.latitude;
+            longitude = addressData?.longitude;
         } catch (error) {
-            console.error("Error fetching cart:", error);
-            return { success: false, message: "Failed to fetch cart" };
+            console.error("Error parsing selected_address:", error);
+            return { success: false, message: "Invalid address format" };
         }
-    },
+
+        // ✅ Fetch cart with location validation
+        const res = await fetch(`${API_URL}/api/cart?lat=${latitude}&lng=${longitude}`, {
+            method: "GET",
+            headers: {
+                "Accept": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+        });
+
+        return await apiHelper.handleResponse(res);
+    } catch (error) {
+        console.error("Error fetching cart:", error);
+        return { success: false, message: "Failed to fetch cart" };
+    }
+}
+,
 
     /**
      * ✅ Add an item to the cart

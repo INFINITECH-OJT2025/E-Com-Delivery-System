@@ -23,4 +23,49 @@ export const orderService = {
             return { success: false, message: "Checkout failed. Try again later." };
         }
     },
+     /**
+     * ✅ Fetch orders for the authenticated user
+     */
+     async getUserOrders() {
+        const token = localStorage.getItem("auth_token");
+        if (!token) return { success: false, message: "Unauthorized" };
+
+        try {
+            const response = await fetch(`${API_URL}/api/orders`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`, // ✅ Authenticate request
+                },
+            });
+
+            return await apiHelper.handleResponse(response);
+        } catch (error) {
+            console.error("Error fetching orders:", error);
+            return { success: false, message: "Failed to fetch orders" };
+        }
+    },
+
+    /**
+     * ✅ Fetch a single order by ID
+     */
+    async getOrderById(orderId: number) {
+        const token = localStorage.getItem("auth_token");
+        if (!token) return { success: false, message: "Unauthorized" };
+
+        try {
+            const response = await fetch(`${API_URL}/api/orders/${orderId}`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+            });
+
+            return await apiHelper.handleResponse(response);
+        } catch (error) {
+            console.error("Error fetching order details:", error);
+            return { success: false, message: "Failed to fetch order details" };
+        }
+    },
 };

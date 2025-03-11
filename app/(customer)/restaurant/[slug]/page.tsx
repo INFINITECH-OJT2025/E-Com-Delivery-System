@@ -4,12 +4,12 @@ import { useParams } from "next/navigation";
 import { restaurantService } from "@/services/restaurantService";
 import { deliveryFeeService } from "@/services/deliveryFeeService";
 import { useUser } from "@/context/userContext";
-import RestaurantHeader from "./components/RestaurantHeader";
-import Breadcrumbs from "./components/Breadcrumbs";
-import ServiceDetails from "./components/ServiceDetails";
-import MenuTabs from "./components/MenuTabs";
-import MenuItem from "./components/MenuItem";
-import MenuSearchBar from "./components/MenuSearchBar";
+import RestaurantHeader from "@/components/RestaurantHeader";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import ServiceDetails from "@/components/ServiceDetails";
+import MenuTabs from "@/components/MenuTabs";
+import MenuItem from "@/components/MenuItem";
+import MenuSearchBar from "@/components/MenuSearchBar";
 import { Spinner } from "@heroui/react";
 import { IoSearch } from "react-icons/io5";
 import { Button } from "@heroui/react";
@@ -89,7 +89,7 @@ export default function RestaurantPage() {
 
     return (
         <div className="w-full h-screen flex flex-col bg-gray-50">
-            <div className="flex-1 overflow-y-auto">
+            <div className="">
                 <Breadcrumbs restaurant={restaurant} />
                 <RestaurantHeader restaurant={restaurant} />
                 <ServiceDetails restaurant={restaurant} />
@@ -102,7 +102,7 @@ export default function RestaurantPage() {
                 )}
 
                 {/* ✅ Sticky Search Button & Tabs */}
-                <div className="sticky top-0 z-50 bg-white shadow-md">
+                <div className="sticky top-0 z-50 bg-white pt-1 shadow-md">
                 <div
     onClick={() => {
         if (restaurant.status !== "closed") setIsSearchOpen(true);
@@ -125,7 +125,7 @@ export default function RestaurantPage() {
                 </div>
 
                 {/* ✅ Menu Items Section - Disabled if Closed */}
-                <div className={`px-4 py-6 space-y-6 ${restaurant.status === "closed" ? "opacity-50 pointer-events-none" : ""}`}>
+                <div className={`px-4 py-2 space-y-6 ${restaurant.status === "closed" ? "opacity-50 pointer-events-none" : ""}`}>
                     {categories.map(({ name }) => (
                         <div key={name} ref={(el) => (menuRefs.current[name] = el)}>
                             <h3 className="text-lg font-bold text-gray-800 mt-6">{name}</h3>

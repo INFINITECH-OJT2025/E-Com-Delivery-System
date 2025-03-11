@@ -12,7 +12,7 @@ export default function SearchBar() {
             {/* Search Bar (Click to Open Modal) */}
             <div
                 onClick={() => setIsSearchOpen(true)}
-                className="flex items-center w-full max-w-lg bg-gray-100 rounded-full px-4 py-3 transition-all cursor-pointer"
+                className="flex items-center w-full  bg-gray-100 rounded-full px-4 py-3 transition-all cursor-pointer"
             >
                 <IoSearch className="text-gray-500 text-xl" />
                 <input

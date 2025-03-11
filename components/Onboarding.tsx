@@ -35,7 +35,7 @@ export default function Onboarding() {
             </div>
 
             {/* 🎯 Get Started Button */}
-            <Button className="bg-white text-primary font-bold px-6 py-3 rounded-full mt-10" onClick={handleGetStarted}>
+            <Button className="bg-white text-primary font-bold px-6 py-3 rounded-full mt-10" onPress={handleGetStarted}>
                 Get Started
             </Button>
         </div>

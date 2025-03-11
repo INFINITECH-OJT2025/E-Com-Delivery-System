@@ -47,21 +47,26 @@ export function UserProvider({ children }: { children: ReactNode }) {
             const response = await userService.fetchUser();
             if (response.success && response.data) {
                 setUser(response.data);
-
+    
                 // ✅ Load last used address from localStorage
                 const lastSavedAddress = localStorage.getItem("selected_address");
                 const parsedAddress: Address | null = lastSavedAddress ? JSON.parse(lastSavedAddress) : null;
-
+    
                 if (parsedAddress) {
                     setSelectedAddress(parsedAddress);
                 } else {
-                    setSelectedAddress(response.data.default_address || response.data.addresses[0] || null);
+                    const defaultAddress = response.data.default_address || response.data.addresses[0] || null;
+                    setSelectedAddress(defaultAddress);
+                    if (defaultAddress) {
+                        localStorage.setItem("selected_address", JSON.stringify(defaultAddress)); // ✅ Ensure storage updates
+                    }
                 }
             }
         } catch (error) {
             console.error("Error fetching user:", error);
         }
     };
+    
 
     /**
      * ✅ Handle address selection & cache it
@@ -71,9 +76,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
         if (address) {
             localStorage.setItem("selected_address", JSON.stringify(address));
         } else {
-            localStorage.removeItem("selected_address");
+            localStorage.removeItem("selected_address"); // ✅ Remove if null
         }
     };
+    
 
     /**
      * ✅ Fetch the user's current location only if no selected address is found
@@ -85,15 +91,29 @@ export function UserProvider({ children }: { children: ReactNode }) {
                     async (position) => {
                         const { latitude, longitude } = position.coords;
                         const address = await googleMapsService.getAddressFromCoords(latitude, longitude);
-
-                        if (address && !selectedAddress) {
-                            handleAddressChange({ address, latitude, longitude });
+        
+                        if (address) {
+                            const newAddress = {
+                                label: "Current Location",
+                                address,
+                                latitude,
+                                longitude,
+                                is_default: false,
+                            };
+        
+                            // ✅ Save new address to backend
+                            const response = await addressService.addAddress(newAddress);
+                            if (response.success) {
+                                await fetchUser(); // ✅ Refresh user data after adding
+                                handleAddressChange(response.data);
+                            }
                         }
                     },
                     () => console.warn("Geolocation permission denied")
                 );
             }
         };
+        
 
         // ✅ Use cached address if available, otherwise fetch GPS
         const storedAddress = localStorage.getItem("selected_address");

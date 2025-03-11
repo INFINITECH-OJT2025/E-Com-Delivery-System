@@ -74,7 +74,21 @@ export const authService = {
             return { success: false, message: "Something went wrong. Please try again." };
         }
     },
+  // ✅ Resend Verification (Email & OTP)
+  resendVerification: async (email: string) => {
+    try {
+        const response = await fetch(`${API_URL}/resend-verification`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+        });
 
+        return await apiHelper.handleResponse(response);
+    } catch (error) {
+        console.error("Resend Verification Error:", error);
+        return { success: false, message: "Failed to resend verification email. Please try again later." };
+    }
+},
     // ✅ Verify OTP
 // ✅ FIXED: Ensure correct JSON structure before sending the request
 verifyOtp: async (email: string, otp: string) => {

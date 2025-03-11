@@ -7,7 +7,7 @@ import { useUser } from "@/context/userContext";
 import { addressService } from "@/services/addressService";
 import { deliveryFeeService } from "@/services/deliveryFeeService";
 import { checkoutService } from "@/services/checkoutService";
-import VoucherModal from "@/components/VoucherModal";
+import VoucherModal from "@/components/ApplyVoucherModal";
 import AddressSelectionModal from "@/components/AddressSelectionModal";
 import AlertModal from "@/components/AlertModal";
 
@@ -104,7 +104,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
         const payload = {
             restaurant_id: cart.restaurant_id,
             cart_items: cartItems,
-            delivery_address_id: selectedAddress.id,
+            customer_address_id: selectedAddress.id,
             order_type: "delivery",
             total_price: totalPrice,
             rider_tip: riderTip,
@@ -155,9 +155,9 @@ export default function CheckoutModal({ isOpen, onClose }) {
                                     <p className="text-sm font-semibold">{selectedAddress.address}</p>
                                     <p className="text-xs text-gray-500">{selectedAddress.label}</p>
                                 </div>
-                                <button onClick={() => setAddressModalOpen(true)} className="text-primary text-sm flex items-center">
+                                {/* <button onClick={() => setAddressModalOpen(true)} className="text-primary text-sm flex items-center">
                                     <Edit className="w-4 h-4 mr-1" /> Change
-                                </button>
+                                </button> */}
                             </div>
                         ) : (
                             <p className="text-gray-500">No address selected</p>
@@ -181,50 +181,94 @@ export default function CheckoutModal({ isOpen, onClose }) {
                         )}
                     </div>
 
-                    {/* 🚴 Tip Your Rider (Chip Buttons) */}
-                    <div className="bg-white p-4 rounded-lg shadow-md mb-4">
-                        <h2 className="text-lg font-semibold">Tip Your Rider</h2>
-                        <div className="flex gap-2 mt-2">
-                            {[0,5, 10, 20, 100].map((tip) => (
-                                <button 
-                                    key={tip} 
-                                    className={`px-4 py-2 rounded-lg border ${riderTip === tip ? 'bg-primary text-white border-primary' : 'border-gray-300 bg-gray-100'}`}
-                                    onClick={() => setRiderTip(tip)}
-                                >
-                                    ₱{tip}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                   {/* 🚴 Tip Your Rider (Chip Buttons) */}
+<div className="bg-white p-4 rounded-lg shadow-md mb-4">
+    <h2 className="text-lg font-semibold">Tip Your Rider</h2>
+    <div className="mt-2 overflow-x-auto whitespace-nowrap">
+        <div className="flex gap-2 w-max">
+            {[0, 5, 10, 20, 100].map((tip) => (
+                <button 
+                    key={tip} 
+                    className={`px-4 py-2 rounded-lg border ${riderTip === tip ? 'bg-primary text-white border-primary' : 'border-gray-300 bg-gray-100'}`}
+                    onClick={() => setRiderTip(tip)}
+                >
+                    ₱{tip}
+                </button>
+            ))}
+        </div>
+    </div>
+</div>
+
 
                     {/* 🛍️ Order Summary */}
                     <div className="bg-white p-4 rounded-lg shadow-md">
-                        <h2 className="text-lg font-semibold">Order Summary</h2>
-                        <div className="flex justify-between text-sm mt-2">
-                            <span>Subtotal</span>
-                            <span>₱{subtotal.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                            <span>Delivery Fee</span>
-                            <span>₱{totalDeliveryFee.toFixed(2)}</span>
-                        </div>
-                        {Object.keys(appliedVouchers).length > 0 &&
-                            Object.entries(appliedVouchers).map(([type, voucher]) => (
-                                <div key={voucher.id} className="flex justify-between text-sm text-green-600">
-                                    <span>{voucher.code} Discount</span>
-                                    <span>-₱{voucher.discount_percentage ? ((subtotal * parseFloat(voucher.discount_percentage)) / 100).toFixed(2) : voucher.discount_amount}</span>
-                                </div>
-                            ))
-                        }
-                        <div className="flex justify-between text-sm">
-                            <span>Rider Tip</span>
-                            <span>₱{riderTip}</span>
-                        </div>
-                        <div className="flex justify-between text-lg font-bold mt-2">
-                            <span>Total</span>
-                            <span>₱{totalPrice.toFixed(2)}</span>
-                        </div>
+    <h2 className="text-lg font-semibold">Order Summary</h2>
+
+    {/* 🛒 Cart Items Breakdown */}
+    <div className="mt-2 space-y-2 text-sm text-gray-700">
+        {cart?.cart_items?.length > 0 ? (
+            cart.cart_items.map((item) => (
+                <div key={item.id} className="flex justify-between">
+                    <span>
+                        {item.quantity}x {item.menu.name}
+                    </span>
+                    <span>₱{(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+            ))
+        ) : (
+            <p className="text-gray-500 text-center">Your cart is empty.</p>
+        )}
+    </div>
+
+    {/* ✅ Divider */}
+    <hr className="my-3 border-gray-300" />
+
+    {/* ✅ Subtotal */}
+    <div className="flex justify-between text-sm">
+        <span>Subtotal</span>
+        <span>₱{totalPrice.toFixed(2)}</span>
+    </div>
+
+    {/* ✅ Delivery Fee */}
+    <div className="flex justify-between text-sm">
+        <span>Delivery Fee</span>
+        <span>₱{totalDeliveryFee.toFixed(2)}</span>
+    </div>
+
+    {/* ✅ Applied Vouchers */}
+    {appliedVouchers && Object.keys(appliedVouchers).length > 0 && (
+        <>
+            {Object.entries(appliedVouchers).map(([type, voucher]) => {
+                const discountAmount = voucher.discount_percentage
+                    ? (subtotal * parseFloat(voucher.discount_percentage)) / 100
+                    : parseFloat(voucher.discount_amount) || 0;
+
+                return (
+                    <div key={voucher.id} className="flex justify-between text-sm text-green-600">
+                        <span>{voucher.code} Discount</span>
+                        <span>-₱{discountAmount.toFixed(2)}</span>
                     </div>
+                );
+            })}
+        </>
+    )}
+
+    {/* ✅ Rider Tip */}
+    <div className="flex justify-between text-sm">
+        <span>Rider Tip</span>
+        <span>₱{riderTip.toFixed(2)}</span>
+    </div>
+
+    {/* ✅ Divider */}
+    <hr className="my-3 border-gray-300" />
+
+    {/* ✅ Total Price */}
+    <div className="flex justify-between text-lg font-bold mt-2">
+        <span>Total</span>
+        <span>₱{totalPrice.toFixed(2)}</span>
+    </div>
+</div>
+
 
                     {/* ✅ Terms Checkbox */}
                     <div className="mt-4">
@@ -237,13 +281,14 @@ export default function CheckoutModal({ isOpen, onClose }) {
                 {/* ✅ Fixed Footer */}
                 <ModalFooter className="p-4 border-t bg-white shadow-lg flex justify-between">
                     <h1 className="text-lg font-bold">Total: ₱{totalPrice.toFixed(2)}</h1>
-                    <Button 
+                  <Button 
     className="bg-primary text-white px-6" 
     onPress={handlePlaceOrder} 
-    disabled={!agreedTerms || loading} // ✅ Disable button while loading
+    isDisabled={!agreedTerms || loading || !selectedAddress || !cart?.cart_items?.length || totalPrice <= 0} // ✅ Ensure all fields are valid before enabling
 >
-    {loading ? "Placing Order..." : "Place Order"} {/* ✅ Show loading text */}
+    {loading ? "Placing Order..." : "Place Order"}
 </Button>
+
 
                 </ModalFooter>
             </ModalContent>

@@ -8,7 +8,7 @@ import { addressService } from "@/services/addressService";
 import { checkoutService } from "@/services/checkoutService";
 import { useCart } from "@/context/cartContext";
 import AlertModal from "@/components/AlertModal";
-import VoucherModal from "@/components/VoucherModal"; // ✅ Import voucher modal
+import VoucherModal from "@/components/ApplyVoucherModal"; // ✅ Import voucher modal
 
 export default function CheckoutPage() {
     const router = useRouter();

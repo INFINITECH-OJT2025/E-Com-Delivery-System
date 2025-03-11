@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from "@heroui/react";
 import { Trash2, Minus, Plus } from "lucide-react";
 import { useCart } from "@/context/cartContext";
@@ -7,11 +8,18 @@ import Image from "next/image";
 import CheckoutModal from "@/components/CheckoutModal";
 
 export default function CartModal({ isOpen, onClose }) {
-    const { cart, removeFromCart, updateQuantity } = useCart();
+    const { cart, removeFromCart, updateQuantity, fetchCart } = useCart();
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
     // ✅ State to control Checkout Modal
     const [isCheckoutOpen, setCheckoutOpen] = useState(false);
+
+    // ✅ Refetch cart every time modal opens
+    useEffect(() => {
+        if (isOpen) {
+            fetchCart(); // ✅ Ensures latest cart data
+        }
+    }, [isOpen]);
 
     // ✅ Compute total price
     const totalPrice = cart?.cart_items?.reduce((acc, item) => acc + parseFloat(item.subtotal), 0) || 0;
@@ -22,6 +30,20 @@ export default function CartModal({ isOpen, onClose }) {
     // ✅ Check if any item is out of stock
     const hasOutOfStockItems = cart?.cart_items?.some(item => item.menu.availability === "out_of_stock");
 
+    // ✅ Check if the restaurant is out of range
+    const isOutOfRange = cart?.is_in_range === false;
+
+    /** ✅ Remove item & refetch cart */
+    const handleRemove = async (itemId: number) => {
+        await removeFromCart(itemId);
+        await fetchCart(); // ✅ Ensures the UI updates properly
+    };
+
+    /** ✅ Update quantity & refetch cart */
+    const handleUpdateQuantity = async (itemId: number, newQuantity: number) => {
+        await updateQuantity(itemId, newQuantity);
+        await fetchCart(); // ✅ Updates totals and availability
+    };
 
     return (
         <>
@@ -48,7 +70,7 @@ export default function CartModal({ isOpen, onClose }) {
                             <div className="flex flex-col gap-4">
                                 {cart?.cart_items?.map((item) => {
                                     const imageUrl = `${API_URL}/storage/${item.menu.image}`;
-                                    const isOutOfStock =  item.menu.availability === "out_of_stock"; 
+                                    const isOutOfStock = item.menu.availability === "out_of_stock"; 
 
                                     return (
                                         <div 
@@ -76,7 +98,7 @@ export default function CartModal({ isOpen, onClose }) {
                                             {/* ✅ Quantity Controls (Disabled if out of stock) */}
                                             <div className="flex items-center gap-2">
                                                 <button 
-                                                    onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))} 
+                                                    onClick={() => handleUpdateQuantity(item.id, Math.max(1, item.quantity - 1))} 
                                                     className="p-2 bg-gray-200 rounded-full"
                                                     disabled={isOutOfStock}
                                                 >
@@ -84,7 +106,7 @@ export default function CartModal({ isOpen, onClose }) {
                                                 </button>
                                                 <span className="text-sm font-semibold">{item.quantity}</span>
                                                 <button 
-                                                    onClick={() => updateQuantity(item.id, item.quantity + 1)} 
+                                                    onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)} 
                                                     className="p-2 bg-gray-200 rounded-full"
                                                     disabled={isOutOfStock}
                                                 >
@@ -94,7 +116,7 @@ export default function CartModal({ isOpen, onClose }) {
 
                                             {/* ✅ Remove Button */}
                                             <button 
-                                                onClick={() => removeFromCart(item.id)} 
+                                                onClick={() => handleRemove(item.id)} 
                                                 className="ml-3 text-red-600 hover:text-red-800"
                                             >
                                                 <Trash2 className="w-5 h-5" />
@@ -118,7 +140,7 @@ export default function CartModal({ isOpen, onClose }) {
                         <Button 
                             className="w-full bg-primary text-white text-md py-3 disabled:bg-gray-300 disabled:cursor-not-allowed"
                             onPress={() => setCheckoutOpen(true)}
-                            isDisabled={cart?.cart_items?.length === 0 || isRestaurantClosed || hasOutOfStockItems}
+                            isDisabled={cart?.cart_items?.length === 0 || isRestaurantClosed || hasOutOfStockItems || isOutOfRange} // ✅ Disabled if out of range
                         >
                             Proceed to Checkout
                         </Button>
@@ -129,6 +151,9 @@ export default function CartModal({ isOpen, onClose }) {
                         )}
                         {hasOutOfStockItems && (
                             <p className="text-red-600 text-sm text-center">Some items are out of stock. Please remove them before checkout.</p>
+                        )}
+                        {isOutOfRange && (
+                            <p className="text-red-600 text-sm text-center">Your location is too far from this restaurant. You cannot proceed with checkout.</p>
                         )}
                     </ModalFooter>
                 </ModalContent>

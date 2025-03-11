@@ -1,7 +1,8 @@
 "use client";
 
-import { IoHeartOutline } from "react-icons/io5";
+import { IoHeartOutline, IoHeart } from "react-icons/io5";
 import { useRouter } from "next/navigation";
+import { useFavorite } from "@/context/favoriteContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -22,6 +23,11 @@ interface RestaurantProps {
 
 export default function RestaurantCard({ restaurant }: RestaurantProps) {
     const router = useRouter();
+    const { favorites, toggleFavorite } = useFavorite();
+
+    const isFavorited = favorites.some(
+        (fav) => fav.favoritable_id === restaurant.id && fav.favoritable_type === "restaurant"
+    );
 
     const imageUrl = restaurant.banner_image?.startsWith("http")
         ? restaurant.banner_image
@@ -55,10 +61,18 @@ export default function RestaurantCard({ restaurant }: RestaurantProps) {
 
             {/* ❤️ Favorite Icon */}
             <button
-                className="absolute top-3 right-3 text-xl text-gray-700 hover:text-red-500 transition"
-                aria-label="Add to favorites"
+                className="absolute top-3 right-3 text-xl transition"
+                aria-label="Toggle favorite"
+                onClick={(e) => {
+                    e.stopPropagation(); // ✅ Prevent triggering the card click
+                    toggleFavorite("restaurant", restaurant.id);
+                }}
             >
-                <IoHeartOutline />
+                {isFavorited ? (
+                    <IoHeart className="text-red-500" />
+                ) : (
+                    <IoHeartOutline className="text-gray-700 hover:text-red-500" />
+                )}
             </button>
 
             {/* 📍 Restaurant Info */}

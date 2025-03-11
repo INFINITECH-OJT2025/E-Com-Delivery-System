@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from "@heroui/react";
-import { Minus, Plus, X } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import { useCart } from "@/context/cartContext";
 import AlertModal from "@/components/AlertModal"; // ✅ Import reusable alert modal
 
@@ -25,6 +25,8 @@ export default function MenuItem({ menuItem }: MenuItemProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [quantity, setQuantity] = useState(1);
     const [isWarningOpen, setIsWarningOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false); // ✅ Add Loading State
+
     const { cart, addToCart, fetchCart, removeFromCart } = useCart();
 
     const handleOpen = () => {
@@ -36,25 +38,28 @@ export default function MenuItem({ menuItem }: MenuItemProps) {
     const increaseQuantity = () => setQuantity((prev) => prev + 1);
     const decreaseQuantity = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
 
-   const handleAddToCart = async () => {
-    if (quantity < 1) return;
+    const handleAddToCart = async () => {
+        if (quantity < 1) return;
+        setIsLoading(true); // ✅ Start Loading
 
-    // ✅ Only show warning if the cart is NOT empty
-    if (cart && cart.cart_items?.[0] && cart.restaurant_id !== menuItem.restaurant_id) {
-        setIsWarningOpen(true);
-        return;
-    }
+        // ✅ Show warning if switching restaurants
+        if (cart && cart.cart_items?.[0] && cart.restaurant_id !== menuItem.restaurant_id) {
+            setIsWarningOpen(true);
+            setIsLoading(false); // ✅ Stop loading if warning is triggered
+            return;
+        }
 
-    const response = await addToCart(menuItem.id, quantity, menuItem.restaurant_id);
-    if (!response.success) {
-        alert(response.message || "Failed to add item to cart.");
-        return;
-    }
+        const response = await addToCart(menuItem.id, quantity, menuItem.restaurant_id);
+        if (!response.success) {
+            alert(response.message || "Failed to add item to cart.");
+            setIsLoading(false); // ✅ Stop Loading on failure
+            return;
+        }
 
-    await fetchCart();
-    handleClose();
-};
-
+        await fetchCart();
+        setIsLoading(false); // ✅ Stop Loading on success
+        handleClose();
+    };
 
     return (
         <>
@@ -88,7 +93,6 @@ export default function MenuItem({ menuItem }: MenuItemProps) {
                     {/* ✅ Modal Header */}
                     <ModalHeader className="flex items-center justify-between p-3">
                         <h2 className="text-sm font-bold text-gray-900">{menuItem.name}</h2>
-                        
                     </ModalHeader>
 
                     {/* ✅ Modal Body */}
@@ -116,8 +120,9 @@ export default function MenuItem({ menuItem }: MenuItemProps) {
                         <Button 
                             onPress={handleAddToCart} 
                             className="bg-primary text-white text-sm px-4 py-2"
+                            isDisabled={isLoading} // ✅ Disable button while loading
                         >
-                            Add to Cart
+                            {isLoading ? "Adding..." : "Add to Cart"} {/* ✅ Show Loading Text */}
                         </Button>
                     </ModalFooter>
                 </ModalContent>
@@ -126,19 +131,31 @@ export default function MenuItem({ menuItem }: MenuItemProps) {
             {/* ✅ Warning Modal for Switching Restaurants */}
             <AlertModal
                 isOpen={isWarningOpen}
-                onClose={() => setIsWarningOpen(false)}
+                onClose={() => {
+                    setIsWarningOpen(false);
+                    setIsLoading(false); // ✅ Reset Loading when modal is closed
+                }}
                 onConfirm={async () => {
+                    setIsLoading(true); // ✅ Start Loading
+
                     for (const item of cart?.cart_items || []) {
                         await removeFromCart(item.id);
                     }
-                    await addToCart(menuItem.id, quantity, menuItem.restaurant_id);
+
+                    const response = await addToCart(menuItem.id, quantity, menuItem.restaurant_id);
                     await fetchCart();
+
                     setIsWarningOpen(false);
+                    setIsLoading(false); // ✅ Stop Loading
+
+                    if (!response.success) {
+                        alert(response.message || "Failed to add item to cart.");
+                    }
                 }}
                 title="Switching Restaurants"
                 message="Your cart contains items from another restaurant. If you continue, your cart will be cleared."
                 type="warning"
-                confirmText="Proceed"
+                confirmText={isLoading ? "Processing..." : "Proceed"} // ✅ Show loading state
                 cancelText="Cancel"
             />
         </>
