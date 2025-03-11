@@ -7,6 +7,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CustomerAddressController;
 use App\Http\Controllers\DeliveryFeeController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\GoogleMapsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
@@ -63,6 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('cart', CartController::class)->except(['create', 'edit']);
 
     Route::post('/checkout', [OrderController::class, 'checkout'])->name('order.checkout');
+    Route::apiResource('favorites', FavoriteController::class)->except(['create', 'edit']);
 });
 Route::middleware('auth:sanctum')->prefix('user')->group(function () {
     Route::apiResource('addresses', CustomerAddressController::class)->except(['create', 'edit']);

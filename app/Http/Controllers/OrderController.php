@@ -28,7 +28,7 @@ class OrderController extends Controller
             'cart_items.*.menu_id' => 'required|exists:menus,id',
             'cart_items.*.quantity' => 'required|integer|min:1',
             'cart_items.*.price' => 'required|numeric|min:0',
-            'delivery_address_id' => 'required|exists:customer_addresses,id',
+            'customer_address_id' => 'required|exists:customer_addresses,id',
             'order_type' => 'required|in:delivery,pickup',
             'payment_method' => 'required|in:cash,gcash,card,maya',
             'rider_tip' => 'required|numeric|min:0',
@@ -93,7 +93,7 @@ class OrderController extends Controller
             $order = Order::create([
                 'customer_id' => $user->id,
                 'restaurant_id' => $request->restaurant_id,
-                'delivery_address_id' => $request->delivery_address_id,
+                'customer_address_id' => $request->customer_address_id,
                 'order_type' => $request->order_type,
                 'total_price' => $total_price,
                 'rider_tip' => $request->rider_tip,

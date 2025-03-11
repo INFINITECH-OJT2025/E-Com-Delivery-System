@@ -14,7 +14,7 @@ use App\Models\Restaurant;
 class CartController extends Controller
 {
     /**
-     * ✅ Display the authenticated user's cart.
+     * ✅ Display the authenticated user's cart and check if it's within range.
      */
     public function index(Request $request)
     {
@@ -24,7 +24,16 @@ class CartController extends Controller
             return ResponseHelper::error("Unauthorized", 401);
         }
 
-        $cart = Cart::with(['cartItems.menu', 'restaurant']) // ✅ Load restaurant details
+        // ✅ Get user's latitude & longitude from request
+        $userLat = $request->query('lat');
+        $userLng = $request->query('lng');
+
+        if (!$userLat || !$userLng) {
+            return ResponseHelper::error("User location is required", 400);
+        }
+
+        // ✅ Load cart with restaurant details
+        $cart = Cart::with(['cartItems.menu', 'restaurant'])
             ->where('user_id', $user->id)
             ->first();
 
@@ -32,15 +41,62 @@ class CartController extends Controller
             return ResponseHelper::success("Cart is empty", ['cart_items' => []]);
         }
 
+        $restaurant = $cart->restaurant;
+
+        if (!$restaurant) {
+            return ResponseHelper::error("Restaurant not found", 404);
+        }
+
+        // ✅ Get restaurant location
+        $restaurantLat = $restaurant->latitude;
+        $restaurantLng = $restaurant->longitude;
+
+        if (!$restaurantLat || !$restaurantLng) {
+            return ResponseHelper::error("Restaurant location is missing", 500);
+        }
+
+        // ✅ Validate if the user is within the allowed delivery range
+        $maxDistance = 10; // ✅ Example: 10km max delivery range
+        $distance = $this->calculateDistance($userLat, $userLng, $restaurantLat, $restaurantLng);
+        $isInRange = $distance <= $maxDistance;
+
         return ResponseHelper::success("Cart retrieved", [
             'id' => $cart->id,
             'user_id' => $cart->user_id,
-            'restaurant_id' => $cart->restaurant_id,
-            'restaurant_name' => $cart->restaurant->name ?? "Unknown", // ✅ Include restaurant name
-            'restaurant_status' => $cart->restaurant->status,
+            'restaurant_id' => $restaurant->id,
+            'restaurant_name' => $restaurant->name,
+            'restaurant_status' => $restaurant->status,
+            'restaurant_lat' => $restaurantLat,
+            'restaurant_lng' => $restaurantLng,
+            'user_lat' => $userLat,
+            'user_lng' => $userLng,
+            'distance_km' => round($distance, 2),
+            'is_in_range' => $isInRange, // ✅ TRUE if in range, FALSE if too far
             'cart_items' => $cart->cartItems
         ]);
     }
+
+    /**
+     * ✅ Calculate distance between two coordinates (Haversine formula)
+     */
+    private function calculateDistance($lat1, $lng1, $lat2, $lng2)
+    {
+        $earthRadius = 6371; // Earth radius in kilometers
+
+        $latFrom = deg2rad($lat1);
+        $lngFrom = deg2rad($lng1);
+        $latTo = deg2rad($lat2);
+        $lngTo = deg2rad($lng2);
+
+        $latDelta = $latTo - $latFrom;
+        $lngDelta = $lngTo - $lngFrom;
+
+        $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+            cos($latFrom) * cos($latTo) * pow(sin($lngDelta / 2), 2)));
+
+        return $earthRadius * $angle; // Distance in kilometers
+    }
+
 
     /**
      * ✅ Add an item to the cart.
