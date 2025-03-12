@@ -1,20 +1,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Avatar, Button, Card } from "@heroui/react";
-import { LogOut, Settings, Ticket, User, Wallet } from "lucide-react";
+import { Settings } from "lucide-react";
+import { Spinner } from "@heroui/react"; // ✅ Import Hero UI Spinner
 import ProfileCard from "@/components/ProfileCard";
 import ProfileMenu from "@/components/ProfileMenu";
 import LogoutButton from "@/components/LogoutButton";
+import { useUser } from "@/context/userContext"; // ✅ Get User Data from Context
 
 export default function ProfilePage() {
-    const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+    const { user, fetchUser } = useUser(); // ✅ Get user & fetchUser function from context
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
+        const loadUser = async () => {
+            await fetchUser(); // ✅ Fetch user from API
+            setLoading(false);
+        };
+        loadUser();
     }, []);
 
     return (
@@ -25,14 +28,23 @@ export default function ProfilePage() {
                 <Settings className="w-6 h-6 text-gray-500" />
             </div>
 
-            {/* ✅ Profile Card */}
-            <ProfileCard user={user} />
+            {/* ✅ Show Spinner if Loading */}
+            {loading ? (
+                <div className="flex justify-center items-center h-40">
+                    <Spinner size="lg" className="text-primary" />
+                </div>
+            ) : (
+                <>
+                    {/* ✅ Pass user as a prop to keep ProfileCard.tsx clean */}
+                    <ProfileCard user={user} />
 
-            {/* ✅ Profile Menu (Perks & General) */}
-            <ProfileMenu />
+                    {/* ✅ Profile Menu (Perks & General) */}
+                    <ProfileMenu />
 
-            {/* ✅ Logout Button */}
-            <LogoutButton />
+                    {/* ✅ Logout Button */}
+                    <LogoutButton />
+                </>
+            )}
         </div>
     );
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Spinner } from "@heroui/react";
-import { useUser } from "@/context/UserContext";
+import { useUser } from "@/context/userContext";
 
 interface ProfileEditModalProps {
     isOpen: boolean;
@@ -46,15 +46,15 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
                     />
 
                     {/* 🔹 Email Display (Disabled) */}
-                    <Input label="Email" value={user?.email || ""} disabled />
+                    <Input label="Email" value={user?.email || ""} isDisabled />
 
                     {/* 🔴 Error Message */}
                     {error && <p className="text-red-600 text-sm">{error}</p>}
                 </ModalBody>
 
                 <ModalFooter className="p-4 flex justify-between border-t">
-                    <Button variant="ghost" onClick={onClose}>Cancel</Button>
-                    <Button className="bg-primary text-white px-6 py-2" onClick={handleSave} disabled={loading}>
+                    <Button variant="ghost" onPress={onClose}>Cancel</Button>
+                    <Button className="bg-primary text-white px-6 py-2" onPress={handleSave} disabled={loading}>
                         {loading ? <Spinner size="sm" color="white" /> : "Save Changes"}
                     </Button>
                 </ModalFooter>
