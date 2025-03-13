@@ -12,7 +12,9 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 use App\Models\User;
 use App\Helpers\ResponseHelper;
+use App\Models\Restaurant;
 use Illuminate\Cache\RateLimiter;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -187,7 +189,6 @@ class AuthController extends Controller
         $request->user()->tokens()->delete();
         return ResponseHelper::success("Logout successful.");
     }
-
     // ✅ Send Email (OTP & Verification Link)
     private function sendEmail($user)
     {
@@ -206,33 +207,100 @@ class AuthController extends Controller
             $mail->isHTML(true);
             $mail->Subject = "Verify Your Account - E-Com Delivery System";
 
-            $verificationLink = url('/auth/verify/' . base64_encode($user->email));
+            // ✅ Generate secure verification link
+            $verificationLink = route('auth.verify', ['email' => base64_encode($user->email)]);
+
+            // ✅ OTP Code
             $otp = $user->otp_code;
 
-            // ✅ Directly use an HTML string instead of `view()`
+            // ✅ Email Body with better HTML structure
             $mail->Body = "
-                <html>
-                <head>
-                    <title>Verify Your Email</title>
-                </head>
-                <body style='font-family: Arial, sans-serif;'>
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset='UTF-8'>
+                <meta name='viewport' content='width=device-width, initial-scale=1'>
+                <title>Verify Your Email</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        line-height: 1.6;
+                        background-color: #f4f4f4;
+                        padding: 20px;
+                        text-align: center;
+                    }
+                    .container {
+                        background: white;
+                        max-width: 500px;
+                        margin: auto;
+                        padding: 20px;
+                        border-radius: 8px;
+                        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                    }
+                    h2 {
+                        color: #333;
+                    }
+                    .otp {
+                        background: #007C3D;
+                        color: white;
+                        font-size: 24px;
+                        padding: 10px;
+                        border-radius: 5px;
+                        display: inline-block;
+                        margin: 10px 0;
+                    }
+                    .verify-button {
+                        display: inline-block;
+                        background: #007C3D;
+                        color: white;
+                        padding: 12px 20px;
+                        text-decoration: none;
+                        font-size: 16px;
+                        border-radius: 5px;
+                        margin-top: 20px;
+                    }
+                    .verify-button:hover {
+                        background: #00592A;
+                    }
+                    .footer {
+                        margin-top: 20px;
+                        font-size: 12px;
+                        color: #666;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class='container'>
                     <h2>Hello, {$user->name}!</h2>
                     <p>Thank you for signing up! Use the OTP below to verify your email:</p>
-                    <h3 style='background: #007C3D; color: white; padding: 10px; display: inline-block;'>{$otp}</h3>
+                    <p class='otp'>{$otp}</p>
                     <p>Or click the button below to verify your email:</p>
-                    <p>
-                        <a href='{$verificationLink}' style='padding: 12px; background: #007C3D; color: white; text-decoration: none; border-radius: 5px;'>Verify Email</a>
-                    </p>
+                    
+                    <!-- ✅ Fix for clickable button in email clients -->
+                    <table align='center' cellspacing='0' cellpadding='0'>
+                        <tr>
+                            <td align='center' bgcolor='#007C3D' style='border-radius: 5px;'>
+                                <a href='{$verificationLink}' target='_blank' class='verify-button'>Verify Email</a>
+                            </td>
+                        </tr>
+                    </table>
+
                     <p>If you did not sign up, please ignore this email.</p>
-                </body>
-                </html>
-            ";
+
+                    <div class='footer'>
+                        <p>&copy; " . date('Y') . " E-Com Delivery System. All rights reserved.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        ";
 
             $mail->send();
         } catch (Exception $e) {
             Log::error("Email sending failed: " . $mail->ErrorInfo);
         }
     }
+
 
     /**
      * ✅ Get Authenticated User Details
@@ -241,5 +309,231 @@ class AuthController extends Controller
     {
         $user = $request->user()->load('addresses'); // ✅ Ensure addresses are included
         return ResponseHelper::success("User retrieved", $user);
+    }
+
+    public function update(Request $request)
+    {
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $user->update(['name' => $validated['name']]);
+
+        return ResponseHelper::success('Name updated successfully', $user);
+    }
+    public function broadcastAuth(Request $request)
+    {
+        try {
+            if (!auth()->check()) {
+                Log::error("❌ WebSocket Auth Failed: User not authenticated.");
+                return response()->json(["message" => "Unauthorized"], 403);
+            }
+
+            $authResponse = Broadcast::auth($request);
+
+            // ✅ Log the successful response
+            Log::info("✅ WebSocket Auth Response:", (array) $authResponse);
+
+            return response()->json($authResponse);
+        } catch (\Exception $e) {
+            // 🚨 Catch any errors and log them
+            Log::error("❌ WebSocket Auth Exception: " . $e->getMessage());
+            return response()->json(["error" => "Internal Server Error"], 500);
+        }
+    }
+
+    /**
+     * ✅ Send Password Reset Link
+     */
+    public function sendResetLink(Request $request)
+    {
+        $request->validate(['email' => 'required|email|exists:users,email']);
+
+        // ✅ Generate a secure token
+        $token = Str::random(64);
+
+        // ✅ Delete any existing reset request for this email
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+        // ✅ Insert new token into the database
+        DB::table('password_reset_tokens')->insert([
+            'email' => $request->email,
+            'token' => $token,
+            'created_at' => now(),
+        ]);
+
+        try {
+            $mail = new PHPMailer(true);
+            $mail->isSMTP();
+            $mail->Host = env('MAIL_HOST'); // Example: smtp.gmail.com
+            $mail->SMTPAuth = true;
+            $mail->Username = env('MAIL_USERNAME');
+            $mail->Password = env('MAIL_PASSWORD');
+            $mail->SMTPSecure = env('MAIL_ENCRYPTION', 'tls');
+            $mail->Port = env('MAIL_PORT', 587);
+
+            $mail->setFrom(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'));
+            $mail->addAddress($request->email);
+            $mail->isHTML(true);
+            $mail->Subject = "Reset Your Password";
+
+            $resetLink = url("/reset-password?token=$token&email={$request->email}");
+            $mail->Body = "
+                <html>
+                <body>
+                    <h2>Password Reset Request</h2>
+                    <p>Click the button below to reset your password:</p>
+                    <p>
+                        <a href='{$resetLink}' style='padding: 12px; background: #007BFF; color: white; text-decoration: none; border-radius: 5px;'>Reset Password</a>
+                    </p>
+                    <p>If you did not request this, please ignore this email.</p>
+                </body>
+                </html>
+            ";
+
+            $mail->send();
+
+            return response()->json(['message' => 'Password reset link sent successfully.']);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to send email. ' . $mail->ErrorInfo], 500);
+        }
+    }
+
+
+    public function showResetForm(Request $request)
+    {
+        // ✅ Check if token exists in DB
+        $tokenExists = DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->where('token', $request->token)
+            ->exists();
+
+        if (!$tokenExists) {
+            return redirect()->route('password.reset.form')->with('error', 'Invalid or expired token.');
+        }
+
+        return view('auth.reset_password');
+    }
+
+    public function resetPassword(Request $request)
+    {
+        // ✅ Validate input
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+            'token' => 'required',
+            'password' => 'required|min:8|confirmed'
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->with('error', 'Password validation failed.');
+        }
+
+        // ✅ Check if token exists
+        $resetRequest = DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->where('token', $request->token)
+            ->first();
+
+        if (!$resetRequest) {
+            return redirect()->back()->with('error', 'Invalid or expired token.');
+        }
+
+        // ✅ Reset password
+        $user = User::where('email', $request->email)->first();
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        // ✅ Delete used reset token
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+        return redirect()->back()->with('success', 'Password reset successfully! You can now log in.');
+    }
+
+    public function registerVendor(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone_number' => 'required|digits_between:10,15|unique:users,phone_number',
+            'password' => 'required|min:6|confirmed',
+            'restaurant_name' => 'required|string|max:255',
+            'restaurant_address' => 'required|string',
+            'restaurant_phone' => 'required|digits_between:10,15',
+        ]);
+
+        if ($validator->fails()) {
+            return ResponseHelper::error("Validation error", 422, $validator->errors());
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $otp = rand(100000, 999999);
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone_number' => $request->phone_number,
+                'password' => Hash::make($request->password),
+                'role' => 'restaurant_owner',
+                'otp_code' => $otp,
+                'otp_expires_at' => now()->addMinutes(10),
+            ]);
+
+            // ✅ Automatically create a restaurant entry for the vendor
+            Restaurant::create([
+                'owner_id' => $user->id,
+                'name' => $request->restaurant_name,
+                'address' => $request->restaurant_address,
+                'phone_number' => $request->restaurant_phone,
+                'status' => 'closed', // Default status
+            ]);
+
+            $this->sendEmail($user);
+            DB::commit();
+
+            return ResponseHelper::success("Vendor account created. Please verify your email.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Vendor Registration Error: " . $e->getMessage());
+            return ResponseHelper::error("Something went wrong. Please try again later.", 500);
+        }
+    }
+    public function vendorLogin(Request $request, RateLimiter $limiter)
+    {
+        $key = 'vendor_login:' . Str::lower($request->email) . '|' . $request->ip();
+
+        if ($limiter->tooManyAttempts($key, 5)) {
+            return ResponseHelper::error("Too many login attempts. Try again in " . $limiter->availableIn($key) . " seconds.", 429);
+        }
+
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            $limiter->hit($key, 60);
+            return ResponseHelper::error("Invalid credentials", 401);
+        }
+
+        if (!$user->email_verified_at) {
+            return ResponseHelper::error("Email not verified. Please verify via OTP or email link.", 403);
+        }
+
+        // ✅ Ensure only vendors (restaurant_owners) can log in
+        if ($user->role !== 'restaurant_owner') {
+            return ResponseHelper::error("Access denied. This login is for restaurant owners only.", 403);
+        }
+
+        $token = $user->createToken("vendor_auth_token")->plainTextToken;
+
+        return ResponseHelper::success("Vendor login successful", [
+            'access_token' => $token,
+            'user' => $user->only(['id', 'name', 'email', 'phone_number', 'role', 'email_verified_at']),
+        ]);
     }
 }

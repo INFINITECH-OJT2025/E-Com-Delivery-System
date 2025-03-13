@@ -178,7 +178,7 @@ class FavoriteController extends Controller
     public function destroy($id)
     {
         $user = Auth::user();
-        $favorite = Favorite::where('id', $id)->where('user_id', $user->id)->first();
+        $favorite = Favorite::where('favoritable_id', $id)->where('user_id', $user->id)->first();
 
         if (!$favorite) {
             return ResponseHelper::error("Favorite not found", 404);

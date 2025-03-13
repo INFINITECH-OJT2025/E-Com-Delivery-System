@@ -36,6 +36,21 @@ class Menu extends Model
         $this->attributes['stock'] = $value;
         $this->attributes['availability'] = ($value > 0) ? 'in_stock' : 'out_of_stock';
     }
+    public function restoreStock(int $quantity)
+    {
+        $this->increment('stock', $quantity);
+    }
+    /**
+     * ✅ Deduct stock when an order is placed
+     */
+    public function deductStock(int $quantity)
+    {
+        if ($this->stock >= $quantity) {
+            $this->decrement('stock', $quantity);
+        } else {
+            throw new \Exception("Insufficient stock for '{$this->name}'");
+        }
+    }
     /**
      * Get the restaurant that owns the menu item.
      */

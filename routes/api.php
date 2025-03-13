@@ -12,6 +12,7 @@ use App\Http\Controllers\GoogleMapsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PromoController;
+use App\Http\Controllers\RefundController;
 use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\UserController;
@@ -30,6 +31,8 @@ Route::post('/register', [AuthController::class, 'register'])->name('auth.regist
 Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum')->name('auth.logout');
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->name('auth.verify');
+Route::post('/resend-verification', [AuthController::class, 'resendVerification'])->name('auth.reverify');
+Route::post('/forgot-password', [AuthController::class, 'sendResetLink']);
 
 // ✅ Check Email (Throttled to prevent abuse)
 Route::post('/email-check', [AuthController::class, 'checkEmail'])
@@ -40,8 +43,9 @@ Route::post('/email-check', [AuthController::class, 'checkEmail'])
 Route::middleware('auth:sanctum')->group(function () {
     // ✅ Authenticated User Details (Move to AuthController)
     Route::get('/user', [AuthController::class, 'me'])->name('auth.user');
-
-    // ✅ User Management (Only for Admins)
+    // ✅ Update Authenticated User (Change Own Profile)
+    Route::put('/user', [AuthController::class, 'update'])->name('auth.user.update');
+    // ✅ User Management 
     Route::apiResource('users', UserController::class)->except(['create', 'edit']);
     Route::get('/home', [HomeController::class, 'index'])->name('home.index');
 });
@@ -86,11 +90,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 // ✅ Secure API with middleware
 Route::middleware(['auth:sanctum'])->group(function () {
-    // 🚀 Place an order (Checkout API)
-    Route::post('/orders', [OrderController::class, 'store']);
+    Route::apiResource('orders', OrderController::class);
 
-    // 🚀 Fetch user orders
-    Route::get('/orders', [OrderController::class, 'index']);
+    // ✅ Cancel Order
+    Route::post('orders/{order}/cancel', [OrderController::class, 'cancelOrder']);
+
+    // ✅ Request Refund
+    Route::post('orders/{order}/refund', [OrderController::class, 'processRefund']);
 });
 Route::prefix('search')->group(function () {
     Route::get('/', [SearchController::class, 'search'])->middleware('auth:sanctum'); // 🔎 Search Restaurants (With Location & Similar Results)
@@ -103,4 +109,14 @@ Route::prefix('categories')->group(function () {
     Route::get('/restaurants', [CategoryController::class, 'getRestaurantCategories']); // ✅ Fetch Restaurant Categories
     Route::get('/menus', [CategoryController::class, 'getMenuCategories']); // ✅ Fetch Menu Categories
     Route::get('/all', [CategoryController::class, 'getAllCategories']); // ✅ Fetch Both Categories
+});
+// ✅ User Routes (Standard API Resource for Refunds)
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::apiResource('refunds', RefundController::class)->only(['index', 'store', 'show']);
+});
+
+// ✅ Admin Routes (Separate Endpoint for Admin to Fetch All Refunds)
+Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::get('admin/refunds', [RefundController::class, 'adminIndex']); // ✅ Admin can fetch all refunds
+    Route::put('admin/refunds/{id}', [RefundController::class, 'update']); // ✅ Admin can update refund status
 });

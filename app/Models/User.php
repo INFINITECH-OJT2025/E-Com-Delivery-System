@@ -65,4 +65,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Restaurant::class, 'owner_id');
     }
+
+    /**
+     * ✅ Define relationship with orders
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'customer_id');
+    }
 }

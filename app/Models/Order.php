@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Order extends Model
 {
@@ -20,6 +22,10 @@ class Order extends Model
         'scheduled_time',
         'rider_tip',
         'order_type',
+        'subtotal',
+        'delivery_fee',
+        'discount_on_subtotal',
+        'discount_on_shipping'
     ];
 
     public function customer()
@@ -47,9 +53,9 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    public function payments()
+    public function payment(): HasOne
     {
-        return $this->hasOne(Payment::class);
+        return $this->hasOne(Payment::class, 'order_id', 'id'); // ✅ Ensure correct foreign key
     }
 
     public function dispute()
@@ -60,5 +66,20 @@ class Order extends Model
     public function refund()
     {
         return $this->hasOne(Refund::class);
+    }
+    /**
+     * ✅ Check if a refund should be processed
+     */
+    public function shouldProcessRefund(): bool
+    {
+        return $this->payment && $this->payment->payment_status === 'success' && $this->payment_method !== 'cash';
+    }
+
+    /**
+     * ✅ Define the relationship between Order and Customer Address
+     */
+    public function customerAddress(): BelongsTo
+    {
+        return $this->belongsTo(CustomerAddress::class, 'customer_address_id', 'id'); // ✅ Correctly link to `customer_addresses` table
     }
 }
