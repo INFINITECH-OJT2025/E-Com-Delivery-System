@@ -315,7 +315,7 @@ return (
                 {/* 🏬 Similar Restaurants */}
                 {!loading && relatedMenuRestaurants.length > 0 && (
                     <div className="mt-6">
-                        <h3 className="text-gray-800 font-semibold mb-2">Similar Restaurants</h3>
+                        <h3 className="text-gray-800 font-semibold mb-2">Related Menu Restaurants</h3>
                         <div className="grid grid-cols-1 gap-4">
                             {relatedMenuRestaurants.map((restaurant: any) => (
                                 <RestaurantCard key={restaurant.id} restaurant={restaurant} />

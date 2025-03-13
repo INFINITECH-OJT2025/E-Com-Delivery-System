@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { useUser } from "@/context/userContext"; // ✅ Import useUser
-
+import { Spinner } from "@heroui/react";
 interface CustomerLayoutProps {
     children: React.ReactNode;
 }
@@ -40,9 +40,11 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
     // ✅ Show a loading screen while checking authentication
     if (isChecking || !user) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-white">
-                <p className="text-lg font-semibold">Checking authentication...</p>
-            </div>
+            <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+            <Spinner />
+            <p className="text-gray-600 text-lg mt-3">Checking authentication... please wait.</p>
+        </div>
+        
         );
     }
 

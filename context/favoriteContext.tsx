@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { favoriteService } from "@/services/favoriteService";
 
 interface Favorite {
@@ -45,13 +45,13 @@ const FavoriteContext = createContext<FavoriteContextType | null>(null);
 export function FavoriteProvider({ children }: { children: ReactNode }) {
     const [favorites, setFavorites] = useState<Favorite[]>([]);
     const [similarRestaurants, setSimilarRestaurants] = useState<SimilarRestaurant[]>([]);
-    const [isFetched, setIsFetched] = useState(false); // ✅ Prevent unnecessary fetching
+    const [isFetched, setIsFetched] = useState(false); // ✅ New flag to prevent refetch on open
 
-    /** ✅ Fetch User's Favorite Items (Only When Needed) */
+    /** ✅ Fetch User's Favorite Items */
     const fetchFavorites = async () => {
-        if (isFetched) return; // ✅ Prevent duplicate fetching
-
         try {
+            const token = localStorage.getItem("auth_token");
+            if (!token) return;
             const response = await favoriteService.fetchFavorites();
             if (response.success) {
                 setFavorites(response.data?.favorites || []);
@@ -86,6 +86,10 @@ export function FavoriteProvider({ children }: { children: ReactNode }) {
             console.error("Error toggling favorite:", error);
         }
     };
+
+    useEffect(() => {
+        if (!isFetched) fetchFavorites(); // ✅ Only fetch once when the app loads
+    }, []);
 
     return (
         <FavoriteContext.Provider value={{ favorites, similarRestaurants, fetchFavorites, toggleFavorite }}>

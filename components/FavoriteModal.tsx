@@ -86,12 +86,7 @@ export default function FavoriteModal({ isOpen, onClose }: FavoriteModalProps) {
                                                 </div>
                                             )}
 
-                                            {/* ✅ Show Closed Overlay */}
-                                            {!favorite.is_open && (
-                                                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-xs font-semibold">
-                                                    Closed
-                                                </div>
-                                            )}
+                                          
                                         </div>
                                     );
                                 })}
