@@ -16,8 +16,6 @@ use App\Http\Controllers\RefundController;
 use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\UserController;
-
-
 use Illuminate\Support\Facades\Http;
 
 Route::prefix('google-maps')->group(function () {
