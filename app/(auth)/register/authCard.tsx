@@ -23,8 +23,10 @@ export default function AuthCard() {
     const openLoginModal = (email: string) => {
         setEmail(email);
         setIsEmailModalOpen(false);
-        setIsLoginModalOpen(true);
+        setIsVerifyEmailModalOpen(false); // ✅ Ensure verification modal closes
+        setIsLoginModalOpen(true); // ✅ Open login modal
     };
+    
 
     // ✅ Open verify email modal
     const openVerifyEmailModal = (email: string) => {
@@ -94,11 +96,14 @@ export default function AuthCard() {
             />
 
             {/* ✅ Verify Email Modal */}
+            {/* ✅ Verify Email Modal */}
             <VerifyEmailModal 
-                isOpen={isVerifyEmailModalOpen} 
-                email={email} 
-                onClose={() => setIsVerifyEmailModalOpen(false)} 
-            />
+    isOpen={isVerifyEmailModalOpen} 
+    email={email} 
+    onClose={() => setIsVerifyEmailModalOpen(false)} 
+    onOpenLogin={openLoginModal} // ✅ This must be correctly passed
+/>
+
 
             {/* ✅ Register Modal */}
             <RegisterModal 

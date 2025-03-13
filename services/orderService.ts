@@ -23,15 +23,32 @@ export const orderService = {
             return { success: false, message: "Checkout failed. Try again later." };
         }
     },
-     /**
-     * ✅ Fetch orders for the authenticated user
+    /**
+     * ✅ Fetch orders for the authenticated user (with location support)
      */
-     async getUserOrders() {
+    async getUserOrders() {
         const token = localStorage.getItem("auth_token");
+        const selectedAddress = localStorage.getItem("selected_address");
+
+        let lat = null, lng = null;
+        if (selectedAddress) {
+            try {
+                const parsed = JSON.parse(selectedAddress);
+                lat = parsed.latitude || null;
+                lng = parsed.longitude || null;
+            } catch (error) {
+                console.error("Error parsing selected_address:", error);
+            }
+        }
+
         if (!token) return { success: false, message: "Unauthorized" };
 
         try {
-            const response = await fetch(`${API_URL}/api/orders`, {
+            const url = lat && lng 
+                ? `${API_URL}/api/orders?lat=${lat}&lng=${lng}` // ✅ Include location in API request
+                : `${API_URL}/api/orders`; // ✅ Default URL if no location is available
+
+            const response = await fetch(url, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -45,17 +62,16 @@ export const orderService = {
             return { success: false, message: "Failed to fetch orders" };
         }
     },
-
     /**
-     * ✅ Fetch a single order by ID
+     * ✅ Cancel an order
      */
-    async getOrderById(orderId: number) {
+    async cancelOrder(orderId: number) {
         const token = localStorage.getItem("auth_token");
         if (!token) return { success: false, message: "Unauthorized" };
 
         try {
-            const response = await fetch(`${API_URL}/api/orders/${orderId}`, {
-                method: "GET",
+            const response = await fetch(`${API_URL}/api/orders/${orderId}/cancel`, {
+                method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`,
@@ -64,8 +80,8 @@ export const orderService = {
 
             return await apiHelper.handleResponse(response);
         } catch (error) {
-            console.error("Error fetching order details:", error);
-            return { success: false, message: "Failed to fetch order details" };
+            console.error("Error canceling order:", error);
+            return { success: false, message: "Failed to cancel order." };
         }
     },
 };

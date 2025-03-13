@@ -1,32 +1,60 @@
 "use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { CartProvider } from "@/context/cartContext";
-import { FavoriteProvider } from "@/context/favoriteContext";
-import { UserProvider } from "@/context/userContext";
-import { OrderProvider } from "@/context/orderContext";
+import { useUser } from "@/context/userContext"; // ✅ Import useUser
+
 interface CustomerLayoutProps {
     children: React.ReactNode;
 }
 
 export default function CustomerLayout({ children }: CustomerLayoutProps) {
-    return (
-        <UserProvider>
-            <OrderProvider>
-                <CartProvider>
-                    <FavoriteProvider>
-                    {/* ✅ Full-height wrapper, allowing only internal scrolling */}
-                    <div className="w-full h-screen flex flex-col bg-white">
-                        {/* ✅ Sticky Navbar */}
-                        <div className="sticky top-0 z-50 w-full bg-white shadow-md">
-                            <Navbar />
-                        </div>
+    const router = useRouter();
+    const { user, fetchUser } = useUser(); // ✅ Get user & fetchUser method
+    const [isChecking, setIsChecking] = useState(true);
 
-                        {/* ✅ Only `children` scrolls (prevents double scrollbar issue) */}
-                        <main className="flex-1 overflow-y-auto">{children}</main>
-                    </div>
-                    </FavoriteProvider>
-                </CartProvider>
-            </OrderProvider>
-        </UserProvider>
+    useEffect(() => {
+        const checkUser = async () => {
+            try {
+                if (!user) {
+                    await fetchUser(); // ✅ Ensure user data is fetched before rendering
+                }
+            } catch (error) {
+                console.error("Error checking user authentication:", error);
+            } finally {
+                setIsChecking(false); // ✅ Mark check as completed
+            }
+        };
+
+        checkUser();
+    }, [user]);
+
+    // ✅ If check is done & user is still null, redirect to login
+    useEffect(() => {
+        if (!isChecking && !user) {
+            router.push("/login");
+        }
+    }, [isChecking, user, router]);
+
+    // ✅ Show a loading screen while checking authentication
+    if (isChecking || !user) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-white">
+                <p className="text-lg font-semibold">Checking authentication...</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full h-screen flex flex-col bg-white">
+            {/* ✅ Sticky Navbar */}
+            <div className="sticky top-0 z-50 w-full bg-white shadow-md">
+                <Navbar />
+            </div>
+
+            {/* ✅ Only render `children` after authentication is confirmed */}
+            <main className="flex-1 overflow-y-auto">{children}</main>
+        </div>
     );
 }

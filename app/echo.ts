@@ -1,30 +1,47 @@
-import Echo from 'laravel-echo';
+import Echo from "laravel-echo";
+import Pusher from "pusher-js";
+import axios from "axios";
 
-import Pusher from 'pusher-js';
-window.Pusher = Pusher;
-import axios from 'axios'
-window.Echo = new Echo({
-    broadcaster: 'reverb',
-    key: process.env.NEXT_PUBLIC_REVERB_APP_KEY,
-    authorizer: (channel) => {
-        return {
-            authorize: (socketId, callback) => {
-                axios.post('/api/broadcasting/auth', {
-                    socket_id: socketId,
-                    channel_name: channel.name
-                })
-                .then(response => {
-                    callback(false, response.data);
-                })
-                .catch(error => {
-                    callback(true, error);
-                });
-            }
-        };
-    },
-    wsHost: process.env.NEXT_PUBLIC_REVERB_HOST,
-    wsPort: process.env.NEXT_PUBLIC_REVERB_PORT ?? 80,
-    wssPort: process.env.NEXT_PUBLIC_REVERB_PORT ?? 443,
-    forceTLS: (process.env.NEXT_PUBLIC_REVERB_SCHEME ?? 'https') === 'https',
-    enabledTransports: ['ws', 'wss'],
-});
+// ✅ Declare Pusher and Echo in the global window object
+declare global {
+    interface Window {
+        Pusher: typeof Pusher;
+        Echo: Echo;
+    }
+}
+
+// ✅ Assign Pusher to Window (Fixes global reference issues)
+if (typeof window !== "undefined") {
+    window.Pusher = Pusher;
+
+    window.Echo = new Echo({
+        broadcaster: "pusher", // ✅ Laravel Reverb still uses "pusher" as a broadcaster
+        key: process.env.NEXT_PUBLIC_REVERB_APP_KEY || "", // ✅ Match Laravel .env
+        wsHost: process.env.NEXT_PUBLIC_REVERB_HOST || "127.0.0.1",
+        wsPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT) || 9000,
+        wssPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT) || 443,
+        forceTLS: (process.env.NEXT_PUBLIC_REVERB_SCHEME ?? "http") === "https",
+        enabledTransports: ["ws", "wss"],
+
+        // ✅ Custom authorizer for private & presence channels
+        authorizer: (channel: any) => {
+            return {
+                authorize: async (socketId: string, callback: (error: boolean, data?: any) => void) => {
+                    try {
+                        const response = await axios.post("/api/broadcasting/auth", {
+                            socket_id: socketId,
+                            channel_name: channel.name,
+                        });
+
+                        callback(false, response.data);
+                    } catch (error) {
+                        console.error("Error authorizing channel:", error);
+                        callback(true, error);
+                    }
+                },
+            };
+        },
+    });
+}
+
+export default window.Echo;

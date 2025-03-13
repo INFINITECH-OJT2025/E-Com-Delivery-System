@@ -1,16 +1,33 @@
 "use client";
 
-import { Button } from "@heroui/react";
+import { useState } from "react";
+import { Button, Spinner } from "@heroui/react"; // ✅ Use Hero UI Spinner
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { authService } from "@/services/authService"; // ✅ Import Auth Service
 
 export default function LogoutButton() {
     const router = useRouter();
+    const [loading, setLoading] = useState(false);
 
-    const handleLogout = () => {
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("user");
-        router.push("/login");
+    const handleLogout = async () => {
+        setLoading(true);
+
+        try {
+            const response = await authService.logout();
+            
+            if (response.success) {
+                localStorage.removeItem("auth_token");
+                localStorage.removeItem("user");
+                router.replace("/login"); // ✅ Redirect to login page
+            } else {
+                console.error("Logout failed:", response.message);
+            }
+        } catch (error) {
+            console.error("Logout error:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -18,8 +35,10 @@ export default function LogoutButton() {
             <Button 
                 className="w-full bg-red-500 text-white flex items-center justify-center gap-2"
                 onPress={handleLogout}
+                isDisabled={loading}
             >
-                <LogOut className="w-5 h-5" /> Log out
+                {loading ? <Spinner size="sm" className="text-white" /> : <LogOut className="w-5 h-5" />}
+                {loading ? "Logging out..." : "Log out"}
             </Button>
         </div>
     );

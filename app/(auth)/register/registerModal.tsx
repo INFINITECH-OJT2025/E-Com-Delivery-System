@@ -36,6 +36,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, email })
     const [isVerifying, setIsVerifying] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [apiErrors, setApiErrors] = useState<string[]>([]);
 
     useEffect(() => {
         setFormData((prev) => ({ ...prev, email }));
@@ -63,30 +64,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, email })
 
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
-
-        // ✅ Validate all fields before submission
-        const validationErrors: ValidationErrors = {
-            name: formData.name ? "" : "Name is required",
-            email: validateEmail(formData.email),
-            phone_number: validatePhone(formData.phone_number),
-            password: validatePassword(formData.password),
-            confirmPassword: validateConfirmPassword(formData.password, formData.confirmPassword),
-        };
-
-        if (Object.values(validationErrors).some((err) => err)) {
-            setErrors(validationErrors);
-            
-            // ✅ Automatically remove errors after 5 seconds
-            setTimeout(() => {
-                setErrors({});
-            }, 5000);
-            
-            return;
-        }
-
+    
+        // ✅ Clear previous API errors
+        setApiErrors([]);
+    
         setLoading(true);
         setErrors({});
-
+    
         try {
             const payload = {
                 name: formData.name,
@@ -95,28 +79,24 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, email })
                 password: formData.password,
                 password_confirmation: formData.confirmPassword,
             };
-
+    
             const response = await authService.register(payload);
             setLoading(false);
-
+    
             if (!response.success) {
                 if (response.data) {
-                    // ✅ Set inline errors and remove after 5 seconds
-                    setErrors((prev) => ({ ...prev, ...response.data }));
-                    setTimeout(() => {
-                        setErrors({});
-                    }, 5000);
+                    // ✅ Store API response errors separately
+                    setApiErrors(Object.values(response.data).flat());
                     return;
                 }
-
-                return;
             }
-
+    
             setIsVerifying(true);
         } catch (err) {
             setLoading(false);
         }
     }, [formData]);
+    
 
     return (
         <>
@@ -128,6 +108,13 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, email })
                     </ModalHeader>
 
                     <ModalBody className="p-6 flex flex-col items-center">
+                    {apiErrors.length > 0 && (
+        <div className="w-full max-w-md bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-md text-sm text-center">
+            {apiErrors.map((error, index) => (
+                <p key={index}>{error}</p>
+            ))}
+        </div>
+    )}
                         <p className="text-gray-500 text-center">
                             Fill in your details to create an account.
                         </p>

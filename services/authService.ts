@@ -74,21 +74,32 @@ export const authService = {
             return { success: false, message: "Something went wrong. Please try again." };
         }
     },
-  // ✅ Resend Verification (Email & OTP)
-  resendVerification: async (email: string) => {
+// ✅ Resend Verification (Email & OTP)
+resendVerification: async (email: string) => {
     try {
-        const response = await fetch(`${API_URL}/resend-verification`, {
+        // ✅ Ensure `email` is a string before sending
+        if (typeof email !== "string" || !email.trim()) {
+            return { success: false, message: "Invalid email format." };
+        }
+
+        // ✅ Send request with correctly structured JSON body
+        const response = await fetch(`${API_URL}/api/resend-verification`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email }),
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email: email.trim() }) // ✅ Ensure email is trimmed & formatted correctly
         });
 
+        // ✅ Use API helper to process response
         return await apiHelper.handleResponse(response);
+
     } catch (error) {
         console.error("Resend Verification Error:", error);
         return { success: false, message: "Failed to resend verification email. Please try again later." };
     }
 },
+
     // ✅ Verify OTP
 // ✅ FIXED: Ensure correct JSON structure before sending the request
 verifyOtp: async (email: string, otp: string) => {
@@ -164,4 +175,19 @@ verifyOtp: async (email: string, otp: string) => {
         const token = localStorage.getItem("auth_token");
         return token ? { "Authorization": `Bearer ${token}` } : {};
     },
+    forgotPassword: async (email: string) => {
+        try {
+            const response = await fetch(`${API_URL}/api/forgot-password`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+            });
+    
+            return await apiHelper.handleResponse(response);
+        } catch (error) {
+            console.error("Forgot Password Error:", error);
+            return { success: false, message: "Something went wrong. Please try again later." };
+        }
+    },
+    
 };

@@ -6,7 +6,13 @@ import * as React from "react";
 import { HeroUIProvider } from "@heroui/system";
 import { useRouter } from "next/navigation";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
-import {ToastProvider} from "@heroui/toast";
+import { ToastProvider } from "@heroui/toast";
+
+// ✅ Import Context Providers
+import { UserProvider } from "@/context/userContext";
+import { OrderProvider } from "@/context/orderContext";
+import { CartProvider } from "@/context/cartContext";
+import { FavoriteProvider } from "@/context/favoriteContext";
 
 export interface ProvidersProps {
   children: React.ReactNode;
@@ -26,9 +32,19 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 
   return (
     <HeroUIProvider navigate={router.push}>
-            <ToastProvider />
-
-      <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
+      <ToastProvider />
+      <NextThemesProvider {...themeProps}>
+        {/* ✅ Global Context Providers */}
+        <UserProvider> 
+          <OrderProvider>
+            <CartProvider>
+              <FavoriteProvider>
+                {children}
+              </FavoriteProvider>
+            </CartProvider>
+          </OrderProvider>
+        </UserProvider>
+      </NextThemesProvider>
     </HeroUIProvider>
   );
 }

@@ -5,7 +5,7 @@ import { Card, Button } from "@heroui/react";
 import { Bookmark, Heart, MapPin } from "lucide-react";
 import AddressModal from "@/components/AddressSelectionModal";
 import FavoriteModal from "@/components/FavoriteModal";
-import OrderModal from "@/components/OrderModal";
+import OrderModal from "@/components/orders/OrderModal";
 import ProfileEditModal from "@/components/ProfileEditModal";
 
 interface ProfileCardProps {

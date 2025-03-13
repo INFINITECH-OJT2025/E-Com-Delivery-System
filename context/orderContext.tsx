@@ -1,95 +1,95 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { orderService } from "@/services/orderService";
-import { socketService } from "@/services/socketService"; // ✅ WebSocket Service
 
 interface Order {
-    id: number;
-    status: string;
-    estimated_delivery: string;
-    rider_location?: { lat: number; lng: number };
+  id: number;
+  order_status: string;
+  total_price: number;
+  order_items: any[];
+  created_at: string;
 }
 
 interface OrderContextType {
-    activeOrder: Order | null;
-    orders: Order[];
-    fetchUserOrders: () => Promise<void>;
-    fetchOrderById: (orderId: number) => Promise<void>;
-    updateOrderStatus: (orderId: number, status: string) => void;
+  orders: Order[];
+  currentOrder: Order | null;
+  fetchOrders: () => Promise<void>;
+  fetchOrderById: (orderId: number) => Promise<void>;
+  cancelOrder: (orderId: number) => Promise<void>; // ✅ Add cancel order
 }
 
-const OrderContext = createContext<OrderContextType | null>(null);
+const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
-export function OrderProvider({ children }: { children: ReactNode }) {
-    const [activeOrder, setActiveOrder] = useState<Order | null>(null);
-    const [orders, setOrders] = useState<Order[]>([]);
+export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
 
-    /**
-     * ✅ Fetch all user orders
-     */
-    const fetchUserOrders = async () => {
-        const response = await orderService.getUserOrders();
-        if (response.success && response.data) {
-            setOrders(response.data);
-        }
-    };
-
-    /**
-     * ✅ Fetch a single order by ID (for tracking)
-     */
-    const fetchOrderById = async (orderId: number) => {
-        const response = await orderService.getOrderById(orderId);
-        if (response.success && response.data) {
-            setActiveOrder(response.data);
-        }
-    };
-
-    /**
-     * ✅ Listen for real-time order updates via WebSockets
-     */
-    useEffect(() => {
-        socketService.connect(); // ✅ Connect WebSocket on mount
-
-        if (activeOrder) {
-            socketService.on(`order_update_${activeOrder.id}`, (updatedOrder: Order) => {
-                console.log("Order Updated:", updatedOrder);
-                setActiveOrder(updatedOrder);
-                setOrders((prevOrders) =>
-                    prevOrders.map((order) => (order.id === updatedOrder.id ? updatedOrder : order))
-                );
-            });
-        }
-
-        return () => {
-            socketService.disconnect(); // ✅ Cleanup WebSocket connection on unmount
-        };
-    }, [activeOrder]);
-
-    /**
-     * ✅ Optimistic UI: Update order status locally before real-time update
-     */
-    const updateOrderStatus = (orderId: number, status: string) => {
-        setOrders((prevOrders) =>
-            prevOrders.map((order) => (order.id === orderId ? { ...order, status } : order))
-        );
-        if (activeOrder?.id === orderId) {
-            setActiveOrder((prev) => prev ? { ...prev, status } : prev);
-        }
-    };
-
-    return (
-        <OrderContext.Provider value={{ activeOrder, orders, fetchUserOrders, fetchOrderById, updateOrderStatus }}>
-            {children}
-        </OrderContext.Provider>
-    );
-}
-
-// ✅ Hook for using OrderContext
-export function useOrder() {
-    const context = useContext(OrderContext);
-    if (!context) {
-        throw new Error("useOrder must be used within an OrderProvider");
+  /**
+   * ✅ Fetch all orders for the user (fixes potential nesting issues)
+   */
+  const fetchOrders = async () => {
+    try {
+      const data = await orderService.getUserOrders();
+      if (data.success && Array.isArray(data.data?.orders)) {
+        setOrders(data.data.orders); // ✅ Ensures only valid order array is set
+      } else {
+        setOrders([]);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setOrders([]);
     }
-    return context;
-}
+  };
+
+  /**
+   * ✅ Fetch order by ID (fixes response validation)
+   */
+  const fetchOrderById = async (orderId: number) => {
+    try {
+      const data = await orderService.getOrderById(orderId);
+      if (data.success && data.data?.order) {
+        setCurrentOrder(data.data.order);
+      } else {
+        setCurrentOrder(null);
+      }
+    } catch (error) {
+      console.error("Error fetching order details:", error);
+    }
+  };
+
+  /**
+   * ✅ Cancel an order
+   */
+  const cancelOrder = async (orderId: number) => {
+    try {
+      const data = await orderService.cancelOrder(orderId);
+      if (data.success) {
+        alert("Order canceled successfully!");
+        fetchOrders(); // ✅ Refresh order list
+      } else {
+        alert(data.message || "Failed to cancel order.");
+      }
+    } catch (error) {
+      console.error("Error canceling order:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  return (
+    <OrderContext.Provider value={{ orders, currentOrder, fetchOrders, fetchOrderById, cancelOrder }}>
+      {children}
+    </OrderContext.Provider>
+  );
+};
+
+export const useOrderContext = () => {
+  const context = useContext(OrderContext);
+  if (!context) {
+    throw new Error("useOrderContext must be used within an OrderProvider");
+  }
+  return context;
+};

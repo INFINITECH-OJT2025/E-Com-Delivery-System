@@ -107,6 +107,10 @@ export default function CheckoutModal({ isOpen, onClose }) {
             customer_address_id: selectedAddress.id,
             order_type: "delivery",
             total_price: totalPrice,
+            delivery_fee: deliveryFee,
+            subtotal: subtotal,
+            discount_on_subtotal: discountOnSubtotal,
+            discount_on_shipping: discountOnShipping,
             rider_tip: riderTip,
             voucher_codes: Object.values(appliedVouchers).map(voucher => voucher.code),
             payment_method: "cash"
