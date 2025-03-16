@@ -10,10 +10,12 @@ use App\Http\Controllers\DeliveryFeeController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\GoogleMapsController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PromoController;
 use App\Http\Controllers\RefundController;
 use App\Http\Controllers\RestaurantController;
+use App\Http\Controllers\RestaurantDashboardController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Http;
@@ -31,6 +33,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanc
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->name('auth.verify');
 Route::post('/resend-verification', [AuthController::class, 'resendVerification'])->name('auth.reverify');
 Route::post('/forgot-password', [AuthController::class, 'sendResetLink']);
+Route::get('verify-otp', [AuthController::class, 'showVerificationPage'])->name('verify-otp');
 
 // ✅ Check Email (Throttled to prevent abuse)
 Route::post('/email-check', [AuthController::class, 'checkEmail'])
@@ -117,4 +120,41 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('admin/refunds', [RefundController::class, 'adminIndex']); // ✅ Admin can fetch all refunds
     Route::put('admin/refunds/{id}', [RefundController::class, 'update']); // ✅ Admin can update refund status
+});
+
+// ✅ Vendor Authentication Routes (Restaurant Owners)
+Route::prefix('/vendor/auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'registerVendor'])->name('vendor.auth.register'); // Vendor Registration
+    Route::post('/login', [AuthController::class, 'vendorLogin'])->name('vendor.auth.login'); // Vendor Login
+});
+Route::middleware(['auth:sanctum'])->prefix('vendor')->group(function () {
+    Route::get('/dashboard/total-orders', [RestaurantDashboardController::class, 'totalOrders']);
+    Route::get('/dashboard/pending-orders', [RestaurantDashboardController::class, 'pendingOrders']);
+    Route::get('/dashboard/total-revenue', [RestaurantDashboardController::class, 'totalRevenue']);
+    Route::get('/dashboard/recent-orders', [RestaurantDashboardController::class, 'recentOrders']);
+});
+// Vendor Routes for Restaurant Management
+Route::middleware(['auth:sanctum'])->prefix('vendor')->group(function () {
+    // Restaurant Management Routes
+    Route::get('/restaurant/details', [RestaurantController::class, 'getDetails']);
+    Route::post('/restaurant/details', [RestaurantController::class, 'updateDetails']);
+    Route::get('/restaurant/categories', [RestaurantController::class, 'getCategories']);
+
+    // Menu Management Routes
+    Route::get('/menu', [MenuController::class, 'getMenu']); // ✅ Fetch menu items
+    Route::post('/menu', [MenuController::class, 'createMenu']); // ✅ Create new menu item
+    Route::post('/menu/{id}', [MenuController::class, 'updateMenu']); // ✅ Update menu item
+    Route::delete('/menu/{id}', [MenuController::class, 'deleteMenu']); // ✅ Delete menu item
+
+    // ✅ Fetch all vendor orders
+    Route::get('/orders', [OrderController::class, 'getOrders']);
+
+    // ✅ Fetch specific order details
+    Route::get('/orders/{id}', [OrderController::class, 'getOrderDetails']);
+
+    // ✅ Update order status (e.g., Confirm, Cancel, Deliver)
+    Route::put('/orders/{id}/status', [OrderController::class, 'updateOrderStatus']);
+    // Refund Management Routes
+    Route::get('/refunds', [RefundController::class, 'getRefunds']);
+    Route::put('/refunds/{id}/status', [RefundController::class, 'updateRefundStatus']);
 });

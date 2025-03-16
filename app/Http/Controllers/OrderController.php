@@ -327,4 +327,56 @@ class OrderController extends Controller
             ], 500);
         }
     }
+    /**
+     * ✅ Get all orders for the vendor's restaurant
+     */
+    public function getOrders(Request $request)
+    {
+        $vendor = Auth::user(); // 🔥 Get authenticated user using Bearer token
+        $restaurant = Restaurant::where('owner_id', $vendor->id)->firstOrFail();
+
+        $orders = Order::where('restaurant_id', $restaurant->id)
+            ->with(['customer', 'orderItems.menu', 'payment'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json(['orders' => $orders]);
+    }
+
+    /**
+     * ✅ Get a specific order's details
+     */
+    public function getOrderDetails(Request $request, $id)
+    {
+        $vendor = Auth::user(); // 🔥 Get authenticated user using Bearer token
+        $restaurant = Restaurant::where('owner_id', $vendor->id)->firstOrFail();
+
+        $order = Order::where('restaurant_id', $restaurant->id)
+            ->with(['customer', 'orderItems.menu', 'payment'])
+            ->findOrFail($id);
+
+        return response()->json(['order' => $order]);
+    }
+
+    /**
+     * ✅ Update order status (e.g., Confirm, Cancel, Deliver)
+     */
+    public function updateOrderStatus(Request $request, $id)
+    {
+        $vendor = Auth::user(); // 🔥 Get authenticated user using Bearer token
+        $restaurant = Restaurant::where('owner_id', $vendor->id)->firstOrFail();
+
+        $order = Order::where('restaurant_id', $restaurant->id)
+            ->findOrFail($id);
+
+        $request->validate([
+            'order_status' => 'required|in:pending,confirmed,preparing,delivered,cancelled'
+        ]);
+
+        $order->update([
+            'order_status' => $request->order_status
+        ]);
+
+        return response()->json(['message' => 'Order status updated successfully.', 'order' => $order]);
+    }
 }

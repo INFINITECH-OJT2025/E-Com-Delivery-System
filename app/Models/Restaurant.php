@@ -33,9 +33,19 @@ class Restaurant extends Model
         parent::boot();
 
         static::creating(function ($restaurant) {
-            $restaurant->slug = Str::slug($restaurant->name) . "-" . uniqid(); // ✅ Unique Slug
+            // ✅ Unique Slug generation with fallback
+            $slug = Str::slug($restaurant->name);
+            $existingSlugCount = Restaurant::where('slug', $slug)->count();
+
+            // If the slug already exists, append a unique ID
+            if ($existingSlugCount > 0) {
+                $slug = $slug . '-' . uniqid();
+            }
+
+            $restaurant->slug = $slug; // ✅ Save unique slug
         });
     }
+
     /**
      * Get the owner of the restaurant.
      */

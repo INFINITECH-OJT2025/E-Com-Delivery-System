@@ -5,7 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Restaurant;
 use Illuminate\Http\Request;
 use App\Helpers\ResponseHelper;
+use App\Models\RestaurantCategory;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+
+use Illuminate\Support\Facades\Validator;
 
 class RestaurantController extends Controller
 {
@@ -135,5 +140,76 @@ class RestaurantController extends Controller
             'reviews' => $restaurant->reviews,
             'total_reviews' => $restaurant->reviews_count,
         ]);
+    }
+
+    // Get restaurant details
+    public function getDetails(Request $request)
+    {
+        $vendor = $request->user(); // Get authenticated vendor
+        $restaurant = Restaurant::where('owner_id', $vendor->id)->firstOrFail();
+        return response()->json($restaurant);
+    }
+
+    public function updateDetails(Request $request)
+    {
+        // Get authenticated vendor
+        $vendor = $request->user();
+
+        // Find the restaurant associated with the vendor
+        $restaurant = Restaurant::where('owner_id', $vendor->id)->firstOrFail();
+
+        // Handle file uploads for logo and banner image
+        $logoPath = $restaurant->logo; // Default to the old logo if no new file is uploaded
+        $bannerPath = $restaurant->banner_image; // Default to the old banner image if no new file is uploaded
+
+        // ✅ Ensure storage is set to public so images are accessible
+        $storageDisk = 'public';
+
+        // ✅ Fix logo upload
+        if ($request->hasFile('logo')) {
+            if ($restaurant->logo && Storage::disk($storageDisk)->exists($restaurant->logo)) {
+                Storage::disk($storageDisk)->delete($restaurant->logo);
+            }
+            // Store new logo in public storage
+            $logoPath = $request->file('logo')->store('restaurants', $storageDisk);
+        }
+
+        // ✅ Fix banner image upload
+        if ($request->hasFile('banner_image')) {
+            if ($restaurant->banner_image && Storage::disk($storageDisk)->exists($restaurant->banner_image)) {
+                Storage::disk($storageDisk)->delete($restaurant->banner_image);
+            }
+            // Store new banner image in public storage
+            $bannerPath = $request->file('banner_image')->store('restaurants', $storageDisk);
+        }
+
+        // ✅ Update restaurant details with provided input
+        $restaurant->update([
+            'name' => $request->input('name', $restaurant->name),
+            'description' => $request->input('description', $restaurant->description),
+            'phone_number' => $request->input('phone_number', $restaurant->phone_number),
+            'status' => $request->input('status', $restaurant->status),
+            'restaurant_category_id' => $request->input('restaurant_category_id', $restaurant->restaurant_category_id),
+            'service_type' => $request->input('service_type', $restaurant->service_type),
+            'minimum_order_for_delivery' => $request->input('minimum_order_for_delivery', $restaurant->minimum_order_for_delivery),
+            'logo' => $logoPath,
+            'banner_image' => $bannerPath,
+        ]);
+
+        // ✅ Return success response
+        return response()->json([
+            'message' => 'Restaurant details updated successfully.',
+            'logo_url' => Storage::url($logoPath),
+            'banner_url' => Storage::url($bannerPath),
+        ]);
+    }
+
+
+
+    // Get restaurant categories
+    public function getCategories()
+    {
+        $categories = RestaurantCategory::all();
+        return response()->json($categories);
     }
 }

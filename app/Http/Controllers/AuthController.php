@@ -114,6 +114,33 @@ class AuthController extends Controller
         return ResponseHelper::success("Email verified successfully.");
     }
 
+    // ✅ Display verification success page
+    public function showVerificationPage(Request $request)
+    {
+        // Decode the email from the query string
+        $decodedEmail = base64_decode($request->email);
+
+        // Fetch the user by the decoded email
+        $user = User::where('email', $decodedEmail)->first();
+
+        // If the user doesn't exist, show an error page
+        if (!$user) {
+            return view('verification_failed');
+        }
+
+        // Check if email is already verified
+        if ($user->email_verified_at) {
+            return view('verification_success'); // Or show a page informing the user the email is already verified
+        }
+
+        // Mark email as verified
+        $user->update([
+            'email_verified_at' => now(),
+        ]);
+
+        // Show the success page after successful verification
+        return view('verification_success');
+    }
 
     // ✅ Resend OTP
     public function resendVerification(Request $request)
@@ -450,7 +477,6 @@ class AuthController extends Controller
 
         return redirect()->back()->with('success', 'Password reset successfully! You can now log in.');
     }
-
     public function registerVendor(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -461,6 +487,13 @@ class AuthController extends Controller
             'restaurant_name' => 'required|string|max:255',
             'restaurant_address' => 'required|string',
             'restaurant_phone' => 'required|digits_between:10,15',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'restaurant_category_id' => 'required|exists:restaurant_categories,id',
+        ], [
+            'restaurant_category_id.exists' => 'The selected restaurant category does not exist.',
+            'email.unique' => 'This email is already registered.',
+            'phone_number.unique' => 'This phone number is already registered.',
         ]);
 
         if ($validator->fails()) {
@@ -470,7 +503,10 @@ class AuthController extends Controller
         try {
             DB::beginTransaction();
 
+            // ✅ Generate OTP for Verification
             $otp = rand(100000, 999999);
+
+            // ✅ Create User (Vendor)
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -481,25 +517,143 @@ class AuthController extends Controller
                 'otp_expires_at' => now()->addMinutes(10),
             ]);
 
-            // ✅ Automatically create a restaurant entry for the vendor
-            Restaurant::create([
+            if (!$user) {
+                throw new \Exception("User creation failed.");
+            }
+
+            Log::info('User created successfully', ['user_id' => $user->id]);
+
+            // ✅ Create Restaurant entry
+            $restaurant = Restaurant::create([
                 'owner_id' => $user->id,
                 'name' => $request->restaurant_name,
                 'address' => $request->restaurant_address,
                 'phone_number' => $request->restaurant_phone,
-                'status' => 'closed', // Default status
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'restaurant_category_id' => $request->restaurant_category_id,
+                'status' => 'closed',
             ]);
 
-            $this->sendEmail($user);
+            if (!$restaurant) {
+                throw new \Exception("Restaurant creation failed.");
+            }
+
+            Log::info('Restaurant created successfully', ['restaurant_id' => $restaurant->id]);
+
+            // ✅ Send Email Verification
+            $this->sendVendorEmail($user);
+
             DB::commit();
 
             return ResponseHelper::success("Vendor account created. Please verify your email.");
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Vendor Registration Error: " . $e->getMessage());
+            Log::error("Vendor Registration Error", ['error' => $e->getMessage()]);
             return ResponseHelper::error("Something went wrong. Please try again later.", 500);
         }
     }
+
+
+    // ✅ Send Email (OTP & Verification Link) for Vendor
+    // ✅ Send Email for Vendor Verification
+    private function sendVendorEmail($user)
+    {
+        try {
+            // Create a new instance of PHPMailer
+            $mail = new PHPMailer(true);
+            $mail->isSMTP();
+            $mail->Host = env('MAIL_HOST');  // Ensure these variables are set in your .env file
+            $mail->SMTPAuth = true;
+            $mail->Username = env('MAIL_USERNAME');
+            $mail->Password = env('MAIL_PASSWORD');
+            $mail->SMTPSecure = env('MAIL_ENCRYPTION');
+            $mail->Port = env('MAIL_PORT');
+
+            $mail->setFrom(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'));
+            $mail->addAddress($user->email, $user->name);
+            $mail->isHTML(true);
+            $mail->Subject = "Verify Your Vendor Account - E-Com Delivery System";
+
+            // ✅ Generate the secure verification link (No OTP)
+            $verificationLink = route('auth.verify', ['email' => base64_encode($user->email)]);
+
+            // HTML email content with the verification button (no OTP)
+            $mail->Body = "
+        <!DOCTYPE html>
+        <html lang='en'>
+        <head>
+            <meta charset='UTF-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1'>
+            <title>Verify Your Vendor Account</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    background-color: #f4f4f4;
+                    padding: 20px;
+                    text-align: center;
+                }
+                .container {
+                    background: white;
+                    max-width: 500px;
+                    margin: auto;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                }
+                h2 {
+                    color: #333;
+                }
+                .verify-button {
+                    display: inline-block;
+                    background: #007C3D;
+                    color: white;
+                    padding: 12px 20px;
+                    text-decoration: none;
+                    font-size: 16px;
+                    border-radius: 5px;
+                    margin-top: 20px;
+                    cursor: pointer;
+                }
+                .verify-button:hover {
+                    background: #00592A;
+                }
+                .footer {
+                    margin-top: 20px;
+                    font-size: 12px;
+                    color: #666;
+                }
+            </style>
+        </head>
+        <body>
+            <div class='container'>
+                <h2>Hello, {$user->name}!</h2>
+                <p>Thank you for registering as a vendor with E-Com Delivery System. To complete your registration, please verify your email by clicking the button below:</p>
+                
+                <!-- Verify Email Button -->
+                <a href='{$verificationLink}' target='_blank' class='verify-button'>
+                    Verify Email
+                </a>
+
+                <p>If you did not sign up, please ignore this email.</p>
+
+                <div class='footer'>
+                    <p>&copy; " . date('Y') . " E-Com Delivery System. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        ";
+
+            // Send the email
+            $mail->send();
+        } catch (Exception $e) {
+            Log::error("Email sending failed: " . $mail->ErrorInfo);
+        }
+    }
+
+
     public function vendorLogin(Request $request, RateLimiter $limiter)
     {
         $key = 'vendor_login:' . Str::lower($request->email) . '|' . $request->ip();
@@ -529,6 +683,7 @@ class AuthController extends Controller
             return ResponseHelper::error("Access denied. This login is for restaurant owners only.", 403);
         }
 
+        // Create the token for the vendor
         $token = $user->createToken("vendor_auth_token")->plainTextToken;
 
         return ResponseHelper::success("Vendor login successful", [

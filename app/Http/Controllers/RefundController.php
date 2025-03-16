@@ -117,4 +117,22 @@ class RefundController extends Controller
             'refund' => $refund,
         ]);
     }
+
+    // Get all refunds for the vendor
+    public function getRefunds(Request $request)
+    {
+        $vendor = $request->user();
+        $refunds = Refund::where('restaurant_id', $vendor->restaurant->id)->get();
+        return response()->json($refunds);
+    }
+
+    // Update refund status
+    public function updateRefundStatus(Request $request, $id)
+    {
+        $refund = Refund::findOrFail($id);
+        $refund->status = $request->input('status');
+        $refund->save();
+
+        return response()->json(['message' => 'Refund status updated successfully.']);
+    }
 }
