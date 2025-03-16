@@ -1,30 +1,70 @@
 import axios from "axios";
 
-const API_URL = "/api/vendor/auth"; // Base URL for vendor authentication API
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/vendor";
 
 export const VendorAuthService = {
+  // ✅ Login
   async login(email: string, password: string) {
-    const response = await axios.post(`${API_URL}/login`, { email, password });
-    return response.data;
+    try {
+      const response = await axios.post(`${API_URL}/api/vendor/auth/login`, { email, password });
+
+      if (response.data.status) {
+        console.log("Login successful, storing data...");
+        // Store the access token and vendor data in localStorage
+        localStorage.setItem("vendorToken", response.data.data.access_token);
+        localStorage.setItem("vendor", JSON.stringify(response.data.data.user));
+
+        console.log("Stored Token:", response.data.data.access_token);
+        console.log("Stored Vendor:", response.data.data.user);
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Login Error:", error);
+      return { success: false, message: "Something went wrong. Please try again." };
+    }
   },
 
+  // ✅ Register Vendor
   async register(vendorData: any) {
-    const response = await axios.post(`${API_URL}/register`, vendorData);
-    return response.data;
+    try {
+      const response = await axios.post(`${API_URL}/api/vendor/auth/register`, vendorData);
+      return response.data;
+    } catch (error) {
+      console.error("Register Vendor Error:", error);
+      return { success: false, message: "Something went wrong. Please try again." };
+    }
   },
 
+  // ✅ Logout
   async logout() {
     const token = localStorage.getItem("vendorToken");
-    await axios.post(`${API_URL}/logout`, {}, { headers: { Authorization: `Bearer ${token}` } });
-    localStorage.removeItem("vendorToken");
+
+    if (!token) {
+      return { success: false, message: "Vendor not logged in" };
+    }
+
+    try {
+      await axios.post(`${API_URL}/api/logout`, {}, { headers: { Authorization: `Bearer ${token}` } });
+
+      // Clear vendor data and token
+      localStorage.removeItem("vendorToken");
+      localStorage.removeItem("vendor");
+
+      return { success: true, message: "Logged out successfully" };
+    } catch (error) {
+      console.error("Logout Error:", error);
+      return { success: false, message: "Something went wrong. Please try again." };
+    }
   },
 
-  async getAuthenticatedUser() {
+  // ✅ Get Authenticated Vendor
+  async getAuthenticatedVendor() {
     const token = localStorage.getItem("vendorToken");
     if (!token) return null;
 
     try {
-      const response = await axios.get(`${API_URL}/me`, {
+      const response = await axios.get(`${API_URL}/api/user`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data;
@@ -32,5 +72,17 @@ export const VendorAuthService = {
       console.error("Error fetching vendor:", error);
       return null;
     }
+  },
+
+  // ✅ Get Authorization Headers
+  getAuthHeaders() {
+    const token = localStorage.getItem("vendorToken");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  },
+
+  // ✅ Get Vendor from localStorage
+  getVendorFromLocalStorage() {
+    const vendor = localStorage.getItem("vendor");
+    return vendor ? JSON.parse(vendor) : null;
   },
 };

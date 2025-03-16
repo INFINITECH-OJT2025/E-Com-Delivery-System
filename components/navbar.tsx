@@ -1,141 +1,101 @@
-import {
-  Navbar as HeroUINavbar,
-  NavbarContent,
-  NavbarMenu,
-  NavbarMenuToggle,
-  NavbarBrand,
-  NavbarItem,
-  NavbarMenuItem,
-} from "@heroui/navbar";
-import { Button } from "@heroui/button";
-import { Kbd } from "@heroui/kbd";
-import { Link } from "@heroui/link";
-import { Input } from "@heroui/input";
-import { link as linkStyles } from "@heroui/theme";
-import NextLink from "next/link";
-import clsx from "clsx";
+"use client";
 
-import { siteConfig } from "@/config/site";
-import { ThemeSwitch } from "@/components/theme-switch";
-import {
-  TwitterIcon,
-  GithubIcon,
-  DiscordIcon,
-  HeartFilledIcon,
-  SearchIcon,
-  Logo,
-} from "@/components/icons";
+import { useState, useEffect } from "react";
+import { useVendorAuth } from "@/context/AuthContext"; // Custom Vendor Authentication Context
+import { Button, Link } from "@heroui/react"; // Hero UI components
+import { useRouter } from "next/navigation"; // Next.js router for programmatic navigation
+import Image from "next/image"; // Next.js Image component for optimized images
+import { ThemeSwitch } from "./theme-switch";
+import { FaSignOutAlt, FaStore, FaCreditCard, FaBars, FaTimes } from "react-icons/fa"; // Icons for menu & items
 
-export const Navbar = () => {
-  const searchInput = (
-    <Input
-      aria-label="Search"
-      classNames={{
-        inputWrapper: "bg-default-100",
-        input: "text-sm",
-      }}
-      endContent={
-        <Kbd className="hidden lg:inline-block" keys={["command"]}>
-          K
-        </Kbd>
-      }
-      labelPlacement="outside"
-      placeholder="Search..."
-      startContent={
-        <SearchIcon className="text-base text-default-400 pointer-events-none flex-shrink-0" />
-      }
-      type="search"
-    />
-  );
+export default function Navbar() {
+  const { vendor, logout } = useVendorAuth();
+  const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // ✅ Reload Navbar when the vendor state changes (after login)
+  useEffect(() => {
+    setLoading(false);
+  }, [vendor]);
+
+  // ✅ Handle logout & redirect to login
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login"); // ✅ Redirect to login
+  };
 
   return (
-    <HeroUINavbar maxWidth="xl" position="sticky">
-      <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
-        <NavbarBrand as="li" className="gap-3 max-w-fit">
-          <NextLink className="flex justify-start items-center gap-1" href="/">
-            <Logo />
-            <p className="font-bold text-inherit">ACME</p>
-          </NextLink>
-        </NavbarBrand>
-        <ul className="hidden lg:flex gap-4 justify-start ml-2">
-          {siteConfig.navItems.map((item) => (
-            <NavbarItem key={item.href}>
-              <NextLink
-                className={clsx(
-                  linkStyles({ color: "foreground" }),
-                  "data-[active=true]:text-primary data-[active=true]:font-medium",
-                )}
-                color="foreground"
-                href={item.href}
-              >
-                {item.label}
-              </NextLink>
-            </NavbarItem>
-          ))}
-        </ul>
-      </NavbarContent>
+    <nav className="w-full bg-primary text-white shadow-md py-3 px-6 flex justify-between items-center">
+      {/* Logo & Branding */}
+      <div className="flex items-center gap-3">
+        <Image src="/images/delivery-panda.png" alt="E-Com Delivery" width={40} height={40} />
+        <h1 className="text-xl font-bold">E-Com Delivery Service</h1>
+      </div>
 
-      <NavbarContent
-        className="hidden sm:flex basis-1/5 sm:basis-full"
-        justify="end"
-      >
-        <NavbarItem className="hidden sm:flex gap-2">
-          <Link isExternal aria-label="Twitter" href={siteConfig.links.twitter}>
-            <TwitterIcon className="text-default-500" />
-          </Link>
-          <Link isExternal aria-label="Discord" href={siteConfig.links.discord}>
-            <DiscordIcon className="text-default-500" />
-          </Link>
-          <Link isExternal aria-label="Github" href={siteConfig.links.github}>
-            <GithubIcon className="text-default-500" />
-          </Link>
-          <ThemeSwitch />
-        </NavbarItem>
-        <NavbarItem className="hidden lg:flex">{searchInput}</NavbarItem>
-        <NavbarItem className="hidden md:flex">
-          <Button
-            isExternal
-            as={Link}
-            className="text-sm font-normal text-default-600 bg-default-100"
-            href={siteConfig.links.sponsor}
-            startContent={<HeartFilledIcon className="text-danger" />}
-            variant="flat"
-          >
-            Sponsor
-          </Button>
-        </NavbarItem>
-      </NavbarContent>
-
-      <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
-        <Link isExternal aria-label="Github" href={siteConfig.links.github}>
-          <GithubIcon className="text-default-500" />
-        </Link>
-        <ThemeSwitch />
-        <NavbarMenuToggle />
-      </NavbarContent>
-
-      <NavbarMenu>
-        {searchInput}
-        <div className="mx-4 mt-2 flex flex-col gap-2">
-          {siteConfig.navMenuItems.map((item, index) => (
-            <NavbarMenuItem key={`${item}-${index}`}>
-              <Link
-                color={
-                  index === 2
-                    ? "primary"
-                    : index === siteConfig.navMenuItems.length - 1
-                      ? "danger"
-                      : "foreground"
-                }
-                href="#"
-                size="lg"
-              >
-                {item.label}
+      {/* Desktop Navigation */}
+      {!loading && (
+        <div className="hidden md:flex items-center gap-6">
+          {vendor ? (
+            <>
+              <Link href="/dashboard" className="text-white hover:text-primary-300 transition-colors">Dashboard</Link>
+              <Link href="/orders" className="text-white hover:text-primary-300 transition-colors">Orders</Link>
+              <Link href="/menu" className="text-white hover:text-primary-300 transition-colors">Menu</Link>
+              <Link href="/restaurant/details" className="text-white hover:text-primary-300 transition-colors flex items-center gap-2">
+                Restaurant Details
               </Link>
-            </NavbarMenuItem>
-          ))}
+              <ThemeSwitch />
+              <Button color="danger" onPress={handleLogout} className="flex items-center gap-2">
+                <FaSignOutAlt />
+                Logout
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="text-white hover:text-primary-300 transition-colors">Login</Link>
+              <Link href="/register" className="text-white hover:text-primary-300 transition-colors">Register</Link>
+            </>
+          )}
         </div>
-      </NavbarMenu>
-    </HeroUINavbar>
+      )}
+
+      {/* Mobile Menu Button */}
+      <button
+        className="md:hidden text-white text-2xl focus:outline-none"
+        onClick={() => setMenuOpen(!menuOpen)}
+      >
+        {menuOpen ? <FaTimes /> : <FaBars />}
+      </button>
+
+      {/* Mobile Menu */}
+      {menuOpen && (
+        <div className="absolute top-0 left-0 w-full h-screen bg-black bg-opacity-80 flex flex-col items-center justify-center space-y-6 md:hidden">
+          <button className="absolute top-5 right-6 text-white text-2xl focus:outline-none" onClick={() => setMenuOpen(false)}>
+            <FaTimes />
+          </button>
+
+          {vendor ? (
+            <>
+              <Link href="/dashboard" className="text-white text-xl hover:text-primary-300 transition-colors" onClick={() => setMenuOpen(false)}>Dashboard</Link>
+              <Link href="/orders" className="text-white text-xl hover:text-primary-300 transition-colors" onClick={() => setMenuOpen(false)}>Orders</Link>
+              <Link href="/menu" className="text-white text-xl hover:text-primary-300 transition-colors" onClick={() => setMenuOpen(false)}>Menu</Link>
+              <Link href="/restaurant/details" className="text-white text-xl flex items-center gap-2 hover:text-primary-300 transition-colors" onClick={() => setMenuOpen(false)}>
+                Restaurant Details
+              </Link>
+              <ThemeSwitch />
+              <Button color="danger" onPress={handleLogout} className="flex items-center gap-2 text-lg">
+                <FaSignOutAlt />
+                Logout
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="text-white text-xl hover:text-primary-300 transition-colors" onClick={() => setMenuOpen(false)}>Login</Link>
+              <Link href="/register" className="text-white text-xl hover:text-primary-300 transition-colors" onClick={() => setMenuOpen(false)}>Register</Link>
+            </>
+          )}
+        </div>
+      )}
+    </nav>
   );
-};
+}
