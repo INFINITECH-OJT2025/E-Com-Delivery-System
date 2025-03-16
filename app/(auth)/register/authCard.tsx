@@ -101,7 +101,6 @@ export default function AuthCard() {
     isOpen={isVerifyEmailModalOpen} 
     email={email} 
     onClose={() => setIsVerifyEmailModalOpen(false)} 
-    onOpenLogin={openLoginModal} // ✅ This must be correctly passed
 />
 
 

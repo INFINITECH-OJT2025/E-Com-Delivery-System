@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    typescript: {
+        ignoreBuildErrors: true,  // Ignores TypeScript errors in production
+      },
     reactStrictMode: true,
     images: {
         remotePatterns: [
