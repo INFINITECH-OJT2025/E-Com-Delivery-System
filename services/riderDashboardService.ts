@@ -11,7 +11,7 @@ export const RiderDashboardService = {
       const token = localStorage.getItem("riderToken");
       if (!token) return { success: false, message: "Unauthorized" };
 
-      const response = await axios.get(`${API_URL}api/riders/profile`, {
+      const response = await axios.get(`${API_URL}/api/riders/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -28,48 +28,7 @@ export const RiderDashboardService = {
   /**
    * ✅ Fetch Rider's Assigned Orders
    */
-  async getAssignedOrders() {
-    try {
-      const token = localStorage.getItem("riderToken");
-      if (!token) return { success: false, message: "Unauthorized" };
 
-      const response = await axios.get(`${API_URL}api/riders/orders`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.data.status === "success") {
-        return { success: true, data: response.data.data };
-      }
-      return { success: false, message: response.data.message };
-    } catch (error) {
-      console.error("Error fetching assigned orders:", error);
-      return { success: false, message: "Failed to fetch orders." };
-    }
-  },
-
-  /**
-   * ✅ Update Order Status
-   */
-  async updateOrderStatus(orderId: number, status: string) {
-    try {
-      const token = localStorage.getItem("riderToken");
-      if (!token) return { success: false, message: "Unauthorized" };
-
-      const response = await axios.post(
-        `${API_URL}api/riders/orders/update`,
-        { order_id: orderId, status },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (response.data.status === "success") {
-        return { success: true, message: "Order status updated." };
-      }
-      return { success: false, message: response.data.message };
-    } catch (error) {
-      console.error("Error updating order status:", error);
-      return { success: false, message: "Failed to update order status." };
-    }
-  },
 
   /**
    * ✅ Fetch Rider Earnings & Payouts
@@ -79,7 +38,7 @@ export const RiderDashboardService = {
       const token = localStorage.getItem("riderToken");
       if (!token) return { success: false, message: "Unauthorized" };
 
-      const response = await axios.get(`${API_URL}api/riders/earnings`, {
+      const response = await axios.get(`${API_URL}/api/riders/earnings`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -101,7 +60,7 @@ export const RiderDashboardService = {
       const token = localStorage.getItem("riderToken");
       if (!token) return { success: false, message: "Unauthorized" };
 
-      const response = await axios.get(`${API_URL}api/riders/notifications`, {
+      const response = await axios.get(`${API_URL}/api/riders/notifications`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -114,4 +73,27 @@ export const RiderDashboardService = {
       return { success: false, message: "Failed to fetch notifications." };
     }
   },
+
+    /**
+   * ✅ Fetch Nearby Orders that Riders Can Accept
+   */
+    async getNearbyOrders(lat: number, lng: number) {
+        try {
+          const token = localStorage.getItem("riderToken");
+          if (!token) return { success: false, message: "Unauthorized" };
+    
+          const response = await axios.get(`${API_URL}/api/riders/nearby-orders`, {
+            params: { lat, lng }, // ✅ Send location to fetch nearby orders
+            headers: { Authorization: `Bearer ${token}` },
+          });
+    
+          if (response.data.status === "success") {
+            return { success: true, data: response.data.data };
+          }
+          return { success: false, message: response.data.message };
+        } catch (error) {
+          console.error("Error fetching nearby orders:", error);
+          return { success: false, message: "Failed to fetch nearby orders." };
+        }
+      }
 };
