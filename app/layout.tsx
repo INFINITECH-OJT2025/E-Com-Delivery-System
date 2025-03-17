@@ -1,63 +1,32 @@
 import "@/styles/globals.css";
-import { Metadata, Viewport } from "next";
-import { Link } from "@heroui/link";
-import clsx from "clsx";
-
+import { Metadata } from "next";
 import { Providers } from "./providers";
-
-import { siteConfig } from "@/config/site";
+import clsx from "clsx";
 import { fontSans } from "@/config/fonts";
-import { Navbar } from "@/components/navbar";
+import Head from "next/head";
+import React from "react";
 
 export const metadata: Metadata = {
-  title: {
-    default: siteConfig.name,
-    template: `%s - ${siteConfig.name}`,
-  },
-  description: siteConfig.description,
-  icons: {
-    icon: "/favicon.ico",
-  },
+  title: "E-Com Delivery System",
+  description: "Fast and reliable food delivery service",
 };
 
-export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "white" },
-    { media: "(prefers-color-scheme: dark)", color: "black" },
-  ],
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html suppressHydrationWarning lang="en">
-      <head />
-      <body
-        className={clsx(
-          "min-h-screen bg-background font-sans antialiased",
-          fontSans.variable,
-        )}
-      >
-        <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
-          <div className="relative flex flex-col h-screen">
-            <Navbar />
-            <main className="container mx-auto max-w-7xl pt-16 px-6 flex-grow">
-              {children}
-            </main>
-            <footer className="w-full flex items-center justify-center py-3">
-              <Link
-                isExternal
-                className="flex items-center gap-1 text-current"
-                href="https://heroui.com?utm_source=next-app-template"
-                title="heroui.com homepage"
-              >
-                <span className="text-default-600">Powered by</span>
-                <p className="text-primary">HeroUI</p>
-              </Link>
-            </footer>
+      <Head>
+        <meta charSet="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#ffffff" />
+        <meta name="apple-mobile-web-app-title" content="E-Com" />
+        <link rel="manifest" href="/manifest.json"/>
+      </Head>
+      {/* ✅ FIXED: Allow scrolling by changing `overflow-hidden` to `overflow-auto` */}
+      <body className={clsx("min-h-screen bg-background font-sans antialiased overflow-auto", fontSans.variable)}>
+        <Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
+          {/* ✅ Ensure full-page layout supports scrolling */}
+          <div className="flex flex-col min-h-screen">
+            <main className="flex-grow">{children}</main>
           </div>
         </Providers>
       </body>
