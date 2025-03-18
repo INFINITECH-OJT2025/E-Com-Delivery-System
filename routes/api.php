@@ -16,6 +16,7 @@ use App\Http\Controllers\PromoController;
 use App\Http\Controllers\RefundController;
 use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\RestaurantDashboardController;
+use App\Http\Controllers\RiderController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Http;
@@ -157,4 +158,19 @@ Route::middleware(['auth:sanctum'])->prefix('vendor')->group(function () {
     // Refund Management Routes
     Route::get('/refunds', [RefundController::class, 'getRefunds']);
     Route::put('/refunds/{id}/status', [RefundController::class, 'updateRefundStatus']);
+});
+Route::post('/riders/register', [AuthController::class, 'registerRider']);
+Route::post('/riders/register', [AuthController::class, 'registerRider']);
+Route::post('/riders/login', [AuthController::class, 'riderLogin']);
+Route::prefix('riders')->middleware(['auth:sanctum'])->group(function () {
+    Route::get('/profile', [RiderController::class, 'getProfile']); // ✅ Fetch Rider Profile
+    Route::get('/orders', [RiderController::class, 'getAssignedOrders']); // ✅ Fetch Assigned Orders
+    Route::get('/orders/{orderId}', [RiderController::class, 'getOrderDetails']);
+
+    Route::post('/orders/accept', [RiderController::class, 'acceptOrder']); // ✅ Accept Order
+    Route::post('/orders/update', [RiderController::class, 'updateOrderStatus']); // ✅ Update Order Status
+    Route::get('/earnings', [RiderController::class, 'getEarnings']); // ✅ Fetch Earnings
+    Route::get('/notifications', [RiderController::class, 'getNotifications']); // ✅ Fetch Notifications
+    Route::get('/nearby-orders', [RiderController::class, 'getNearbyOrders']); // ✅ Fetch Notifications
+    Route::post('/deliveries/upload-proof', [RiderController::class, 'uploadProofOfDelivery']);
 });

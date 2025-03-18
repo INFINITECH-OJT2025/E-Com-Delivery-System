@@ -27,6 +27,15 @@ class User extends Authenticatable
         'email_verified_at', // ✅ Added email verification field
         'otp_code',        // ✅ Added OTP field
         'otp_expires_at',  // ✅ Added OTP expiration field
+        'rider_id',
+        'vehicle_type',
+        'profile_image',
+        'plate_number',
+        'rider_status',
+        'profile_image',
+        'license_image',
+        'lat',
+        'lng',
     ];
 
     /**

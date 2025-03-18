@@ -691,4 +691,202 @@ class AuthController extends Controller
             'user' => $user->only(['id', 'name', 'email', 'phone_number', 'role', 'email_verified_at']),
         ]);
     }
+    /**
+     * 🚀 Rider Registration API
+     */
+    public function registerRider(Request $request)
+    {
+        Log::info("🚀 Rider registration initiated", ['email' => $request->email]);
+
+        // ✅ Validate Request
+        $validator = Validator::make($request->all(), [
+            'name'          => 'required|string|max:255',
+            'email'         => 'required|email|unique:users,email',
+            'phone_number'  => 'required|digits_between:10,15|unique:users,phone_number',
+            'password'      => 'required|min:6|confirmed',
+            'vehicle_type'  => 'required|string|max:50',
+            'plate_number'  => 'nullable|string|max:20',
+            'profile_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'license_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            Log::warning("❌ Rider registration validation failed", ['errors' => $validator->errors()]);
+            return ResponseHelper::error("Validation error", 422, $validator->errors());
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // ✅ Generate Unique Rider ID
+            do {
+                $riderId = 'RDR-' . now()->format('Y') . rand(1000, 9999);
+            } while (User::where('rider_id', $riderId)->exists());
+
+            Log::info("✅ Rider ID generated successfully", ['rider_id' => $riderId]);
+
+            // ✅ Handle Profile Image Upload
+            $profileImagePath = $request->hasFile('profile_image')
+                ? $request->file('profile_image')->store('uploads/riders', 'public')
+                : null;
+
+            Log::info("✅ Profile image uploaded", ['path' => $profileImagePath]);
+
+            // ✅ Handle License Image Upload
+            $licenseImagePath = $request->hasFile('license_image')
+                ? $request->file('license_image')->store('uploads/riders', 'public')
+                : null;
+
+            Log::info("✅ License image uploaded", ['path' => $licenseImagePath]);
+
+            // ✅ Generate OTP for Verification
+            $otp = rand(100000, 999999);
+            Log::info("✅ OTP generated", ['otp' => $otp]);
+
+            // ✅ Create Rider User
+            Log::info("🔄 Creating new rider user...");
+            $rider = User::create([
+                'name'          => $request->name,
+                'email'         => $request->email,
+                'phone_number'  => $request->phone_number,
+                'password'      => Hash::make($request->password),
+                'role'          => 'rider',
+                'rider_id'      => $riderId,
+                'vehicle_type'  => $request->vehicle_type,
+                'plate_number'  => $request->plate_number ?? null,
+                'rider_status'  => 'pending', // Default status is pending
+                'profile_image' => $profileImagePath,
+                'license_image' => $licenseImagePath,
+                'otp_code'      => $otp,
+                'otp_expires_at' => now()->addMinutes(10),
+            ]);
+
+            if (!$rider) {
+                DB::rollBack();
+                Log::error("❌ Rider creation failed.");
+                return ResponseHelper::error("Failed to create rider account.", 500);
+            }
+
+            Log::info("✅ Rider registered successfully", ['rider_id' => $rider->id]);
+
+            // ✅ Send Email Verification
+            $this->sendRiderEmail($rider);
+
+            DB::commit();
+
+            return ResponseHelper::success("Rider account created. Please verify your email.", [
+                'rider_id'      => $rider->rider_id,
+                'name'          => $rider->name,
+                'email'         => $rider->email,
+                'phone_number'  => $rider->phone_number,
+                'vehicle_type'  => $rider->vehicle_type,
+                'plate_number'  => $rider->plate_number,
+                'rider_status'  => $rider->rider_status,
+                'profile_image' => $profileImagePath ? asset('storage/' . $profileImagePath) : null,
+                'license_image' => $licenseImagePath ? asset('storage/' . $licenseImagePath) : null,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("❌ Rider Registration Error", ['error' => $e->getMessage()]);
+            return ResponseHelper::error("Something went wrong. Please try again later.", 500);
+        }
+    }
+
+    /**
+     * ✅ Send Verification Email to Rider
+     */
+    private function sendRiderEmail($user)
+    {
+        try {
+            Log::info("📧 Sending verification email to rider", ['email' => $user->email]);
+
+            // Create a new instance of PHPMailer
+            $mail = new PHPMailer(true);
+            $mail->isSMTP();
+            $mail->Host = env('MAIL_HOST');
+            $mail->SMTPAuth = true;
+            $mail->Username = env('MAIL_USERNAME');
+            $mail->Password = env('MAIL_PASSWORD');
+            $mail->SMTPSecure = env('MAIL_ENCRYPTION');
+            $mail->Port = env('MAIL_PORT');
+
+            $mail->setFrom(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'));
+            $mail->addAddress($user->email, $user->name);
+            $mail->isHTML(true);
+            $mail->Subject = "Verify Your Rider Account - E-Com Delivery System";
+
+            // ✅ Generate Verification Link
+            $verificationLink = route('auth.verify', ['email' => base64_encode($user->email)]);
+
+            // Email Body
+            $mail->Body = "
+        <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; background: #f4f4f4; text-align: center; padding: 20px; }
+                .container { background: white; max-width: 500px; margin: auto; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+                .verify-button { background: #007C3D; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+                .verify-button:hover { background: #00592A; }
+            </style>
+        </head>
+        <body>
+            <div class='container'>
+                <h2>Hello, {$user->name}!</h2>
+                <p>To complete your registration as a rider, please verify your email by clicking the button below:</p>
+                <a href='{$verificationLink}' target='_blank' class='verify-button'>Verify Email</a>
+                <p>If you did not sign up, please ignore this email.</p>
+            </div>
+        </body>
+        </html>";
+
+            // Send the email
+            $mail->send();
+            Log::info("✅ Verification email sent successfully", ['email' => $user->email]);
+        } catch (Exception $e) {
+            Log::error("❌ Email sending failed: " . $mail->ErrorInfo);
+        }
+    }
+
+    public function riderLogin(Request $request, RateLimiter $limiter)
+    {
+        $key = 'rider_login:' . Str::lower($request->email) . '|' . $request->ip();
+
+        // ✅ Rate limiting (Max 5 attempts per minute)
+        if ($limiter->tooManyAttempts($key, 5)) {
+            return ResponseHelper::error("Too many login attempts. Try again in " . $limiter->availableIn($key) . " seconds.", 429);
+        }
+
+        // ✅ Validate request
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        // ✅ Find the user
+        $user = User::where('email', $request->email)->first();
+
+        // ✅ Check if user exists & password is correct
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            $limiter->hit($key, 60);
+            return ResponseHelper::error("Invalid credentials", 401);
+        }
+
+        // ✅ Ensure email verification
+        if (!$user->email_verified_at) {
+            return ResponseHelper::error("Email not verified. Please verify via email link.", 403);
+        }
+
+        // ✅ Ensure only riders can log in
+        if ($user->role !== 'rider') {
+            return ResponseHelper::error("Access denied. This login is for riders only.", 403);
+        }
+
+        // ✅ Generate authentication token for the rider
+        $token = $user->createToken("rider_auth_token")->plainTextToken;
+
+        return ResponseHelper::success("Rider login successful", [
+            'access_token' => $token,
+            'user' => $user->only(['id', 'name', 'email', 'phone_number', 'role', 'email_verified_at']),
+        ]);
+    }
 }

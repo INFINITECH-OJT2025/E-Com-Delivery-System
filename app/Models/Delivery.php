@@ -16,7 +16,9 @@ class Delivery extends Model
         'delivery_time',
         'status',
         'current_lat',
-        'current_lng'
+        'current_lng',
+        'proof_image', // Newly added proof image
+
     ];
 
     public function order()
