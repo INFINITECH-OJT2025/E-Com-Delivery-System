@@ -23,7 +23,7 @@ export default function MobileNavbar() {
       description: "You have been logged out successfully.",
       color: "warning",
     });
-    router.push("/riders/login");
+    router.push("/login");
   };
 
   return (
@@ -31,7 +31,7 @@ export default function MobileNavbar() {
       <div className="container mx-auto flex justify-between items-center">
         
         {/* 🚴‍♂️ Logo */}
-        <Link href="/riders/dashboard" className="text-xl font-bold flex items-center gap-2">
+        <Link href="/dashboard" className="text-xl font-bold flex items-center gap-2">
           🚴‍♂️ <span>Rider App</span>
         </Link>
 
@@ -43,17 +43,17 @@ export default function MobileNavbar() {
         {/* 🖥️ Desktop Menu */}
         <ul className="hidden md:flex gap-6">
           <li>
-            <Link href="/riders/dashboard" className="flex items-center gap-2 hover:text-gray-300 transition">
+            <Link href="/dashboard" className="flex items-center gap-2 hover:text-gray-300 transition">
               <FiHome /> Dashboard
             </Link>
           </li>
           <li>
-            <Link href="/riders/orders" className="flex items-center gap-2 hover:text-gray-300 transition">
+            <Link href="/orders" className="flex items-center gap-2 hover:text-gray-300 transition">
               <FiList /> Orders
             </Link>
           </li>
           <li>
-            <Link href="/riders/earnings" className="flex items-center gap-2 hover:text-gray-300 transition">
+            <Link href="/earnings" className="flex items-center gap-2 hover:text-gray-300 transition">
               <FiDollarSign /> Earnings
             </Link>
           </li>
@@ -72,17 +72,17 @@ export default function MobileNavbar() {
         <div className="md:hidden bg-primary absolute top-full left-0 w-full shadow-lg">
           <ul className="flex flex-col items-center gap-4 p-4">
             <li>
-              <Link href="/riders/dashboard" className="flex items-center gap-2 text-white" onClick={toggleMenu}>
+              <Link href="/dashboard" className="flex items-center gap-2 text-white" onClick={toggleMenu}>
                 <FiHome /> Dashboard
               </Link>
             </li>
             <li>
-              <Link href="/riders/orders" className="flex items-center gap-2 text-white" onClick={toggleMenu}>
+              <Link href="/orders" className="flex items-center gap-2 text-white" onClick={toggleMenu}>
                 <FiList /> Orders
               </Link>
             </li>
             <li>
-              <Link href="/riders/earnings" className="flex items-center gap-2 text-white" onClick={toggleMenu}>
+              <Link href="/earnings" className="flex items-center gap-2 text-white" onClick={toggleMenu}>
                 <FiDollarSign /> Earnings
               </Link>
             </li>

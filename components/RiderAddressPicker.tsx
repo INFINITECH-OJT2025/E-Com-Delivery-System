@@ -1,13 +1,10 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+import { GoogleMap, Marker } from "@react-google-maps/api";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input } from "@heroui/react";
 import { googleMapsService } from "@/services/googleMapsService";
 import { IoLocationOutline } from "react-icons/io5";
 import { LocateFixed } from "lucide-react";
-
-
-const MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 const mapContainerStyle = {
   width: "100%",
@@ -24,27 +21,22 @@ export default function RiderAddressPicker({ isOpen, onClose, onSelect }: {
   const [mapCenter, setMapCenter] = useState(defaultCenter);
   const [markerPosition, setMarkerPosition] = useState(defaultCenter);
   const [formattedAddress, setFormattedAddress] = useState("Fetching location...");
-  const { isLoaded } = useJsApiLoader({ googleMapsApiKey: MAPS_API_KEY || "", libraries: ["places"] });
-
   const autocompleteRef = useRef<HTMLInputElement | null>(null);
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      // ✅ Load last selected location when opening
       const savedLocation = localStorage.getItem("rider_location");
       if (savedLocation) {
         const { address, lat, lng } = JSON.parse(savedLocation);
         updateLocation(lat, lng, address);
       } else {
-        getCurrentLocation(); // Default to current location
+        getCurrentLocation();
       }
       loadAutocomplete();
     }
   }, [isOpen]);
 
-  // ✅ Get Current Location
+  // ✅ Get Current Location (GPS)
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(async (position) => {
@@ -104,8 +96,6 @@ export default function RiderAddressPicker({ isOpen, onClose, onSelect }: {
     onClose();
   };
 
-  if (!isLoaded) return <p>Loading map...</p>;
-
   return (
     <Modal isOpen={isOpen} onOpenChange={onClose} size="md" isDismissable={false}>
       <ModalContent>
@@ -116,7 +106,7 @@ export default function RiderAddressPicker({ isOpen, onClose, onSelect }: {
           {/* 📍 Address Search Input */}
           <Input ref={autocompleteRef} placeholder="Search for an address..." className="mb-3" />
 
-          {/* Google Map */}
+          {/* Google Map - Uses Global GoogleMapsProvider */}
           <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={15}>
             <Marker position={markerPosition} draggable onDragEnd={handleMarkerDragEnd} />
           </GoogleMap>
@@ -126,9 +116,8 @@ export default function RiderAddressPicker({ isOpen, onClose, onSelect }: {
         </ModalBody>
         <ModalFooter className="p-4 flex justify-between">
           <Button className="bg-gray-300" onPress={onClose}>Cancel</Button>
-          {/* ✅ New "Use Current Location" Button */}
           <Button className="bg-secondary text-white flex items-center" onPress={getCurrentLocation}>
-            <IoLocationOutline className="mr-2" /> 
+            <IoLocationOutline className="mr-2" /> Use My Location
           </Button>
           <Button className="bg-primary text-white" onPress={handleSave}>Set Location</Button>
         </ModalFooter>
