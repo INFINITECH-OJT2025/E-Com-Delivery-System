@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\RiderLocationUpdated;
 use App\Helpers\ResponseHelper;
 use App\Models\Delivery;
 use App\Models\Notification;
@@ -155,15 +156,6 @@ class RiderController extends Controller
             'delivered'
         ];
 
-        $validOrderStatuses = [
-            'pending',
-            'confirmed',
-            'preparing',
-            'out_for_delivery',
-            'completed',
-            'canceled'
-        ];
-
         $request->validate([
             'order_id' => 'required|exists:orders,id',
             'status' => 'required|in:' . implode(',', $validDeliveryStatuses),
@@ -173,48 +165,48 @@ class RiderController extends Controller
 
         $order = Order::findOrFail($request->order_id);
 
-        if ($order->delivery_rider_id === null) {
-            return ResponseHelper::error("Order is not assigned to any rider.", 403);
-        }
-
         if ($order->delivery_rider_id !== $rider->id) {
             return ResponseHelper::error("You are not assigned to this order.", 403);
         }
 
-        $delivery = Delivery::where('order_id', $order->id)
-            ->where('rider_id', $rider->id)
-            ->first();
+        $delivery = Delivery::firstOrCreate(
+            ['order_id' => $order->id, 'rider_id' => $rider->id],
+            ['status' => 'assigned']
+        );
 
-        if (!$delivery) {
-            return ResponseHelper::error("No delivery record found for this order.", 404);
-        }
-
-        // ✅ Update Rider Progress in `deliveries`
-        $delivery->update([
+        $deliveryUpdateData = [
             'status' => $request->status,
-            'current_lat' => $request->input('current_lat', null),
-            'current_lng' => $request->input('current_lng', null),
-        ]);
+            'current_lat' => $request->input('current_lat', $delivery->current_lat),
+            'current_lng' => $request->input('current_lng', $delivery->current_lng),
+        ];
 
-        // ✅ Logic to synchronize Order Status based on Delivery Status
-        switch ($request->status) {
-            case 'assigned':
-            case 'arrived_at_vendor':
-                $order->update(['order_status' => 'preparing']);
-                break;
-            case 'picked_up':
-                $order->update(['order_status' => 'out_for_delivery']);
-                break;
-            case 'delivered':
-            case 'photo_uploaded':
-                $order->update(['order_status' => 'completed']);
-                break;
+        // ✅ Add timestamps based on status
+        if ($request->status === 'picked_up') {
+            $deliveryUpdateData['pickup_time'] = now();
         }
+
+        if ($request->status === 'delivered') {
+            $deliveryUpdateData['delivery_time'] = now();
+        }
+
+        $delivery->update($deliveryUpdateData);
+
+        // ✅ Synchronize Order Status based on Delivery Status
+        $orderStatus = match ($request->status) {
+            'assigned', 'arrived_at_vendor' => 'preparing',
+            'picked_up', 'in_delivery', 'arrived_at_customer' => 'out_for_delivery',
+            'photo_uploaded', 'delivered' => 'completed',
+            default => $order->order_status,
+        };
+
+        $order->update(['order_status' => $orderStatus]);
 
         return ResponseHelper::success("Order status updated successfully", [
             'order_id' => $order->id,
             'order_status' => $order->order_status,
             'delivery_status' => $delivery->status,
+            'pickup_time' => $delivery->pickup_time,
+            'delivery_time' => $delivery->delivery_time,
         ]);
     }
 
@@ -433,24 +425,34 @@ class RiderController extends Controller
     public function updateRiderLocation(Request $request)
     {
         $request->validate([
-            'delivery_id' => 'required|exists:deliveries,id',
+            'order_id' => 'required|exists:orders,id',
             'current_lat' => 'required|numeric',
             'current_lng' => 'required|numeric',
         ]);
 
-        $delivery = Delivery::find($request->delivery_id);
+        $rider = Auth::user();
 
+        // ✅ Ensure the rider is assigned to the given order
+        $order = Order::findOrFail($request->order_id);
+        if ($order->delivery_rider_id !== $rider->id) {
+            return ResponseHelper::error("You are not assigned to this order.", 403);
+        }
+
+        // ✅ Find or create the Delivery entry associated with the rider and order
+        $delivery = Delivery::firstOrCreate(
+            ['order_id' => $order->id, 'rider_id' => $rider->id],
+            ['status' => 'in_delivery']
+        );
+
+        // ✅ Update the delivery location
         $delivery->update([
             'current_lat' => $request->current_lat,
             'current_lng' => $request->current_lng,
         ]);
 
-        // Real-time update via Laravel Reverb (Broadcast)
+        // ✅ Broadcast the updated location (Laravel Reverb or WebSockets)
         broadcast(new RiderLocationUpdated($delivery))->toOthers();
 
-        return ResponseHelper::success("Location updated successfully", [
-            'current_lat' => $delivery->current_lat,
-            'current_lng' => $delivery->current_lng,
-        ]);
+        return ResponseHelper::success('Location updated successfully');
     }
 }

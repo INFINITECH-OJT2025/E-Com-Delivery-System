@@ -157,4 +157,90 @@ class HomeController extends Controller
             'estimated_time' => $estimatedTime,
         ];
     }
+
+
+    /**
+     * ✅ Fetch user's active order along with rider and customer address details
+     */
+    public function getCurrentOrder(Request $request)
+    {
+        $user = $request->user();
+
+        $currentOrder = Order::with([
+            'delivery' => function ($query) {
+                $query->select(
+                    'id',
+                    'order_id',
+                    'status',
+                    'current_lat',
+                    'current_lng',
+                    'pickup_time',
+                    'delivery_time'
+                );
+            },
+            'customerAddress' => function ($query) {
+                $query->select(
+                    'id',
+                    'address',
+                    'latitude',
+                    'longitude'
+                );
+            },
+            'restaurant' => function ($query) {
+                $query->select(
+                    'id',
+                    'name',
+                    'address',
+                    'latitude',
+                    'longitude',
+                    'phone_number'
+                );
+            },
+            'rider' => function ($query) {
+                $query->select(
+                    'id',
+                    'name',
+                    'phone_number',
+                    'profile_image'
+                );
+            }
+        ])
+            ->where('customer_id', $user->id)
+            ->whereNotIn('order_status', ['completed', 'canceled'])
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$currentOrder) {
+            return ResponseHelper::error('No active orders found', 404);
+        }
+
+        return ResponseHelper::success('Active order details fetched successfully', [
+            'order_id'        => $currentOrder->id,
+            'order_status'    => $currentOrder->order_status,
+            'delivery_status' => optional($currentOrder->delivery)->status,
+            'rider_location'  => [
+                'lat' => optional($currentOrder->delivery)->current_lat,
+                'lng' => optional($currentOrder->delivery)->current_lng,
+            ],
+            'customer_location' => [
+                'address'   => optional($currentOrder->customerAddress)->address,
+                'lat'       => optional($currentOrder->customerAddress)->latitude,
+                'lng'       => optional($currentOrder->customerAddress)->longitude,
+            ],
+            'restaurant_location' => [
+                'name'    => optional($currentOrder->restaurant)->name,
+                'address' => optional($currentOrder->restaurant)->address,
+                'lat'     => optional($currentOrder->restaurant)->latitude,
+                'lng'     => optional($currentOrder->restaurant)->longitude,
+                'phone'   => optional($currentOrder->restaurant)->phone,
+            ],
+            'rider' => [
+                'name'          => optional($currentOrder->rider)->name,
+                'phone'         => optional($currentOrder->rider)->phone,
+                'profile_image' => optional($currentOrder->rider)->profile_image,
+            ],
+            'pickup_time'    => optional($currentOrder->delivery)->pickup_time,
+            'delivery_time'  => optional($currentOrder->delivery)->delivery_time,
+        ]);
+    }
 }

@@ -50,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ✅ User Management 
     Route::apiResource('users', UserController::class)->except(['create', 'edit']);
     Route::get('/home', [HomeController::class, 'index'])->name('home.index');
+    Route::get('/getCurrentOrder', [HomeController::class, 'getCurrentOrder']);
 });
 
 
@@ -173,4 +174,5 @@ Route::prefix('riders')->middleware(['auth:sanctum'])->group(function () {
     Route::get('/notifications', [RiderController::class, 'getNotifications']); // ✅ Fetch Notifications
     Route::get('/nearby-orders', [RiderController::class, 'getNearbyOrders']); // ✅ Fetch Notifications
     Route::post('/deliveries/upload-proof', [RiderController::class, 'uploadProofOfDelivery']);
+    Route::post('/location', [RiderController::class, 'updateRiderLocation']);
 });

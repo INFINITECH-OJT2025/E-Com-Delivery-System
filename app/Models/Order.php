@@ -82,4 +82,10 @@ class Order extends Model
     {
         return $this->belongsTo(CustomerAddress::class, 'customer_address_id', 'id'); // ✅ Correctly link to `customer_addresses` table
     }
+
+
+    public function delivery()
+    {
+        return $this->hasOne(Delivery::class, 'order_id');
+    }
 }
