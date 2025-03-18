@@ -6,7 +6,7 @@ import {
     Card, CardBody, CardHeader, CardFooter,
     Button, Badge,Chip, Divider, Spinner
   } from '@heroui/react';
-  import { useToast } from "@heroui/react";
+  import { addToast } from "@heroui/react";
 // import { IoFastFoodOutline, IoWalletOutline, IoNotificationsOutline, IoLocationOutline } from "react-icons/io5";
 import {
     FaMapMarkerAlt,

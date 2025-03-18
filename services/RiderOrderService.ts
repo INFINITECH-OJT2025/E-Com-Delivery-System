@@ -137,4 +137,40 @@ export const RiderOrderService = {
       return { success: false, message: "Failed to upload proof." };
     }
   },
+  /**
+ * ✅ Send Rider Location Update (using order_id)
+ */
+async updateRiderLocation(orderId: number, lat: number, lng: number) {
+  try {
+    const token = localStorage.getItem("riderToken");
+    if (!token) {
+      return { success: false, message: "Unauthorized. Please log in." };
+    }
+
+    const response = await axios.post(
+      `${API_URL}/api/riders/location`,
+      {
+        order_id: orderId, // ✅ order_id instead of delivery_id
+        current_lat: lat,
+        current_lng: lng,
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (response.data.status === "success") {
+      return { success: true, message: "Location updated successfully." };
+    }
+
+    return { success: false, message: response.data.message };
+  } catch (error: any) {
+    console.error("❌ Error updating rider location:", error.response?.data || error.message);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to update rider location.",
+    };
+  }
+},
+
 };

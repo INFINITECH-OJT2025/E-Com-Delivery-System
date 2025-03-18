@@ -49,7 +49,46 @@ const RiderOrderUI = () => {
     };
     fetchOrder();
   }, [orderId]);
+  useEffect(() => {
+    // ✅ Interval to update rider location every 10 seconds
+    const interval = setInterval(async () => {
+  try {
+    let storedLocation = localStorage.getItem("rider_location");
+    if (!storedLocation) {
+      console.error("No stored rider location found!");
+      return;
+    }
 
+    let { lat, lng } = JSON.parse(storedLocation);
+
+    // ✅ Simulate moving towards the customer
+    lat += 0.0005; // Move slightly north
+    lng += 0.0007; // Move slightly east
+
+    // ✅ Update stored location (for UI consistency)
+    localStorage.setItem("rider_location", JSON.stringify({ lat, lng }));
+
+    // ✅ Send updated location to API
+    const response = await RiderOrderService.updateRiderLocation(
+      Number(orderId), // ✅ Using order_id
+      lat,
+      lng
+    );
+
+    if (!response.success) {
+      console.error("Location update error:", response.message);
+    } else {
+      console.log("✅ Rider location updated:", { lat, lng });
+    }
+  } catch (error) {
+    console.error("Error updating location:", error);
+  }
+}, 5000); // ✅ Poll every 5 seconds for testing (change to 10s in production)
+
+
+    // ✅ Clean up interval on unmount
+    return () => clearInterval(interval);
+  }, [orderId]);
   const openMap = () => {
     if (!order) return;
     const riderLocation = JSON.parse(localStorage.getItem("rider_location") || "{}");
