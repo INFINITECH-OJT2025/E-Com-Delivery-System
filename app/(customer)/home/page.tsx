@@ -14,6 +14,7 @@ import RestaurantModal from "@/components/restaurantModal";
 import HorizontalScrollList from "@/components/horizontalScrollList";
 import CircleScrollList from "@/components/circleScrollList";
 import { Spinner } from "@heroui/react";
+import ActiveOrderTracker from "@/components/ActiveOrderTracker";
 
 export default function HomePage() {
     const { selectedAddress, fetchUser } = useUser();
@@ -30,7 +31,9 @@ export default function HomePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [modalData, setModalData] = useState(null);
-
+    const [pendingOrder, setPendingOrder] = useState(null);
+    const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
+    
     useEffect(() => {
         async function fetchData() {
             if (!selectedAddress) {
@@ -55,6 +58,13 @@ export default function HomePage() {
                 if (!response.success || !response.data) throw new Error(response.message || "Invalid home data response");
 
                 setData(response.data);
+                  // ✅ Fetch pending orders for the current user
+        const pendingResponse = await homeService.getPendingOrder();
+        if (pendingResponse.success && pendingResponse.data) {
+            setPendingOrder(pendingResponse.data);
+        } else {
+            setPendingOrder(null);
+        }
             } catch (err) {
                 console.error("API Error:", err.message);
                 setError("Failed to load homepage data.");
@@ -185,6 +195,10 @@ export default function HomePage() {
                     onClose={() => setModalData(null)}
                 />
             )}
+            <div className="relative pb-14"> {/* ensure padding-bottom to prevent overlap */}
+            {/* your existing homepage components */}
+            <ActiveOrderTracker />
+        </div>
         </div>
     );
 }

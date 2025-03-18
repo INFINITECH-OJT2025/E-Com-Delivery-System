@@ -47,4 +47,33 @@ export const homeService = {
             };
         }
     },
+     /**
+     * ✅ Fetch the user's current pending order (if exists)
+     */
+     async getPendingOrder() {
+        try {
+            const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+
+            if (!token) {
+                return { success: false, message: "Unauthorized" };
+            }
+
+            const res = await fetch(`${API_URL}/api/getCurrentOrder`, {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+            });
+
+            return await apiHelper.handleResponse(res);
+        } catch (error) {
+            console.error("Error fetching pending order:", error);
+            return {
+                success: false,
+                message: "Failed to fetch pending order",
+            };
+        }
+    },
 };
