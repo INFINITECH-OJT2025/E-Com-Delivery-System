@@ -17,8 +17,14 @@ const UserOrderTracking = () => {
     const [routePath, setRoutePath] = useState<any[]>([]);
     const [stepIndex, setStepIndex] = useState(0);
     const [modalOpen, setModalOpen] = useState(false);
-    
+
     const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_API_KEY });
+
+    // 📍 Restaurant (Start)
+    const restaurantLocation = { lat: 14.5578348, lng: 120.9878622 };
+
+    // 🏠 Customer (End)
+    const customerLocation = { lat: 14.5599435, lng: 121.0135214 };
 
     useEffect(() => {
         fetchCurrentOrder();
@@ -27,36 +33,38 @@ const UserOrderTracking = () => {
     }, []);
 
     const fetchCurrentOrder = async () => {
-        const token = localStorage.getItem("auth_token");
-        const res = await fetch(`${API_URL}/api/getCurrentOrder`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
+        try {
+            const token = localStorage.getItem("auth_token");
+            const res = await fetch(`${API_URL}/api/getCurrentOrder`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
 
-        if (data.status === "success" && data.data.order_status === "out_for_delivery" && data.data.delivery_status === "in_delivery") {
-            setOrder(data.data);
-            fetchDirections(data.data);
-        } else {
-            setOrder(null);
+            if (data.status === "success" && data.data?.order_status === "out_for_delivery" && data.data?.delivery_status === "in_delivery") {
+                setOrder(data.data);
+                fetchDirections();
+            } else {
+                setOrder(null);
+            }
+        } catch (error) {
+            console.error("Error fetching order:", error);
         }
         setLoading(false);
     };
 
-    const fetchDirections = async (orderData: any) => {
-        if (!isLoaded || !orderData) return;
+    useEffect(() => {
+        if (isLoaded) {
+            fetchDirections();
+        }
+    }, [isLoaded]);
 
+    const fetchDirections = () => {
         const directionsService = new google.maps.DirectionsService();
 
         directionsService.route(
             {
-                origin: {
-                    lat: parseFloat(orderData.restaurant.latitude),
-                    lng: parseFloat(orderData.restaurant.longitude),
-                },
-                destination: {
-                    lat: parseFloat(orderData.customer_address.latitude),
-                    lng: parseFloat(orderData.customer_address.longitude),
-                },
+                origin: restaurantLocation,
+                destination: customerLocation,
                 travelMode: google.maps.TravelMode.DRIVING,
             },
             (result, status) => {
@@ -70,7 +78,9 @@ const UserOrderTracking = () => {
                     }));
 
                     setRoutePath(path);
-                    setRiderPosition(path[0]); // Rider starts at restaurant
+                    setRiderPosition(path[0]); // Start rider at restaurant
+                    setStepIndex(0);
+                    moveRiderAlongRoute(path); // Start moving the rider
                 } else {
                     console.error("Failed to fetch directions", result);
                 }
@@ -78,17 +88,23 @@ const UserOrderTracking = () => {
         );
     };
 
-    // 🚀 Simulate Rider Moving Along the Route
-    useEffect(() => {
-        if (routePath.length > 0 && stepIndex < routePath.length - 1) {
-            const interval = setInterval(() => {
-                setStepIndex((prev) => prev + 1);
-                setRiderPosition(routePath[stepIndex]); // Update rider position
-            }, 2000); // Move every 2 sec
+    // 🚀 **Move Rider Along the Route Smoothly**
+    const moveRiderAlongRoute = (path: any[]) => {
+        let i = 0;
 
-            return () => clearInterval(interval);
-        }
-    }, [routePath, stepIndex]);
+        const move = () => {
+            if (i < path.length - 1) {
+                setRiderPosition(path[i]);
+                i++;
+
+                setTimeout(() => {
+                    requestAnimationFrame(move);
+                }, 1000); // Rider moves every second (adjust for speed)
+            }
+        };
+
+        requestAnimationFrame(move);
+    };
 
     if (loading) return <div className="flex justify-center py-4"><Spinner /></div>;
     if (!order) return null;
@@ -105,19 +121,17 @@ const UserOrderTracking = () => {
             <Modal isOpen={modalOpen} onOpenChange={() => setModalOpen(false)} size="full">
                 <ModalContent>
                     <ModalHeader className="flex items-center gap-2">
-                        <FaMapMarkerAlt /> Live Rider Tracking - Order #{order.order_id}
+                        <FaMapMarkerAlt /> Live Rider Tracking - Order #{order?.order_id}
                     </ModalHeader>
                     <ModalBody className="p-0">
                         {isLoaded ? (
                             <GoogleMap
-                                mapContainerStyle={{ width: "100%", height: "80vh" }}
-                                center={riderPosition || {
-                                    lat: parseFloat(order.restaurant.latitude),
-                                    lng: parseFloat(order.restaurant.longitude),
-                                }}
-                                zoom={14}
+                                mapContainerStyle={{ width: "100%", height: "70vh", borderRadius: "12px" }}
+                                center={restaurantLocation} // Fixed view to avoid recentering
+                                zoom={17} // Zoom in for a closer look
+                                options={{ disableDefaultUI: true }} // Hide UI for cleaner look
                             >
-                                {/* 🏍️ Rider Marker (Moving) */}
+                                {/* 🏍️ Moving Rider Marker */}
                                 {riderPosition && (
                                     <Marker
                                         position={riderPosition}
@@ -130,10 +144,7 @@ const UserOrderTracking = () => {
 
                                 {/* 📍 Restaurant Marker */}
                                 <Marker
-                                    position={{
-                                        lat: parseFloat(order.restaurant.latitude),
-                                        lng: parseFloat(order.restaurant.longitude),
-                                    }}
+                                    position={restaurantLocation}
                                     label="Restaurant"
                                     icon={{
                                         url: "/icons/store.png",
@@ -143,10 +154,7 @@ const UserOrderTracking = () => {
 
                                 {/* 🏠 Customer Marker */}
                                 <Marker
-                                    position={{
-                                        lat: parseFloat(order.customer_address.latitude),
-                                        lng: parseFloat(order.customer_address.longitude),
-                                    }}
+                                    position={customerLocation}
                                     label="Customer"
                                     icon={{
                                         url: "/icons/home.png",
@@ -154,7 +162,7 @@ const UserOrderTracking = () => {
                                     }}
                                 />
 
-                                {/* 🚗 Show Blue Route */}
+                                {/* 🚗 Blue Route */}
                                 {directions && <DirectionsRenderer directions={directions} />}
                             </GoogleMap>
                         ) : (
