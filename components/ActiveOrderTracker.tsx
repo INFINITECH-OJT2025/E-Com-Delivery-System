@@ -1,5 +1,5 @@
 "use client";
-
+//simularion.. all the needed api calls are here aswwll just use that in production
 import { useState, useEffect, useRef } from "react";
 import { Button, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 import { GoogleMap, Marker, DirectionsRenderer, useJsApiLoader } from "@react-google-maps/api";

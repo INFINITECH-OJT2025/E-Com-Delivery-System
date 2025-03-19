@@ -33,7 +33,8 @@ export default function HomePage() {
     const [modalData, setModalData] = useState(null);
     const [pendingOrder, setPendingOrder] = useState(null);
     const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
-    
+    const [categoryModal, setCategoryModal] = useState({ isOpen: false, category: "" }); // ✅ State for the category modal
+
     useEffect(() => {
         async function fetchData() {
             if (!selectedAddress) {
