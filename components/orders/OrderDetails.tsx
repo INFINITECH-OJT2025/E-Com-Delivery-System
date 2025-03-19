@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@heroui/react";
-import { MapPin, CreditCard, RotateCw, X } from "lucide-react";
+import { MapPin, CreditCard, RotateCw, X, FileText } from "lucide-react";
 import { capitalize, getRefundStatusColor } from "@/components/orders/OrderUtils";
 import { orderService } from "@/services/orderService";
 
@@ -56,6 +56,20 @@ export default function OrderDetails({ order, onBack, openRefundModal, fetchOrde
             {/* ✅ Order Summary */}
             <OrderSummary order={order} />
 
+            {/* ✅ Proof of Delivery (If Available) */}
+            {order.delivery_proof && (
+                <div className="border-t pt-3 space-y-2">
+                    <p className="text-md font-semibold flex items-center">
+                        <FileText className="w-5 h-5 text-green-600 mr-2" /> Proof of Delivery:
+                    </p>
+                    <img
+                        src={order.delivery_proof}
+                        alt="Proof of Delivery"
+                        className="w-full max-h-60 object-cover rounded-md border"
+                    />
+                </div>
+            )}
+
             {/* ✅ Refund Status */}
             {order.refund && (
                 <div className="border-t pt-3">
@@ -69,7 +83,9 @@ export default function OrderDetails({ order, onBack, openRefundModal, fetchOrde
             {/* ✅ Payment Info */}
             <div className="flex items-center space-x-2 text-gray-700">
                 <CreditCard className="w-5 h-5" />
-                <p>Paid with <span className="font-semibold">{order.payment?.payment_status === "success" ? order.payment?.payment_method : "Pending Payment"}</span></p>
+                <p>
+                    Paid with <span className="font-semibold">{order.payment?.payment_status === "success" ? order.payment?.payment_method : "Pending Payment"}</span>
+                </p>
             </div>
 
             {/* ✅ Cancel Order Button (Only for Pending Orders) */}

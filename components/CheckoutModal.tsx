@@ -28,6 +28,10 @@ export default function CheckoutModal({ isOpen, onClose }) {
     const [alertMessage, setAlertMessage] = useState("");
     const { fetchCart } = useCart(); // ✅ Import fetchCart to refetch cart after order
     const [loading, setLoading] = useState(false); // ✅ Loading state for button
+    const [scheduleTime, setScheduleTime] = useState(""); // Store selected time
+    const [isScheduled, setIsScheduled] = useState(false); // Track if scheduling is enabled
+    
+ 
     // ✅ Fetch Addresses on Load
     useEffect(() => {
         async function fetchAddresses() {
@@ -113,8 +117,10 @@ export default function CheckoutModal({ isOpen, onClose }) {
             discount_on_shipping: discountOnShipping,
             rider_tip: riderTip,
             voucher_codes: Object.values(appliedVouchers).map(voucher => voucher.code),
-            payment_method: "cash"
+            payment_method: "cash",
+            scheduled_time: isScheduled ? scheduleTime : null, // ✅ Add scheduled time if selected
         };
+        
         
     
         console.log("🔹 Checkout Payload:", payload);
@@ -167,6 +173,24 @@ export default function CheckoutModal({ isOpen, onClose }) {
                             <p className="text-gray-500">No address selected</p>
                         )}
                     </div>
+{/* 📅 Schedule Order */}
+<div className="bg-white p-4 rounded-lg shadow-md mb-4">
+    <h2 className="text-lg font-semibold">Schedule Order</h2>
+    <div className="mt-2">
+        <Checkbox checked={isScheduled} onChange={() => setIsScheduled(!isScheduled)}>
+            Schedule for later
+        </Checkbox>
+    </div>
+    {isScheduled && (
+        <input 
+            type="datetime-local"
+            value={scheduleTime}
+            onChange={(e) => setScheduleTime(e.target.value)}
+            className="w-full mt-2 p-2 border rounded-md text-sm"
+            min={new Date().toISOString().slice(0, 16)} // Prevent past dates
+        />
+    )}
+</div>
 
                     {/* 🎟 Apply Voucher */}
                     <div className="bg-white p-4 rounded-lg shadow-md mb-4">
