@@ -252,12 +252,7 @@ export default function RiderDashboard() {
             </CardBody>
           </Card>
   
-          {/* Address Picker Modal */}
-          <RiderAddressPicker
-            isOpen={locationModalOpen}
-            onClose={() => setLocationModalOpen(false)}
-            onSelect={handleAddressSelect}
-          />
+        
         </div>
       )}
     </div>

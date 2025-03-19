@@ -26,14 +26,18 @@ export default function RiderAddressPicker({ onSelect }: {
   const autocompleteRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
+    // ✅ Fetch Location Immediately on Page Load
+    const savedLocation = localStorage.getItem("rider_location");
+    if (savedLocation) {
+      const { address, lat, lng } = JSON.parse(savedLocation);
+      updateLocation(lat, lng, address);
+    } else {
+      getCurrentLocation();
+    }
+  }, []);
+
+  useEffect(() => {
     if (isOpen) {
-      const savedLocation = localStorage.getItem("rider_location");
-      if (savedLocation) {
-        const { address, lat, lng } = JSON.parse(savedLocation);
-        updateLocation(lat, lng, address);
-      } else {
-        getCurrentLocation();
-      }
       loadAutocomplete();
     }
   }, [isOpen]);
@@ -100,7 +104,7 @@ export default function RiderAddressPicker({ onSelect }: {
 
   return (
     <>
-      {/* ✅ Location Selector Button (Click to Open Modal) */}
+      {/* ✅ Location Selector Button (Always Shows Last Known Address) */}
       <div
         onClick={() => setIsOpen(true)}
         className="w-full flex items-center gap-3 px-4 py-3 cursor-pointer bg-secondary text-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
