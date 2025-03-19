@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 import { GoogleMap, Marker, DirectionsRenderer, useJsApiLoader } from "@react-google-maps/api";
 import { FaMapMarkerAlt } from "react-icons/fa";
@@ -9,26 +9,24 @@ import ActiveOrderFooter from "./ActiveOrderFooter";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
+const restaurantLocation = { lat: 14.5578348, lng: 120.9878622 };
+const customerLocation = { lat: 14.5599435, lng: 121.0135214 };
+
 const UserOrderTracking = () => {
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [directions, setDirections] = useState<any>(null);
-    const [riderPosition, setRiderPosition] = useState<{ lat: number; lng: number } | null>(null);
-    const [routePath, setRoutePath] = useState<any[]>([]);
-    const [stepIndex, setStepIndex] = useState(0);
+    const [riderPosition, setRiderPosition] = useState<any>(null);
     const [modalOpen, setModalOpen] = useState(false);
+    const routePath = useRef<any[]>([]);
+    const riderIndex = useRef(0);
+    const riderMoving = useRef(false);
 
     const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_API_KEY });
 
-    // 📍 Restaurant (Start)
-    const restaurantLocation = { lat: 14.5578348, lng: 120.9878622 };
-
-    // 🏠 Customer (End)
-    const customerLocation = { lat: 14.5599435, lng: 121.0135214 };
-
     useEffect(() => {
         fetchCurrentOrder();
-        const interval = setInterval(fetchCurrentOrder, 5000); // Poll every 5 sec
+        const interval = setInterval(fetchCurrentOrder, 5000);
         return () => clearInterval(interval);
     }, []);
 
@@ -40,9 +38,12 @@ const UserOrderTracking = () => {
             });
             const data = await res.json();
 
-            if (data.status === "success" && data.data?.order_status === "out_for_delivery" && data.data?.delivery_status === "in_delivery") {
+            if (
+                data.status === "success" &&
+                data.data?.order_status === "out_for_delivery" &&
+                data.data?.delivery_status === "in_delivery"
+            ) {
                 setOrder(data.data);
-                fetchDirections();
             } else {
                 setOrder(null);
             }
@@ -53,10 +54,10 @@ const UserOrderTracking = () => {
     };
 
     useEffect(() => {
-        if (isLoaded) {
+        if (isLoaded && order && !directions) {
             fetchDirections();
         }
-    }, [isLoaded]);
+    }, [isLoaded, order]);
 
     const fetchDirections = () => {
         const directionsService = new google.maps.DirectionsService();
@@ -68,19 +69,19 @@ const UserOrderTracking = () => {
                 travelMode: google.maps.TravelMode.DRIVING,
             },
             (result, status) => {
-                if (status === google.maps.DirectionsStatus.OK) {
+                if (status === google.maps.DirectionsStatus.OK && result) {
                     setDirections(result);
 
-                    // Extract full route path
-                    const path = result.routes[0].overview_path.map((point) => ({
+                    routePath.current = result.routes[0].overview_path.map((point) => ({
                         lat: point.lat(),
                         lng: point.lng(),
                     }));
 
-                    setRoutePath(path);
-                    setRiderPosition(path[0]); // Start rider at restaurant
-                    setStepIndex(0);
-                    moveRiderAlongRoute(path); // Start moving the rider
+                    if (!riderMoving.current) {
+                        riderIndex.current = 0;
+                        riderMoving.current = true;
+                        moveRiderSmoothly();
+                    }
                 } else {
                     console.error("Failed to fetch directions", result);
                 }
@@ -88,21 +89,14 @@ const UserOrderTracking = () => {
         );
     };
 
-    // 🚀 **Move Rider Along the Route Smoothly**
-    const moveRiderAlongRoute = (path: any[]) => {
-        let i = 0;
-
+    const moveRiderSmoothly = () => {
         const move = () => {
-            if (i < path.length - 1) {
-                setRiderPosition(path[i]);
-                i++;
-
-                setTimeout(() => {
-                    requestAnimationFrame(move);
-                }, 1000); // Rider moves every second (adjust for speed)
+            if (riderIndex.current < routePath.current.length) {
+                setRiderPosition(routePath.current[riderIndex.current]);
+                riderIndex.current += 1;
+                setTimeout(() => requestAnimationFrame(move), 1000);
             }
         };
-
         requestAnimationFrame(move);
     };
 
@@ -111,13 +105,11 @@ const UserOrderTracking = () => {
 
     return (
         <>
-            {/* Sticky Footer for Live Tracking */}
             <ActiveOrderFooter
                 status="Rider is on the way"
                 onClick={() => setModalOpen(true)}
             />
 
-            {/* Full-Screen Google Maps Modal */}
             <Modal isOpen={modalOpen} onOpenChange={() => setModalOpen(false)} size="full">
                 <ModalContent>
                     <ModalHeader className="flex items-center gap-2">
@@ -127,42 +119,15 @@ const UserOrderTracking = () => {
                         {isLoaded ? (
                             <GoogleMap
                                 mapContainerStyle={{ width: "100%", height: "70vh", borderRadius: "12px" }}
-                                center={restaurantLocation} // Fixed view to avoid recentering
-                                zoom={17} // Zoom in for a closer look
-                                options={{ disableDefaultUI: true }} // Hide UI for cleaner look
+                                center={riderPosition || restaurantLocation}
+                                zoom={17}
+                                options={{ disableDefaultUI: true }}
                             >
-                                {/* 🏍️ Moving Rider Marker */}
                                 {riderPosition && (
-                                    <Marker
-                                        position={riderPosition}
-                                        icon={{
-                                            url: "/icons/rider.png",
-                                            scaledSize: new google.maps.Size(40, 40),
-                                        }}
-                                    />
+                                    <Marker position={riderPosition} icon={{ url: "/icons/rider.png", scaledSize: new google.maps.Size(40, 40) }} />
                                 )}
-
-                                {/* 📍 Restaurant Marker */}
-                                <Marker
-                                    position={restaurantLocation}
-                                    label="Restaurant"
-                                    icon={{
-                                        url: "/icons/store.png",
-                                        scaledSize: new google.maps.Size(35, 35),
-                                    }}
-                                />
-
-                                {/* 🏠 Customer Marker */}
-                                <Marker
-                                    position={customerLocation}
-                                    label="Customer"
-                                    icon={{
-                                        url: "/icons/home.png",
-                                        scaledSize: new google.maps.Size(35, 35),
-                                    }}
-                                />
-
-                                {/* 🚗 Blue Route */}
+                                <Marker position={restaurantLocation} label="Restaurant" icon={{ url: "/icons/store.png", scaledSize: new google.maps.Size(35, 35) }} />
+                                <Marker position={customerLocation} label="Customer" icon={{ url: "/icons/home.png", scaledSize: new google.maps.Size(35, 35) }} />
                                 {directions && <DirectionsRenderer directions={directions} />}
                             </GoogleMap>
                         ) : (
