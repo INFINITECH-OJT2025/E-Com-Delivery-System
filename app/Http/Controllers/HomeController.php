@@ -138,25 +138,28 @@ class HomeController extends Controller
      */
     private function formatRestaurant($restaurant)
     {
-        // ✅ Use Distance Service to Calculate Distance, Fee, and Estimated Time
-        $distance = DeliveryService::calculateDistance(request()->query('lat'), request()->query('lng'), $restaurant->latitude, $restaurant->longitude);
-        $deliveryFee = DeliveryService::calculateDeliveryFee($distance, $restaurant->base_delivery_fee);
+        // ✅ Use SQL-calculated distance directly (no need to recalculate)
+        $distance = round($restaurant->distance, 2);
+
+        // ✅ Calculate delivery fee & estimated time based on correct distance
+        $deliveryFee = DeliveryService::calculateDeliveryFee($distance);
         $estimatedTime = DeliveryService::estimateDeliveryTime($distance);
 
         return [
             'id' => $restaurant->id,
             'slug' => $restaurant->slug,
             'name' => $restaurant->name,
-            'logo' => $restaurant->logo, // ✅ Now correctly fetched
+            'logo' => $restaurant->logo,
             'banner_image' => $restaurant->banner_image,
             'rating' => number_format($restaurant->rating, 1),
-            'total_reviews' => $restaurant->reviews_count ?? 0, // ✅ Ensures `reviews_count` is always included
-            'is_open' => $restaurant->status === 'open', // ✅ UI function will handle this
-            'distance_km' => round($distance, 2),
+            'total_reviews' => $restaurant->reviews_count ?? 0,
+            'is_open' => $restaurant->status === 'open',
+            'distance_km' => $distance, // ✅ Now correctly using SQL distance
             'delivery_fee' => $deliveryFee,
             'estimated_time' => $estimatedTime,
         ];
     }
+
 
 
     /**

@@ -18,12 +18,14 @@ use App\Services\DeliveryService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon; // ✅ Import Carbon
 
 class OrderController extends Controller
 {
     /**
      * ✅ Fetch all orders for the authenticated user, including restaurant, payment, customer address, and refunds
      */
+
     public function index(Request $request)
     {
         $userId = Auth::id();
@@ -48,6 +50,7 @@ class OrderController extends Controller
                 'orderItems.menu:id,name,price,image',
                 'payment:id,order_id,payment_method,payment_status',
                 'customerAddress:id,address,latitude,longitude',
+                'delivery:id,order_id,status,proof_image,delivery_time', // ✅ Include delivery proof
                 'refund' => function ($query) {
                     $query->select('id', 'order_id', 'status', 'admin_status', 'amount', 'reason', 'image_proof', 'created_at', 'updated_at')
                         ->orderBy('created_at', 'desc');
@@ -98,6 +101,14 @@ class OrderController extends Controller
                     ],
                     'order_type' => $order->order_type,
                     'order_status' => $order->order_status,
+                    'delivery_status' => optional($order->delivery)->status ?? 'not_assigned', // ✅ Use `optional()` to prevent null errors
+                    'scheduled_time' => $order->scheduled_time ? Carbon::parse($order->scheduled_time)->format('Y-m-d H:i:s') : null, // ✅ Safe conversion
+                    'delivery_proof' => $order->delivery && $order->delivery->proof_image
+                        ? asset('storage/' . $order->delivery->proof_image)
+                        : null, // ✅ Ensure no error if proof_image is null
+                    'delivered_at' => $order->delivery && $order->delivery->delivery_time
+                        ? Carbon::parse($order->delivery->delivery_time)->format('Y-m-d H:i:s')
+                        : null, // ✅ Ensure safe conversion
                     'total_price' => (float) $order->total_price,
                     'subtotal' => (float) $order->subtotal,
                     'delivery_fee' => (float) $order->delivery_fee,
@@ -136,6 +147,8 @@ class OrderController extends Controller
 
         return ResponseHelper::success("Orders retrieved successfully", ['orders' => $orders]);
     }
+
+
 
 
     /**
@@ -207,6 +220,8 @@ class OrderController extends Controller
             'discount_on_shipping' => 'nullable|numeric|min:0',
             'discount_on_subtotal' => 'nullable|numeric|min:0',
             'total_price' => 'required|numeric|min:0',
+            'scheduled_time' => 'nullable|date|after:now',
+
         ]);
 
         $user = Auth::user(); // ✅ Get authenticated user
@@ -269,6 +284,8 @@ class OrderController extends Controller
                 'rider_tip' => $validated['rider_tip'],
                 'order_status' => 'pending',
                 'payment_status' => 'pending',
+                'scheduled_time' => $validated['scheduled_time'] ?? null, // ✅ Store the scheduled time if provided
+
             ]);
 
             // ✅ **Insert Order Items & Deduct Stock**
@@ -370,7 +387,7 @@ class OrderController extends Controller
             ->findOrFail($id);
 
         $request->validate([
-            'order_status' => 'required|in:pending,confirmed,preparing,delivered,cancelled'
+            'order_status' => 'required|in:pending,confirmed,preparing,delivered,canceled'
         ]);
 
         $order->update([

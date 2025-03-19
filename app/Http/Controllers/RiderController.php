@@ -199,11 +199,18 @@ class RiderController extends Controller
             default => $order->order_status,
         };
 
-        $order->update(['order_status' => $orderStatus]);
+        // ✅ If order is completed, set `payment_status` to `paid`
+        $paymentStatus = ($orderStatus === 'completed') ? 'paid' : $order->payment_status;
+
+        $order->update([
+            'order_status' => $orderStatus,
+            'payment_status' => $paymentStatus, // ✅ Set payment to paid when completed
+        ]);
 
         return ResponseHelper::success("Order status updated successfully", [
             'order_id' => $order->id,
             'order_status' => $order->order_status,
+            'payment_status' => $order->payment_status, // ✅ Return updated payment status
             'delivery_status' => $delivery->status,
             'pickup_time' => $delivery->pickup_time,
             'delivery_time' => $delivery->delivery_time,
@@ -454,5 +461,70 @@ class RiderController extends Controller
         broadcast(new RiderLocationUpdated($delivery))->toOthers();
 
         return ResponseHelper::success('Location updated successfully');
+    }
+
+    public function getAllRidersWithEarnings(Request $request)
+    {
+        // ✅ Get all riders
+        $query = User::where('role', 'rider');
+
+        // ✅ Apply Search Filter (if provided)
+        if (!empty($request->search)) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'LIKE', "%{$request->search}%")
+                    ->orWhere('email', 'LIKE', "%{$request->search}%")
+                    ->orWhere('phone_number', 'LIKE', "%{$request->search}%");
+            });
+        }
+
+        // ✅ Apply Status Filter (if provided)
+        if (!empty($request->status)) {
+            $query->where('status', $request->status);
+        }
+
+        // ✅ Fetch paginated riders
+        $riders = $query->paginate(10);
+
+        // ✅ Calculate earnings per rider & platform earnings
+        $platformEarnings = 0;
+
+        $riders->getCollection()->transform(function ($rider) use (&$platformEarnings) {
+
+            // ✅ Fetch completed orders delivered by this rider
+            $completedOrders = Order::where('delivery_rider_id', $rider->id)
+                ->where('order_status', 'completed')
+                ->get(['delivery_fee', 'rider_tip']);
+
+            // ✅ Compute total earnings using the exact logic from `getEarnings()`
+            $totalEarnings = $completedOrders->reduce(function ($carry, $order) use (&$platformEarnings) {
+                $riderShare = (floatval($order->delivery_fee) * 0.9) + floatval($order->rider_tip);
+                $platformShare = floatval($order->delivery_fee) * 0.1;
+
+                $platformEarnings += $platformShare;
+
+                return $carry + $riderShare;
+            }, 0);
+
+            return [
+                'id' => $rider->id,
+                'name' => $rider->name,
+                'email' => $rider->email,
+                'phone_number' => $rider->phone_number,
+                'status' => $rider->status,
+                'vehicle_type' => $rider->vehicle_type,
+                'profile_image' => $rider->profile_image,
+                'total_earnings' => round($totalEarnings, 2),
+                'total_completed_orders' => $completedOrders->count()
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Riders retrieved successfully',
+            'data' => [
+                'riders' => $riders,
+                'total_platform_earnings' => round($platformEarnings, 2),
+            ]
+        ], 200);
     }
 }

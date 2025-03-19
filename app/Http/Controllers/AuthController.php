@@ -677,7 +677,10 @@ class AuthController extends Controller
         if (!$user->email_verified_at) {
             return ResponseHelper::error("Email not verified. Please verify via OTP or email link.", 403);
         }
-
+        // ✅ Ensure approved
+        if (!$user->status == "approved") {
+            return ResponseHelper::error("Email not approved.", 403);
+        }
         // ✅ Ensure only vendors (restaurant_owners) can log in
         if ($user->role !== 'restaurant_owner') {
             return ResponseHelper::error("Access denied. This login is for restaurant owners only.", 403);
@@ -875,7 +878,10 @@ class AuthController extends Controller
         if (!$user->email_verified_at) {
             return ResponseHelper::error("Email not verified. Please verify via email link.", 403);
         }
-
+        // ✅ Ensure approved
+        if (!$user->status == "approved") {
+            return ResponseHelper::error("Email not approved.", 403);
+        }
         // ✅ Ensure only riders can log in
         if ($user->role !== 'rider') {
             return ResponseHelper::error("Access denied. This login is for riders only.", 403);
@@ -888,5 +894,50 @@ class AuthController extends Controller
             'access_token' => $token,
             'user' => $user->only(['id', 'name', 'email', 'phone_number', 'role', 'email_verified_at']),
         ]);
+    }
+
+    public function adminLogin(Request $request, RateLimiter $limiter)
+    {
+        $key = 'admin_login:' . Str::lower($request->email) . '|' . $request->ip();
+
+        // ✅ Rate limiting (Max 5 attempts per minute)
+        if ($limiter->tooManyAttempts($key, 5)) {
+            return ResponseHelper::error("Too many login attempts. Try again in " . $limiter->availableIn($key) . " seconds.", 429);
+        }
+
+        // ✅ Validate request
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        // ✅ Find the admin user
+        $admin = User::where('email', $request->email)->first();
+
+        // ✅ Check if admin exists & password is correct
+        if (!$admin || !Hash::check($request->password, $admin->password)) {
+            $limiter->hit($key, 60);
+            return ResponseHelper::error("Invalid credentials", 401);
+        }
+
+        // ✅ Ensure email verification
+        if (!$admin->email_verified_at) {
+            return ResponseHelper::error("Email not verified. Please verify via email link.", 403);
+        }
+
+        // ✅ Ensure only super admins can log in
+        if ($admin->role !== 'admin') {
+            return ResponseHelper::error("Access denied. This login is for super admins only.", 403);
+        }
+
+        // ✅ Generate authentication token for the admin
+        $token = $admin->createToken("admin_auth_token")->plainTextToken;
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Admin login successful',
+            'access_token' => $token,
+            'admin' => $admin->only(['id', 'name', 'email', 'role', 'email_verified_at']),
+        ], 200);
     }
 }

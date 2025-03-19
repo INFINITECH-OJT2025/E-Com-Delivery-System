@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminDashboardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -175,4 +176,18 @@ Route::prefix('riders')->middleware(['auth:sanctum'])->group(function () {
     Route::get('/nearby-orders', [RiderController::class, 'getNearbyOrders']); // ✅ Fetch Notifications
     Route::post('/deliveries/upload-proof', [RiderController::class, 'uploadProofOfDelivery']);
     Route::post('/location', [RiderController::class, 'updateRiderLocation']);
+});
+Route::post('/admin/login', [AuthController::class, 'adminlogin']);
+Route::get('/admin/google-auth', [AuthController::class, 'googleAuth']);
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/admin/dashboard/stats', [AdminDashboardController::class, 'getStats']);
+    Route::get('/admin/dashboard/recent-orders', [AdminDashboardController::class, 'getRecentOrders']);
+    Route::get('/admin/dashboard/recent-registrations', [AdminDashboardController::class, 'getRecentRegistrations']);
+});
+Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
+    Route::apiResource('users', UserController::class)->only(['index', 'destroy']);
+    Route::put('/users/{id}/update-status', [UserController::class, 'updateStatus']); // ✅ Custom status update route
+});
+Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
+    Route::get('/riders', [RiderController::class, 'getAllRidersWithEarnings']); // ✅ Fetch all riders with earnings
 });
