@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 import { GoogleMap, Marker, DirectionsRenderer, useJsApiLoader } from "@react-google-maps/api";
-import { FaMapMarkerAlt } from "react-icons/fa";
+import { FaMapMarkerAlt, FaMotorcycle } from "react-icons/fa";
 import ActiveOrderFooter from "./ActiveOrderFooter";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -19,6 +19,7 @@ const UserOrderTracking = () => {
     const [riderPosition, setRiderPosition] = useState<any>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [eta, setEta] = useState("");
+    const [currentDirection, setCurrentDirection] = useState("right");
     const routePath = useRef<any[]>([]);
     const riderIndex = useRef(0);
     const riderMoving = useRef(false);
@@ -78,13 +79,10 @@ const UserOrderTracking = () => {
                         lng: point.lng(),
                     }));
 
-                    const durationText = result.routes[0].legs[0].duration.text;
-                    setEta(durationText);
-
                     if (!riderMoving.current) {
                         riderIndex.current = 0;
                         riderMoving.current = true;
-                        moveRiderSmoothly();
+                        moveRiderSmoothly(result.routes[0].legs[0].duration.value);
                     }
                 } else {
                     console.error("Failed to fetch directions", result);
@@ -93,10 +91,12 @@ const UserOrderTracking = () => {
         );
     };
 
-    const moveRiderSmoothly = () => {
+    const moveRiderSmoothly = (initialDuration: number) => {
         const move = () => {
             if (riderIndex.current < routePath.current.length) {
                 const nextPosition = routePath.current[riderIndex.current];
+                updateETA(initialDuration, riderIndex.current, routePath.current.length);
+                updateDirection(nextPosition);
                 setRiderPosition(nextPosition);
                 previousPosition.current = nextPosition;
                 riderIndex.current += 1;
@@ -105,6 +105,26 @@ const UserOrderTracking = () => {
         };
         requestAnimationFrame(move);
     };
+
+    const updateETA = (initialDuration: number, currentStep: number, totalSteps: number) => {
+        const remainingDuration = ((totalSteps - currentStep) / totalSteps) * initialDuration;
+        const minutes = Math.ceil(remainingDuration / 60);
+        setEta(`${minutes} min`);
+    };
+
+    const updateDirection = (nextPos: any) => {
+        if (!previousPosition.current) return;
+        const dx = nextPos.lng - previousPosition.current.lng;
+        const dy = nextPos.lat - previousPosition.current.lat;
+        if (Math.abs(dx) > Math.abs(dy)) {
+            setCurrentDirection(dx > 0 ? "right" : "left");
+        } else {
+            setCurrentDirection(dy > 0 ? "up" : "down");
+        }
+    };
+
+    // IMPORTANT: Icons change based on direction (up, down, left, right)
+    const riderDirectionIcon = () => `/icons/rider-${currentDirection}.png`;
 
     if (loading) return <div className="flex justify-center py-4"><Spinner /></div>;
     if (!order) return null;
@@ -118,36 +138,28 @@ const UserOrderTracking = () => {
 
             <Modal isOpen={modalOpen} onOpenChange={() => setModalOpen(false)} size="full">
                 <ModalContent>
-                    <ModalHeader className="flex items-center gap-2">
+                    <ModalHeader className="flex items-center gap-2 bg-primary text-white">
                         <FaMapMarkerAlt /> Live Rider Tracking - Order #{order?.order_id}
                     </ModalHeader>
                     <ModalBody className="p-0">
-                        <div className="p-3 bg-white text-center font-semibold shadow">
-                            Rider is heading towards your location<br />
-                            Estimated Arrival: {eta}
+                        <div className="p-4 bg-white text-center font-semibold shadow-md flex gap-2 items-center justify-center text-primary">
+                            <FaMotorcycle /> Rider is heading towards your location - ETA: {eta}
                         </div>
                         {isLoaded ? (
                             <GoogleMap
-                                mapContainerStyle={{ width: "100%", height: "65vh", borderRadius: "12px" }}
+                                mapContainerStyle={{ width: "100%", height: "80vh", borderRadius: "12px" }}
                                 center={riderPosition || restaurantLocation}
                                 zoom={17}
                                 options={{ disableDefaultUI: true }}
                             >
-                                {riderPosition && (
-                                    <Marker
-                                        position={riderPosition}
-                                        icon={{ url: "/icons/rider-right.png", scaledSize: new google.maps.Size(40, 40) }}
-                                    />
-                                )}
-                                <Marker position={restaurantLocation} label="Restaurant" icon={{ url: "/icons/store.png", scaledSize: new google.maps.Size(35, 35) }} />
-                                <Marker position={customerLocation} label="Customer" icon={{ url: "/icons/home.png", scaledSize: new google.maps.Size(35, 35) }} />
-                                {directions && <DirectionsRenderer directions={directions} />}
+                                {riderPosition && <Marker position={riderPosition} icon={{ url: riderDirectionIcon(), scaledSize: new google.maps.Size(40, 40) }} />}
+                                <Marker position={restaurantLocation} icon={{ url: "/icons/stores.png", scaledSize: new google.maps.Size(40, 40) }} />
+                                <Marker position={customerLocation} icon={{ url: "/icons/location.gif", scaledSize: new google.maps.Size(40, 40) }} />
+                                {directions && <DirectionsRenderer directions={directions} options={{ suppressMarkers: true }} />}
                             </GoogleMap>
                         ) : <Spinner />}
                     </ModalBody>
-                    <ModalFooter>
-                        <Button color="danger" variant="flat" onPress={() => setModalOpen(false)}>Close</Button>
-                    </ModalFooter>
+
                 </ModalContent>
             </Modal>
         </>
