@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = { images: {
+const nextConfig = {  reactStrictMode: false, // 🔥 Turn this off
+    images: {
     remotePatterns: [
       {
         protocol: "http",

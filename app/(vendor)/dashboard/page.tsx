@@ -93,7 +93,7 @@ export default function Dashboard() {
             <FaDollarSign className="text-3xl text-primary" />
             <div>
               <h2 className="text-xl font-semibold">Total Revenue</h2>
-              <p className="text-2xl">₱{totalRevenue.toFixed(2)}</p>
+              <p className="text-2xl">₱{totalRevenue}</p>
             </div>
           </div>
         </div>
