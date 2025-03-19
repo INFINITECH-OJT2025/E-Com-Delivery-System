@@ -18,8 +18,7 @@ const UserOrderTracking = () => {
     const [directions, setDirections] = useState<any>(null);
     const [riderPosition, setRiderPosition] = useState<any>(null);
     const [modalOpen, setModalOpen] = useState(false);
-    const [riderAction, setRiderAction] = useState("Waiting");
-    const [currentDirection, setCurrentDirection] = useState("unknown");
+    const [eta, setEta] = useState("");
     const routePath = useRef<any[]>([]);
     const riderIndex = useRef(0);
     const riderMoving = useRef(false);
@@ -74,11 +73,13 @@ const UserOrderTracking = () => {
             (result, status) => {
                 if (status === google.maps.DirectionsStatus.OK && result) {
                     setDirections(result);
-
                     routePath.current = result.routes[0].overview_path.map((point) => ({
                         lat: point.lat(),
                         lng: point.lng(),
                     }));
+
+                    const durationText = result.routes[0].legs[0].duration.text;
+                    setEta(durationText);
 
                     if (!riderMoving.current) {
                         riderIndex.current = 0;
@@ -96,7 +97,6 @@ const UserOrderTracking = () => {
         const move = () => {
             if (riderIndex.current < routePath.current.length) {
                 const nextPosition = routePath.current[riderIndex.current];
-                updateRiderAction(nextPosition);
                 setRiderPosition(nextPosition);
                 previousPosition.current = nextPosition;
                 riderIndex.current += 1;
@@ -106,27 +106,13 @@ const UserOrderTracking = () => {
         requestAnimationFrame(move);
     };
 
-    const updateRiderAction = (nextPos: any) => {
-        if (!previousPosition.current) return;
-        const dx = nextPos.lng - previousPosition.current.lng;
-        const dy = nextPos.lat - previousPosition.current.lat;
-        let direction = "right";
-        if (Math.abs(dx) > Math.abs(dy)) direction = dx > 0 ? "right" : "left";
-        else direction = dy > 0 ? "up" : "down";
-
-        setCurrentDirection(direction);
-        setRiderAction(`Rider moving ${direction}`);
-    };
-
-    const riderDirectionIcon = () => `/icons/rider-${currentDirection}.png`;
-
     if (loading) return <div className="flex justify-center py-4"><Spinner /></div>;
     if (!order) return null;
 
     return (
         <>
             <ActiveOrderFooter
-                status={riderAction}
+                status={`Rider is heading towards your location (ETA: ${eta})`}
                 onClick={() => setModalOpen(true)}
             />
 
@@ -136,13 +122,13 @@ const UserOrderTracking = () => {
                         <FaMapMarkerAlt /> Live Rider Tracking - Order #{order?.order_id}
                     </ModalHeader>
                     <ModalBody className="p-0">
-                        <div className="absolute top-2 left-2 bg-white p-2 rounded shadow z-10">
-                            <strong>Status:</strong> {riderAction} <br />
-                            <strong>Debug Direction:</strong> {currentDirection}
+                        <div className="p-3 bg-white text-center font-semibold shadow">
+                            Rider is heading towards your location<br />
+                            Estimated Arrival: {eta}
                         </div>
                         {isLoaded ? (
                             <GoogleMap
-                                mapContainerStyle={{ width: "100%", height: "70vh", borderRadius: "12px" }}
+                                mapContainerStyle={{ width: "100%", height: "65vh", borderRadius: "12px" }}
                                 center={riderPosition || restaurantLocation}
                                 zoom={17}
                                 options={{ disableDefaultUI: true }}
@@ -150,7 +136,7 @@ const UserOrderTracking = () => {
                                 {riderPosition && (
                                     <Marker
                                         position={riderPosition}
-                                        icon={{ url: riderDirectionIcon(), scaledSize: new google.maps.Size(40, 40) }}
+                                        icon={{ url: "/icons/rider-right.png", scaledSize: new google.maps.Size(40, 40) }}
                                     />
                                 )}
                                 <Marker position={restaurantLocation} label="Restaurant" icon={{ url: "/icons/store.png", scaledSize: new google.maps.Size(35, 35) }} />
