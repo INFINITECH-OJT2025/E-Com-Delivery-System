@@ -18,9 +18,12 @@ const UserOrderTracking = () => {
     const [directions, setDirections] = useState<any>(null);
     const [riderPosition, setRiderPosition] = useState<any>(null);
     const [modalOpen, setModalOpen] = useState(false);
+    const [riderAction, setRiderAction] = useState("Waiting");
+    const [currentDirection, setCurrentDirection] = useState("unknown");
     const routePath = useRef<any[]>([]);
     const riderIndex = useRef(0);
     const riderMoving = useRef(false);
+    const previousPosition = useRef<any>(null);
 
     const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_API_KEY });
 
@@ -92,7 +95,10 @@ const UserOrderTracking = () => {
     const moveRiderSmoothly = () => {
         const move = () => {
             if (riderIndex.current < routePath.current.length) {
-                setRiderPosition(routePath.current[riderIndex.current]);
+                const nextPosition = routePath.current[riderIndex.current];
+                updateRiderAction(nextPosition);
+                setRiderPosition(nextPosition);
+                previousPosition.current = nextPosition;
                 riderIndex.current += 1;
                 setTimeout(() => requestAnimationFrame(move), 1000);
             }
@@ -100,13 +106,27 @@ const UserOrderTracking = () => {
         requestAnimationFrame(move);
     };
 
+    const updateRiderAction = (nextPos: any) => {
+        if (!previousPosition.current) return;
+        const dx = nextPos.lng - previousPosition.current.lng;
+        const dy = nextPos.lat - previousPosition.current.lat;
+        let direction = "right";
+        if (Math.abs(dx) > Math.abs(dy)) direction = dx > 0 ? "right" : "left";
+        else direction = dy > 0 ? "up" : "down";
+
+        setCurrentDirection(direction);
+        setRiderAction(`Rider moving ${direction}`);
+    };
+
+    const riderDirectionIcon = () => `/icons/rider-${currentDirection}.png`;
+
     if (loading) return <div className="flex justify-center py-4"><Spinner /></div>;
     if (!order) return null;
 
     return (
         <>
             <ActiveOrderFooter
-                status="Rider is on the way"
+                status={riderAction}
                 onClick={() => setModalOpen(true)}
             />
 
@@ -116,6 +136,10 @@ const UserOrderTracking = () => {
                         <FaMapMarkerAlt /> Live Rider Tracking - Order #{order?.order_id}
                     </ModalHeader>
                     <ModalBody className="p-0">
+                        <div className="absolute top-2 left-2 bg-white p-2 rounded shadow z-10">
+                            <strong>Status:</strong> {riderAction} <br />
+                            <strong>Debug Direction:</strong> {currentDirection}
+                        </div>
                         {isLoaded ? (
                             <GoogleMap
                                 mapContainerStyle={{ width: "100%", height: "70vh", borderRadius: "12px" }}
@@ -124,17 +148,16 @@ const UserOrderTracking = () => {
                                 options={{ disableDefaultUI: true }}
                             >
                                 {riderPosition && (
-                                    <Marker position={riderPosition} icon={{ url: "/icons/rider.png", scaledSize: new google.maps.Size(40, 40) }} />
+                                    <Marker
+                                        position={riderPosition}
+                                        icon={{ url: riderDirectionIcon(), scaledSize: new google.maps.Size(40, 40) }}
+                                    />
                                 )}
                                 <Marker position={restaurantLocation} label="Restaurant" icon={{ url: "/icons/store.png", scaledSize: new google.maps.Size(35, 35) }} />
                                 <Marker position={customerLocation} label="Customer" icon={{ url: "/icons/home.png", scaledSize: new google.maps.Size(35, 35) }} />
                                 {directions && <DirectionsRenderer directions={directions} />}
                             </GoogleMap>
-                        ) : (
-                            <div className="flex justify-center items-center h-64">
-                                <Spinner />
-                            </div>
-                        )}
+                        ) : <Spinner />}
                     </ModalBody>
                     <ModalFooter>
                         <Button color="danger" variant="flat" onPress={() => setModalOpen(false)}>Close</Button>
