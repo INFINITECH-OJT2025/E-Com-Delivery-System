@@ -6,15 +6,16 @@ import {
   Button, Table, TableBody, TableHeader, TableRow, TableColumn, TableCell,
   Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Spinner, Card, CardBody
 } from "@heroui/react";
-import { FaEye, FaCheck } from "react-icons/fa";
+import { FaEye, FaCheck, FaTimes, FaTruck, FaClipboardCheck, FaClock } from "react-icons/fa";
 import Image from "next/image";
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState([]); // ✅ Default empty array
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [newStatus, setNewStatus] = useState("");
 
   useEffect(() => {
@@ -23,9 +24,15 @@ export default function OrdersPage() {
 
   const fetchOrders = async () => {
     setLoading(true);
-    const data = await orderService.fetchOrders();
-    setOrders(data);
-    setLoading(false);
+    try {
+      const data = await orderService.fetchOrders();
+      setOrders(data || []); // ✅ Avoid `undefined`
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setOrders([]); // ✅ Fallback to empty array
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleViewOrder = (order) => {
@@ -39,6 +46,13 @@ export default function OrdersPage() {
     setConfirmModalOpen(true);
   };
 
+  const handleCancelOrder = (order,status) => {
+    setSelectedOrder(order);
+    setNewStatus(status);
+
+    setCancelModalOpen(true);
+  };
+
   const handleUpdateStatus = async () => {
     if (!selectedOrder) return;
     const response = await orderService.updateOrderStatus(selectedOrder.id, newStatus);
@@ -48,6 +62,20 @@ export default function OrdersPage() {
     }
   };
 
+  const handleCancelConfirmed = async () => {
+    if (!selectedOrder) return;
+  
+    try {
+      const response = await orderService.updateOrderStatus(selectedOrder.id, "canceled");
+      if (response) {
+        fetchOrders(); // ✅ Refresh Orders
+        setCancelModalOpen(false); // ✅ Close Modal
+      }
+    } catch (error) {
+      console.error("Error canceling order:", error);
+    }
+  };
+  
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold text-center mb-6">Orders Management</h1>
@@ -58,28 +86,41 @@ export default function OrdersPage() {
         </div>
       ) : (
         <Table isStriped aria-label="Orders Table">
-          <TableHeader>
-            <TableColumn>ID</TableColumn>
-            <TableColumn>Customer</TableColumn>
-            <TableColumn>Total Price</TableColumn>
-            <TableColumn>Status</TableColumn>
-            <TableColumn>Actions</TableColumn>
-          </TableHeader>
+        <TableHeader>
+  <TableColumn>ID</TableColumn>
+  <TableColumn>Customer</TableColumn>
+  <TableColumn>Order Type</TableColumn>
+  <TableColumn>Total Price</TableColumn>
+  <TableColumn>Scheduled Time</TableColumn>
+  <TableColumn>Status</TableColumn>
+  <TableColumn>Actions</TableColumn>
+</TableHeader>
+
           <TableBody>
             {orders.length > 0 ? (
               orders.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell>#{order.id}</TableCell>
-                  <TableCell>{order.customer.name}</TableCell>
-                  <TableCell>₱{order.total_price}</TableCell>
+  <TableCell>#{order.id}</TableCell>
+  <TableCell>{order.customer?.name || "Unknown"}</TableCell>
+  <TableCell>{order.order_type.toUpperCase()}</TableCell>
+
+  <TableCell className={order.scheduled_time? "text-primary" : "text-gray-800"}>
+    {order.scheduled_time
+      ? new Date(order.scheduled_time).toLocaleString()
+      : "N/A"}
+  </TableCell>
+  <TableCell>₱{order.total_price}</TableCell>
+
+
                   <TableCell>
                     <span
                       className={`px-2 py-1 rounded-full text-white text-sm ${
                         order.order_status === "pending" ? "bg-yellow-500" :
                         order.order_status === "confirmed" ? "bg-blue-500" :
                         order.order_status === "preparing" ? "bg-purple-500" :
-                        order.order_status === "delivered" ? "bg-green-500" :
-                        "bg-red-500"
+                        order.order_status === "completed" ? "bg-green-500" :
+                        order.order_status === "canceled" ? "bg-red-500" :
+                        "bg-gray-500"
                       }`}
                     >
                       {order.order_status}
@@ -92,13 +133,25 @@ export default function OrdersPage() {
 
                     {order.order_status === "pending" && (
                       <Button color="warning" onPress={() => handleConfirmOrder(order, "confirmed")}>
-                        <FaCheck className="mr-2" /> Confirm Order
+                        <FaCheck className="mr-2" /> Confirm
                       </Button>
                     )}
 
                     {order.order_status === "confirmed" && (
                       <Button color="success" onPress={() => handleConfirmOrder(order, "preparing")}>
-                        <FaCheck className="mr-2" /> Mark as Preparing
+                        <FaClipboardCheck className="mr-2" /> Mark as Preparing
+                      </Button>
+                    )}
+
+                    {order.order_status === "preparing" && (
+                      <Button color="success" onPress={() => handleConfirmOrder(order, "delivered")}>
+                        <FaTruck className="mr-2" /> Mark as Delivered
+                      </Button>
+                    )}
+
+                    {order.order_status === "pending" && (
+                      <Button color="danger" onPress={() => handleCancelOrder(order, "canceled")}>
+                        <FaTimes className="mr-2" /> Cancel
                       </Button>
                     )}
                   </TableCell>
@@ -120,21 +173,29 @@ export default function OrdersPage() {
           <ModalBody>
             {selectedOrder && (
               <div className="space-y-4">
-                <p className="text-lg font-semibold">Customer: {selectedOrder.customer.name}</p>
+                <p className="text-lg font-semibold">Customer: {selectedOrder.customer?.name || "Unknown"}</p>
                 <p className="text-lg">Total: <span className="font-bold">₱{selectedOrder.total_price}</span></p>
                 <p className="text-lg">Status: 
                   <span className={`ml-2 px-2 py-1 rounded-full text-white text-sm ${
                     selectedOrder.order_status === "pending" ? "bg-yellow-500" :
                     selectedOrder.order_status === "confirmed" ? "bg-blue-500" :
                     selectedOrder.order_status === "preparing" ? "bg-purple-500" :
-                    selectedOrder.order_status === "delivered" ? "bg-green-500" :
-                    "bg-red-500"
+                    selectedOrder.order_status === "completed" ? "bg-green-500" :
+                    selectedOrder.order_status === "canceled" ? "bg-red-500" :
+                    "bg-gray-500"
                   }`}>
                     {selectedOrder.order_status}
                   </span>
                 </p>
 
-                {/* Order Items */}
+                {/* ✅ Scheduled Order */}
+                {selectedOrder.scheduled_time && (
+                  <p className="text-md text-blue-600 font-semibold flex items-center">
+                    <FaClock className="mr-2" /> Scheduled for: {new Date(selectedOrder.scheduled_time).toLocaleString()}
+                  </p>
+                )}
+
+                {/* ✅ Order Items */}
                 <h3 className="text-xl font-bold">Items Ordered</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {selectedOrder.order_items.map((item) => (
@@ -155,6 +216,20 @@ export default function OrdersPage() {
                     </Card>
                   ))}
                 </div>
+
+                {/* ✅ Proof of Delivery (If Available) */}
+                {selectedOrder.delivery_proof && (
+                  <div className="mt-4">
+                    <h3 className="text-lg font-semibold">Proof of Delivery</h3>
+                    <Image
+                      src={selectedOrder.delivery_proof}
+                      alt="Proof of Delivery"
+                      width={400}
+                      height={300}
+                      className="rounded-md border"
+                    />
+                  </div>
+                )}
               </div>
             )}
           </ModalBody>
@@ -181,6 +256,46 @@ export default function OrdersPage() {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* ✅ Cancel Order Confirmation Modal */}
+      <Modal isOpen={cancelModalOpen} onOpenChange={setCancelModalOpen} size="sm">
+        <ModalContent>
+          <ModalHeader>Cancel Order</ModalHeader>
+          <ModalBody>
+            {selectedOrder && (
+              <p>Are you sure you want to cancel order #{selectedOrder.id}?</p>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button onPress={() => setCancelModalOpen(false)}>Keep Order</Button>
+            <Button color="danger" onPress={handleCancelConfirmed}>
+              <FaTimes className="mr-2" /> Cancel Order
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      {/* ✅ Cancel Order Confirmation Modal */}
+<Modal isOpen={cancelModalOpen} onOpenChange={setCancelModalOpen} size="sm">
+  <ModalContent>
+    <ModalHeader>Cancel Order</ModalHeader>
+    <ModalBody>
+      {selectedOrder && (
+        <p className="text-md">
+          Are you sure you want to cancel order <strong>#{selectedOrder.id}</strong>? This action cannot be undone.
+        </p>
+      )}
+    </ModalBody>
+    <ModalFooter className="flex justify-between">
+      <Button variant="bordered" onPress={() => setCancelModalOpen(false)}>
+        Keep Order
+      </Button>
+      <Button color="danger" onPress={handleCancelConfirmed}>
+        <FaTimes className="mr-2" /> Cancel Order
+      </Button>
+    </ModalFooter>
+  </ModalContent>
+</Modal>
+
     </div>
   );
 }

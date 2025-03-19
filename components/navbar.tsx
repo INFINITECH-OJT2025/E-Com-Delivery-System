@@ -26,7 +26,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="w-full bg-primary text-white shadow-md py-3 px-6 flex justify-between items-center">
+    <nav className="w-full bg-primary text-white shadow-md py-3 px-6 flex justify-between items-center border-gray-300">
       {/* Logo & Branding */}
       <div className="flex items-center gap-3">
         <Image src="/images/delivery-panda.png" alt="E-Com Delivery" width={40} height={40} />
