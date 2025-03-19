@@ -111,14 +111,8 @@ export default function RiderDashboard() {
         <div className="max-w-4xl mx-auto space-y-6 pb-16">
       
       {/*location */}
-      <div
-  onClick={() => setLocationModalOpen(true)}
-  className="w-full flex items-center gap-3 px-4 py-3 cursor-pointer bg-secondary  text-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
->
-  <FaMapMarkerAlt className="text-white text-xl flex-shrink-0" />
-  <p className="text-base font-semibold truncate flex-1">{currentLocation}</p>
-  <span className="text-sm font-semibold underline">Change</span>
-</div>
+      <RiderAddressPicker onSelect={handleAddressSelect} />
+
 
           {/* Rider Profile */}
           <Card className="p-4 shadow-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
@@ -173,7 +167,7 @@ export default function RiderDashboard() {
                       <Button
                         size="sm"
                         color="primary"
-                        onPress={() => router.push(`/riders/orders/${order.order_id}`)}
+                        onPress={() => router.push(`/orders/${order.order_id}`)}
                       >
                         View
                       </Button>

@@ -276,9 +276,18 @@ const RiderOrderUI = () => {
               <Button fullWidth color="success" onPress={() => updateStatus("picked_up")}>Pick Up Order</Button>
             )}
 
-            {step === "picked_up" && (
-              <Button fullWidth color="success" onPress={() => updateStatus("arrived_at_customer")}>Arrived at Customer</Button>
-            )}
+{step === "picked_up" && (
+  <Button fullWidth color="success" onPress={() => updateStatus("in_delivery")}>
+    Start Delivery
+  </Button>
+)}
+
+{step === "in_delivery" && (
+  <Button fullWidth color="success" onPress={() => updateStatus("arrived_at_customer")}>
+    Arrived at Customer
+  </Button>
+)}
+
 
 {step === "arrived_at_customer" && (
   <>
@@ -314,9 +323,7 @@ const RiderOrderUI = () => {
               <ModalBody>
                 <iframe src={mapUrl} className="w-full h-full min-h-[70vh]" allowFullScreen />
               </ModalBody>
-              <ModalFooter>
-                <Button color="danger" variant="flat" onPress={onClose}>Close</Button>
-              </ModalFooter>
+
             </>
           )}
         </ModalContent>
