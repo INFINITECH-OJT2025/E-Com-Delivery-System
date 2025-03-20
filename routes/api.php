@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\CustomerAddressController;
 use App\Http\Controllers\DeliveryFeeController;
 use App\Http\Controllers\FavoriteController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\RestaurantDashboardController;
 use App\Http\Controllers\RiderController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SupportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Http;
 
@@ -190,4 +192,27 @@ Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
 });
 Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
     Route::get('/riders', [RiderController::class, 'getAllRidersWithEarnings']); // ✅ Fetch all riders with earnings
+});
+Route::middleware('auth:sanctum')->group(function () {
+
+    // 🔹 USER ROUTES
+    Route::post('/chat/start', [ChatController::class, 'startChat']); // Start a support chat
+    Route::get('/chat/messages/{chatId}', [ChatController::class, 'getMessages']); // Fetch messages
+    Route::post('/chat/send', [ChatController::class, 'sendMessage']); // Send message (User)
+
+    // 🔹 ADMIN ROUTES
+    Route::get('/chat/active-chats', [ChatController::class, 'getActiveChats']); // List all user chats
+    Route::post('/chat/send-support', [ChatController::class, 'sendSupportMessage']); // Send message (Admin)
+});
+Route::middleware(['auth:sanctum'])->group(function () {
+    // 🚀 User Routes
+    Route::post('/support/tickets', [SupportController::class, 'createTicket']); // Submit Ticket
+    Route::get('/support/tickets', [SupportController::class, 'listUserTickets']); // User's Tickets
+    Route::get('/support/tickets/{ticket}', [SupportController::class, 'viewTicket']); // View Specific Ticket
+
+    // 🚀 Admin Routes
+    Route::get('/admin/support/tickets', [SupportController::class, 'listAllTickets']); // All Tickets
+    Route::patch('/admin/support/tickets/{ticket}/update', [SupportController::class, 'updateTicketStatus']); // Update Ticket Status
+    Route::delete('/admin/support/tickets/{ticket}/delete', [SupportController::class, 'deleteTicket']); // Delete Ticket
+
 });

@@ -15,4 +15,19 @@ class Chat extends Model
     {
         return $this->hasMany(Message::class);
     }
+
+    public function sender()
+    {
+        return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    public function receiver()
+    {
+        return $this->belongsTo(User::class, 'receiver_id');
+    }
+
+    public static function getUserSupportChat($userId)
+    {
+        return self::where('sender_id', $userId)->first(); // Ensure only ONE chat per user
+    }
 }

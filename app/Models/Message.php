@@ -20,4 +20,9 @@ class Message extends Model
     {
         return $this->belongsTo(User::class, 'sender_id');
     }
+
+    public static function getUnreadMessages($chatId)
+    {
+        return self::where('chat_id', $chatId)->where('is_read', false)->count();
+    }
 }

@@ -214,7 +214,18 @@ class HomeController extends Controller
             ->first();
 
         if (!$currentOrder) {
-            return ResponseHelper::error('No active orders found', 404);
+            // ✅ Return 200 instead of 404 when no active orders exist
+            return ResponseHelper::success('No active orders found', [
+                'order_id' => null,
+                'order_status' => null,
+                'delivery_status' => null,
+                'rider_location' => null,
+                'customer_location' => null,
+                'restaurant_location' => null,
+                'rider' => null,
+                'pickup_time' => null,
+                'delivery_time' => null,
+            ], false); // ✅ Marking success as false but with HTTP 200
         }
 
         return ResponseHelper::success('Active order details fetched successfully', [
@@ -235,11 +246,11 @@ class HomeController extends Controller
                 'address' => optional($currentOrder->restaurant)->address,
                 'lat'     => optional($currentOrder->restaurant)->latitude,
                 'lng'     => optional($currentOrder->restaurant)->longitude,
-                'phone'   => optional($currentOrder->restaurant)->phone,
+                'phone'   => optional($currentOrder->restaurant)->phone_number,
             ],
             'rider' => [
                 'name'          => optional($currentOrder->rider)->name,
-                'phone'         => optional($currentOrder->rider)->phone,
+                'phone'         => optional($currentOrder->rider)->phone_number,
                 'profile_image' => optional($currentOrder->rider)->profile_image,
             ],
             'pickup_time'    => optional($currentOrder->delivery)->pickup_time,
