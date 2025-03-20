@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { useUser } from "@/context/userContext"; // ✅ Import useUser
 import { Spinner } from "@heroui/react";
+import ChatSupportBot from "@/components/ChatSupportBot";
 interface CustomerLayoutProps {
     children: React.ReactNode;
 }
@@ -56,7 +57,7 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
             </div>
 
             {/* ✅ Only render `children` after authentication is confirmed */}
-            <main className="flex-1 overflow-y-auto">{children}</main>
+            <main className="flex-1 overflow-y-auto">{children} <ChatSupportBot /></main>
         </div>
     );
 }

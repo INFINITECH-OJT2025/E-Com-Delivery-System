@@ -47,33 +47,40 @@ export const homeService = {
             };
         }
     },
-     /**
-     * ✅ Fetch the user's current pending order (if exists)
-     */
-     async getPendingOrder() {
-        try {
-            const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    /**
+ * ✅ Fetch the user's current pending order (if exists)
+ */
+async getPendingOrder() {
+    try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
 
-            if (!token) {
-                return { success: false, message: "Unauthorized" };
-            }
-
-            const res = await fetch(`${API_URL}/api/getCurrentOrder`, {
-                method: "GET",
-                headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`,
-                },
-            });
-
-            return await apiHelper.handleResponse(res);
-        } catch (error) {
-            console.error("Error fetching pending order:", error);
-            return {
-                success: false,
-                message: "Failed to fetch pending order",
-            };
+        if (!token) {
+            return { success: false, message: "Unauthorized" };
         }
-    },
+
+        const res = await fetch(`${API_URL}/api/getCurrentOrder`, {
+            method: "GET",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+        });
+
+        const data = await apiHelper.handleResponse(res);
+
+        // ✅ If 404 or "No active orders found", return success but empty order
+        if (!data.success && data.message === "No active orders found") {
+            return { success: true, message: "No active orders found", data: null };
+        }
+
+        return data;
+    } catch (error) {
+        console.error("Error fetching pending order:", error);
+        return {
+            success: false,
+            message: "Failed to fetch pending order",
+        };
+    }
+},
 };
