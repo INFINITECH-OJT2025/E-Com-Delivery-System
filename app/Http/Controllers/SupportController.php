@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ResponseHelper;
 use App\Models\Ticket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -49,9 +50,11 @@ class SupportController extends Controller
     // ✅ 4. Get All Tickets (Admin)
     public function listAllTickets()
     {
-        $tickets = Ticket::latest()->get();
-        return response()->json(['tickets' => $tickets]);
+        $tickets = Ticket::with('user:id,name,email')->latest()->get(); // ✅ Load user name
+
+        return response()->json(['success' => true, 'tickets' => $tickets]);
     }
+
 
     // ✅ 5. Update Ticket Status (Admin)
     public function updateTicketStatus(Request $request, Ticket $ticket)
@@ -60,7 +63,7 @@ class SupportController extends Controller
 
         $ticket->update(['status' => $request->status]);
 
-        return response()->json(['message' => 'Ticket status updated successfully!', 'ticket' => $ticket]);
+        return response()->json(['message' => 'Ticket status updated successfully!', 'ticket' => $ticket, 'success' => true]);
     }
 
     // ✅ 6. Delete a Ticket (Admin)
@@ -68,5 +71,19 @@ class SupportController extends Controller
     {
         $ticket->delete();
         return response()->json(['message' => 'Ticket deleted successfully.']);
+    }
+    public function getPendingTickets()
+    {
+        try {
+            $pendingCount = Ticket::where('status', 'Pending')->count();
+
+            return ResponseHelper::success('Pending ticket count retrieved successfully.', [
+                'count' => $pendingCount
+            ]);
+        } catch (\Exception $e) {
+            return ResponseHelper::error('Failed to fetch pending tickets.', 500, [
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

@@ -214,5 +214,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/admin/support/tickets', [SupportController::class, 'listAllTickets']); // All Tickets
     Route::patch('/admin/support/tickets/{ticket}/update', [SupportController::class, 'updateTicketStatus']); // Update Ticket Status
     Route::delete('/admin/support/tickets/{ticket}/delete', [SupportController::class, 'deleteTicket']); // Delete Ticket
-
+    Route::get('/admin/tickets/pending', [SupportController::class, 'getPendingTickets']);
 });
