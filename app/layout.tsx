@@ -44,7 +44,7 @@ export default function RootLayout({
         <Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
           <div className="relative flex flex-col h-screen">
             <AdminNavbar />
-            <main className="container mx-auto max-w-7xl flex-grow">
+            <main className="  ">
               {children}
             </main>
             <footer className="w-full  text-gray-300 py-4 flex flex-col items-center text-center">

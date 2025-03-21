@@ -10,8 +10,8 @@ import { adminService } from "@/services/adminService";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({ restaurants: 0, users: 0, riders: 0, activeOrders: 0 });
-  const [recentOrders, setRecentOrders] = useState([]);
-  const [recentRegistrations, setRecentRegistrations] = useState([]);
+  const [recentOrders, setRecentOrders] = useState<{ id: number; customer: string; total: number; status: string }[]>([]);
+  const [recentRegistrations, setRecentRegistrations] = useState<{ name: string; type: string; date: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -72,7 +72,7 @@ export default function AdminDashboard() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={5} className="text-center">Loading...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="text-center">Loading...</TableCell></TableRow>
                 ) : recentOrders.length > 0 ? (
                   recentOrders.map((order) => (
                     <TableRow key={order.id}>
@@ -87,11 +87,11 @@ export default function AdminDashboard() {
                           {order.status}
                         </span>
                       </TableCell>
-                      
+                
                     </TableRow>
                   ))
                 ) : (
-                  <TableRow><TableCell colSpan={5} className="text-center">No recent orders</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="text-center">No recent orders</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>

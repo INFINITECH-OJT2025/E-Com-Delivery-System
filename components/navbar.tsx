@@ -26,6 +26,7 @@ const adminRoutes: AdminRoute[] = [
   // { name: "Restaurants", path: "/admin/restaurants" },
   { name: "Users", path: "/admin/users" },
   { name: "Riders", path: "/admin/riders" },
+  { name: "Ticket", path: "/admin/tickets" },
 ];
 
 export default function AdminNavbar() {
