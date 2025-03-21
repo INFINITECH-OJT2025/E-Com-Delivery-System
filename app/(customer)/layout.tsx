@@ -57,7 +57,7 @@ export default function CustomerLayout({ children }: CustomerLayoutProps) {
             </div>
 
             {/* ✅ Only render `children` after authentication is confirmed */}
-            <main className="flex-1 overflow-y-auto">{children} <ChatSupportBot /></main>
+            <main className="flex-1 overflow-y-auto">{children} </main>
         </div>
     );
 }

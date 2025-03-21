@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { fontSans } from "@/config/fonts";
 import Head from "next/head";
 import React from "react";
+import Echo from 'laravel-echo';
 
 export const metadata: Metadata = {
   title: "E-Com Delivery System",

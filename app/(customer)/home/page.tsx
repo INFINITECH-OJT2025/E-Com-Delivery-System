@@ -199,6 +199,7 @@ export default function HomePage() {
             <div className="relative pb-14"> {/* ensure padding-bottom to prevent overlap */}
             {/* your existing homepage components */}
             <ActiveOrderTracker />
+            
         </div>
         </div>
     );

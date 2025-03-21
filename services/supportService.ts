@@ -1,52 +1,54 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://127.0.0.1:8000/api";
+import axios from 'axios';
 
-export async function fetchChatMessages() {
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-    if (!token) return { success: false, messages: [] };
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
-    try {
-        const res = await fetch(`${API_URL}/api/chat/messages`, {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Accept": "application/json",
-            },
-        });
+/**
+ * ✅ Submit a new support ticket
+ * @param {string} subject
+ * @param {string} message
+ * @returns {Promise<any>}
+ */
+export const submitSupportTicket = async (subject: string, message: string) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/api/support/tickets`,
+      { subject, message },
+      { headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` } }
+    );
+    return response.data;
+  } catch (error) {
+    return { success: false, message: error.response?.data?.message || 'Failed to submit ticket.' };
+  }
+};
 
-        if (!res.ok) {
-            return { success: false, messages: [], message: "Failed to fetch messages" };
-        }
+/**
+ * ✅ Fetch user’s submitted tickets
+ * @returns {Promise<any>}
+ */
+export const fetchUserTickets = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/support/tickets`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
+    });
+    return response.data;
+  } catch (error) {
+    return { success: false, message: error.response?.data?.message || 'Failed to fetch tickets.' };
+  }
+};
 
-        const data = await res.json();
-        return { success: true, messages: data.messages };
-    } catch (error) {
-        console.error("Error fetching chat messages:", error);
-        return { success: false, messages: [], message: "Error retrieving messages" };
-    }
-}
+/**
+ * ✅ Fetch a single ticket details
+ * @param {number} ticketId
+ * @returns {Promise<any>}
+ */
+export const fetchTicketDetails = async (ticketId: number) => {
+  try {
+    const response = await axios.get(`${API_URL}/api/support/tickets/${ticketId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
+    });
+    return response.data;
+  } catch (error) {
+    return { success: false, message: error.response?.data?.message || 'Failed to fetch ticket details.' };
+  }
+};
 
-export async function sendChatMessage(message: string) {
-    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-    if (!token) return { success: false, message: "Unauthorized" };
-
-    try {
-        const res = await fetch(`${API_URL}/api/chat/send`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`,
-            },
-            body: JSON.stringify({ message }),
-        });
-
-        if (!res.ok) {
-            return { success: false, message: "Failed to send message" };
-        }
-
-        const data = await res.json();
-        return { success: true, message: data.message };
-    } catch (error) {
-        console.error("Error sending chat message:", error);
-        return { success: false, message: "Error sending message" };
-    }
-}
