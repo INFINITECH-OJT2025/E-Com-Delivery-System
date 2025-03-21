@@ -1,5 +1,18 @@
 import axios from "axios";
 
+// Define the Restaurant type
+interface Restaurant {
+  name?: string;
+  slug?: string;
+  description?: string;
+  address?: string;
+  phone_number?: string;
+  status?: string;
+  service_type?: string;
+  minimum_order_for_delivery?: number;
+  restaurant_category_id?: number | null;
+}
+
 // Define the API URL
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/vendor";
 

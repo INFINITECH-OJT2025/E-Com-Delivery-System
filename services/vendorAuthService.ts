@@ -50,7 +50,7 @@ export const VendorAuthService = {
       // Clear vendor data and token
       localStorage.removeItem("vendorToken");
       localStorage.removeItem("vendor");
-
+      
       return { success: true, message: "Logged out successfully" };
     } catch (error) {
       console.error("Logout Error:", error);
