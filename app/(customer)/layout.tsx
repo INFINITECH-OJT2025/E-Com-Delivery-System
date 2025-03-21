@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { useUser } from "@/context/userContext"; // ✅ Import useUser
 import { Spinner } from "@heroui/react";
-import ChatSupportBot from "@/components/ChatSupportBot";
 interface CustomerLayoutProps {
     children: React.ReactNode;
 }
