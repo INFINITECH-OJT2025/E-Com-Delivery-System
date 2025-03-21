@@ -88,4 +88,18 @@ class User extends Authenticatable
     {
         return $this->hasMany(Delivery::class, 'rider_id');
     }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+    public function isCustomer(): bool
+    {
+        return $this->role === 'customer';
+    }
+
+    public function isRider(): bool
+    {
+        return $this->role === 'rider';
+    }
 }

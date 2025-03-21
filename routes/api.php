@@ -1,5 +1,6 @@
 <?php
 
+use App\Events\MyEvent;
 use App\Http\Controllers\AdminDashboardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -202,7 +203,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // 🔹 ADMIN ROUTES
     Route::get('/chat/active-chats', [ChatController::class, 'getActiveChats']); // List all user chats
-    Route::post('/chat/send-support', [ChatController::class, 'sendSupportMessage']); // Send message (Admin)
+    Route::post('admin/chat/send', [ChatController::class, 'sendSupportMessage']); // Admin sends message
 });
 Route::middleware(['auth:sanctum'])->group(function () {
     // 🚀 User Routes
@@ -216,3 +217,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/admin/support/tickets/{ticket}/delete', [SupportController::class, 'deleteTicket']); // Delete Ticket
     Route::get('/admin/tickets/pending', [SupportController::class, 'getPendingTickets']);
 });
+Route::get('/test-event', function () {
+    event(new MyEvent('Hello world!'));
+    return "Event broadcasted!";
+});
+Route::middleware('auth:sanctum')->post('/chat/test', [ChatController::class, 'testSend']);
