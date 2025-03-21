@@ -185,3 +185,61 @@ export const SearchIcon = (props: IconSvgProps) => (
     />
   </svg>
 );
+export const UserIcon = (props) => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height="18"
+    viewBox="0 0 24 24"
+    width="18"
+    {...props}
+  >
+    <path
+      d="M12 14C15.866 14 19 15.791 19 18V20H5V18C5 15.791 8.13401 14 12 14Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    />
+    <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.5" />
+  </svg>
+);
+
+export const RiderIcon = (props) => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height="18"
+    viewBox="0 0 24 24"
+    width="18"
+    {...props}
+  >
+    <path
+      d="M9 17L15 11L9 5"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const TicketIcon = (props) => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height="18"
+    viewBox="0 0 24 24"
+    width="18"
+    {...props}
+  >
+    <path
+      d="M3 8V16H21V8M3 8C4.65685 8 6 6.65685 6 5V4H18V5C18 6.65685 19.3431 8 21 8M3 8C4.65685 8 6 9.34315 6 11C6 12.6569 4.65685 14 3 14M21 8C19.3431 8 18 9.34315 18 11C18 12.6569 19.3431 14 21 14"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);

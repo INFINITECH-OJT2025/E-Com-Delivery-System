@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Navbar as HeroUINavbar,
@@ -11,33 +11,34 @@ import {
   NavbarMenu,
   NavbarMenuItem,
   Button,
+  Badge,
 } from "@heroui/react";
 import NextLink from "next/link";
 import Image from "next/image";
 import { authService } from "@/services/authService";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { usePendingTickets } from "@/context/PendingTicketsContext"; // ✅ Import context
+
+// ✅ Lucide Icons
+import { Users, Bike, Ticket } from "lucide-react";
 
 interface AdminRoute {
   name: string;
   path: string;
+  icon: JSX.Element;
+  showBadge?: boolean;
 }
 
 const adminRoutes: AdminRoute[] = [
-  // { name: "Restaurants", path: "/admin/restaurants" },
-  { name: "Users", path: "/admin/users" },
-  { name: "Riders", path: "/admin/riders" },
-  { name: "Ticket", path: "/admin/tickets" },
+  { name: "Users", path: "/admin/users", icon: <Users size={18} /> },
+  { name: "Riders", path: "/admin/riders", icon: <Bike size={18} /> },
+  { name: "Tickets", path: "/admin/tickets", icon: <Ticket size={18} />, showBadge: true },
 ];
 
 export default function AdminNavbar() {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { pendingCount } = usePendingTickets(); // ✅ Get ticket count from context
   const router = useRouter();
-
-  useEffect(() => {
-    const token = localStorage.getItem("adminToken");
-    setIsLoggedIn(!!token);
-  }, []);
 
   const handleLogout = async () => {
     await authService.logout();
@@ -49,10 +50,11 @@ export default function AdminNavbar() {
     <HeroUINavbar
       maxWidth="xl"
       position="sticky"
-      className="text-white bg-primary"
+      className="bg-primary text-white"
       isMenuOpen={isMenuOpen}
       onMenuOpenChange={setIsMenuOpen}
     >
+      {/* Logo / Brand */}
       <NavbarContent>
         <NavbarMenuToggle className="md:hidden" />
         <NavbarBrand>
@@ -63,38 +65,63 @@ export default function AdminNavbar() {
         </NavbarBrand>
       </NavbarContent>
 
-      {isLoggedIn && (
-        <NavbarContent className="hidden md:flex" justify="end">
-          {adminRoutes.map((route) => (
-            <NavbarItem key={route.path}>
-              <NextLink href={route.path} className="text-white hover:text-gray-200">
+      {/* Desktop Navigation */}
+      <NavbarContent className="hidden md:flex" justify="end">
+        {adminRoutes.map((route) => (
+          <NavbarItem key={route.path}>
+            <NextLink href={route.path} className="flex items-center">
+              <Button
+                variant="light"
+                className="text-white hover:bg-primary/80 flex items-center gap-2"
+                isIconOnly={false}
+              >
+                {route.showBadge && pendingCount > 0 ? (
+                  <Badge content={pendingCount} shape="circle" color="danger">
+                    {route.icon}
+                  </Badge>
+                ) : (
+                  route.icon
+                )}
                 {route.name}
-              </NextLink>
-            </NavbarItem>
-          ))}
-
-          <NavbarItem>
-            <Button color="danger" onPress={handleLogout}>
-              Logout
-            </Button>
+              </Button>
+            </NextLink>
           </NavbarItem>
-        </NavbarContent>
-      )}
+        ))}
+        <NavbarItem>
+          <Button color="danger" onPress={handleLogout}>
+            Logout
+          </Button>
+        </NavbarItem>
+      </NavbarContent>
 
+      {/* Theme Toggle */}
       <NavbarContent justify="end">
         <ThemeSwitch className="text-white" />
       </NavbarContent>
 
-      {/* Mobile View Menu */}
+      {/* Mobile Menu */}
       <NavbarMenu className="bg-primary text-white">
         {adminRoutes.map((route) => (
           <NavbarMenuItem key={route.path}>
             <NextLink
               href={route.path}
-              className="block py-2 text-white hover:bg-primary/80"
               onClick={() => setIsMenuOpen(false)}
+              className="block py-2 hover:bg-primary/80"
             >
-              {route.name}
+              <Button
+                fullWidth
+                variant="light"
+                className="text-white justify-start flex items-center gap-3"
+              >
+                {route.showBadge && pendingCount > 0 ? (
+                  <Badge content={pendingCount} color="danger" shape="circle">
+                    {route.icon}
+                  </Badge>
+                ) : (
+                  route.icon
+                )}
+                {route.name}
+              </Button>
             </NextLink>
           </NavbarMenuItem>
         ))}

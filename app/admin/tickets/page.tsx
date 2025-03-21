@@ -26,6 +26,7 @@ import {
 } from '@heroui/react';
 import { Loader } from 'lucide-react';
 import EmailInstructions from '@/components/EmailInstructions';
+import { usePendingTickets } from "@/context/PendingTicketsContext"; // ✅ Import Context
 
 const statusColorMap: Record<'Pending' | 'In Progress' | 'Resolved', string> = {
   'Pending': 'danger',
@@ -55,6 +56,7 @@ const AdminSupportTickets = () => {
   useEffect(() => {
     loadTickets();
   }, []);
+  const { refreshPendingCount } = usePendingTickets(); // ✅ Get refresh function
 
   const loadTickets = async () => {
     setLoading(true);
@@ -69,17 +71,17 @@ const AdminSupportTickets = () => {
     if (selectedTicket) {
       const response = await updateTicketStatus(selectedTicket.id, newStatus);
       if (response.success) {
-        await loadTickets(); // ✅ Reload tickets from API after update
+        await loadTickets();
+        refreshPendingCount(); // ✅ Refresh pending count
         setShowModal(false);
       }
     }
   };
-  
-
   const handleDelete = async (ticketId: number) => {
     const response = await deleteTicket(ticketId);
     if (response.success) {
       setTickets((prev) => prev.filter((t) => t.id !== ticketId));
+      refreshPendingCount(); // ✅ Refresh pending count
     }
   };
 

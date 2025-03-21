@@ -11,7 +11,7 @@ const EmailInstructions = () => {
     <div className="mb-5" >
     
 
-      <Accordion variant="light" showDivider={false} >
+      <Accordion variant="bordered" showDivider={false} >
         <AccordionItem
           key="email-instructions"
           aria-label="Email Communication Guide"

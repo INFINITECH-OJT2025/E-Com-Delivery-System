@@ -48,3 +48,20 @@ export const deleteTicket = async (ticketId: number) => {
     return { success: false, message: error.response?.data?.message || 'Failed to delete ticket.' };
   }
 };
+export const fetchPendingTickets = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/admin/tickets/pending`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` },
+      // ✅ Ensures Laravel Sanctum authentication
+    });
+
+    if (response.data.status === "success") {
+      return { success: true, count: response.data.data.count };
+    }
+
+    return { success: false, count: 0 };
+  } catch (error) {
+    console.error("Error fetching pending tickets:", error);
+    return { success: false, count: 0 };
+  }
+};
