@@ -8,7 +8,7 @@ export const TestimonialSection = () => {
             {/* Testimonial 1 */}
             <div className="bg-white p-6 rounded-lg shadow-lg">
               <div className="flex items-center justify-center mb-4">
-                <img src="/images/testimonial-1.jpg" alt="Testimonial 1" className="w-16 h-16 rounded-full object-cover"/>
+                <img src="/images/inifnitech_default_profile2.jpg" alt="Testimonial 1" className="w-16 h-16 rounded-full object-cover"/>
               </div>
               <p className="text-xl text-gray-700 mb-4">
                 "The platform provided an opportunity for our brands to be readily accessible to customers whenever and wherever they are."
@@ -20,7 +20,7 @@ export const TestimonialSection = () => {
             {/* Testimonial 2 */}
             <div className="bg-white p-6 rounded-lg shadow-lg">
               <div className="flex items-center justify-center mb-4">
-                <img src="/images/testimonial-2.jpg" alt="Testimonial 2" className="w-16 h-16 rounded-full object-cover"/>
+                <img src="/images/inifnitech_default_profile3.jpg" alt="Testimonial 2" className="w-16 h-16 rounded-full object-cover"/>
               </div>
               <p className="text-xl text-gray-700 mb-4">
                 "Apart from their strong consumer base, foodpanda always ensures that we grow our business together. Thank you foodpanda!"
@@ -32,7 +32,7 @@ export const TestimonialSection = () => {
             {/* Testimonial 3 */}
             <div className="bg-white p-6 rounded-lg shadow-lg">
               <div className="flex items-center justify-center mb-4">
-                <img src="/images/testimonial-3.jpg" alt="Testimonial 3" className="w-16 h-16 rounded-full object-cover"/>
+                <img src="/images/inifnitech_default_profile4.jpg" alt="Testimonial 3" className="w-16 h-16 rounded-full object-cover"/>
               </div>
               <p className="text-xl text-gray-700 mb-4">
                 "Foodpanda helped us reach new markets and increase our sales significantly. We are proud to be their partners."

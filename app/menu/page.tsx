@@ -121,17 +121,19 @@ export default function MenuPage() {
       <h1 className="text-2xl font-bold text-center mb-4">Manage Menu</h1>
 
       <div className="flex justify-end mb-4">
-        <Button
-          color="primary"
-          onPress={() => {
-            setEditMode(false);
-            setFormData({ name: "", description: "", price: "", stock: "", image: null, menu_category_id: "" });
-            setImagePreview(null);
-            setModalOpen(true);
-          }}
-        >
-          <FaPlus className="mr-2" /> Add Menu Item
-        </Button>
+      <Button
+  color="primary"
+  onPress={() => {
+    setEditMode(false);
+    setFormData({ name: "", description: "", price: "", stock: "", image: null, menu_category_id: "" });
+    setImagePreview(null);
+    setModalOpen(true);
+  }}
+  className="shadow-md"
+>
+  <FaPlus className="mr-2" /> Add Menu Item
+</Button>
+
       </div>
 
       {loading ? (
@@ -141,26 +143,36 @@ export default function MenuPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.map((menu: any) => (
-            <Card key={menu.id} className="shadow-lg">
-              <CardBody>
-                <img src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${menu.image}`} alt={menu.name} className="w-full h-40 object-cover rounded-md mb-4" />
-                <h3 className="text-xl font-semibold">{menu.name}</h3>
-                <p className="text-gray-500">{menu.description}</p>
-                <p className="text-lg font-bold">₱{menu.price}</p>
-                <p className={`text-sm ${menu.stock > 0 ? "text-green-500" : "text-red-500"}`}>
-                  {menu.stock > 0 ? "In Stock" : "Out of Stock"}
-                </p>
-
-                <div className="flex justify-between mt-4">
-                  <Button color="warning" onPress={() => handleEdit(menu)}>
-                    <FaEdit className="mr-2" /> Edit
-                  </Button>
-                  <Button color="danger" onPress={() => handleDelete(menu.id)}>
-                    <FaTrash className="mr-2" /> Delete
-                  </Button>
-                </div>
-              </CardBody>
-            </Card>
+         <Card
+         key={menu.id}
+         className="shadow-lg transition-transform hover:scale-105 hover:shadow-xl border border-gray-200"
+       >
+         <CardBody className="p-4">
+           <img
+             src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${menu.image}`}
+             alt={menu.name}
+             className="w-full h-40 object-cover rounded-lg mb-4"
+           />
+           <div className="space-y-1">
+             <h3 className="text-xl font-bold text-gray-800">{menu.name}</h3>
+             <p className="text-gray-500 text-sm">{menu.description}</p>
+             <p className="text-lg font-semibold text-primary">₱{menu.price}</p>
+             <span className={`text-sm font-medium ${menu.stock > 0 ? "text-green-600" : "text-red-500"}`}>
+               {menu.stock > 0 ? `In Stock (${menu.stock})` : "Out of Stock"}
+             </span>
+           </div>
+       
+           <div className="flex justify-end gap-2 mt-4">
+             <Button size="sm" color="warning" onPress={() => handleEdit(menu)}>
+               <FaEdit className="mr-2" /> Edit
+             </Button>
+             <Button size="sm" color="danger" onPress={() => handleDelete(menu.id)}>
+               <FaTrash className="mr-2" /> Delete
+             </Button>
+           </div>
+         </CardBody>
+       </Card>
+       
           ))}
         </div>
       )}
@@ -170,21 +182,37 @@ export default function MenuPage() {
         <ModalContent>
           <ModalHeader>{editMode ? "Edit Menu" : "Add Menu"}</ModalHeader>
           <ModalBody>
-            <form onSubmit={handleSubmit} className="grid gap-4">
-              <Input label="Name" name="name" value={formData.name} onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))} required />
-              <Textarea label="Description" name="description" value={formData.description} onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))} />
-              <Input label="Price" name="price" type="number" value={formData.price} onChange={(e) => setFormData((prev) => ({ ...prev, price: e.target.value }))} required />
-              <Input label="Stock" name="stock" type="number" value={formData.stock} onChange={(e) => setFormData((prev) => ({ ...prev, stock: e.target.value }))} required />
+          <form onSubmit={handleSubmit} className="grid gap-4">
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <Input label="Name" name="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+    <Input label="Price (₱)" name="price" type="number" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} required />
+  </div>
 
-              <Select label="Category" name="menu_category_id" value={formData.menu_category_id} onChange={(e) => setFormData((prev) => ({ ...prev, menu_category_id: e.target.value }))}>
-                {categories.map((cat) => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
-              </Select>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <Input label="Stock" name="stock" type="number" value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: e.target.value })} required />
+    <Select label="Category" name="menu_category_id" value={formData.menu_category_id} onChange={(e) => setFormData({ ...formData, menu_category_id: e.target.value })}>
+      {categories.map((cat) => (
+        <SelectItem key={cat.id} value={cat.id}>
+          {cat.name}
+        </SelectItem>
+      ))}
+    </Select>
+  </div>
 
-              <Input label="Image" type="file" accept="image" name="image" onChange={handleFileChange} />
-              {imagePreview && <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover rounded-md" />}
+  <Textarea label="Description" name="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
 
-              <Button type="submit" color="primary">{editMode ? "Update Menu" : "Add Menu"}</Button>
-            </form>
+  <div>
+    <label className="text-sm font-medium text-gray-700">Upload Image</label>
+    <input type="file" accept="image/*" onChange={handleFileChange} className="mt-1 block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90" />
+  </div>
+
+  {imagePreview && <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover rounded-lg mt-2" />}
+
+  <Button type="submit" color="primary" className="mt-4 self-end">
+    {editMode ? "Update Menu" : "Add Menu"}
+  </Button>
+</form>
+
           </ModalBody>
         </ModalContent>
       </Modal>

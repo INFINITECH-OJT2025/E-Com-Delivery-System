@@ -7,7 +7,8 @@ import { categoryService } from "@/services/categoryService"; // ✅ Import Cate
 import { Button, Card, CardBody, Form, Input, Select, SelectItem ,Textarea } from "@heroui/react";
 import { addToast } from "@heroui/toast";
 import { useRouter } from "next/navigation";
-
+import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/passwordIcons";
+import React from "react";
 export default function VendorRegister() {
   const { register } = useVendorAuth();
   const router = useRouter();
@@ -31,7 +32,9 @@ export default function VendorRegister() {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
   const mapInstance = useRef<google.maps.Map | null>(null);
+  const [isVisible, setIsVisible] = React.useState(false);
 
+  const toggleVisibility = () => setIsVisible(!isVisible);
   useEffect(() => {
     loadGoogleMaps();
     getCurrentLocation();
@@ -195,19 +198,47 @@ export default function VendorRegister() {
               />
               <Input
                 label="Password"
-                type="password"
+                type={isVisible ? "text" : "password"}
                 name="password"
                 value={formData.password}
                 onValueChange={(val) => handleChange("password", val)}
                 required
+                endContent={
+                  <button
+                    aria-label="toggle password visibility"
+                    className="focus:outline-none"
+                    type="button"
+                    onClick={toggleVisibility}
+                  >
+                    {isVisible ? (
+                      <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                    ) : (
+                      <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                    )}
+                  </button>
+                }
               />
               <Input
                 label="Confirm Password"
-                type="password"
+                type={isVisible ? "text" : "password"}
                 name="password_confirmation"
                 value={formData.password_confirmation}
                 onValueChange={(val) => handleChange("password_confirmation", val)}
                 required
+                endContent={
+                  <button
+                    aria-label="toggle password visibility"
+                    className="focus:outline-none"
+                    type="button"
+                    onClick={toggleVisibility}
+                  >
+                    {isVisible ? (
+                      <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                    ) : (
+                      <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                    )}
+                  </button>
+                }
               />
             </div>
 

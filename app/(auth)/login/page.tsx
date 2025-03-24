@@ -5,7 +5,8 @@ import { useVendorAuth } from "@/context/AuthContext";
 import { Button, Card, CardBody, Input } from "@heroui/react";
 import { addToast } from "@heroui/toast";
 import { useRouter } from "next/navigation";
-
+import React from "react";
+import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/passwordIcons";
 export default function VendorLogin() {
   const { login } = useVendorAuth();
   const router = useRouter();
@@ -35,13 +36,15 @@ export default function VendorLogin() {
     } finally {
       setLoading(false);
     }
-  };
+  };  const [isVisible, setIsVisible] = React.useState(false);
+
+  const toggleVisibility = () => setIsVisible(!isVisible);
 
   return (
     <div className="relative flex justify-center items-center bg-cover bg-center h-screen px-4" style={{ backgroundImage: 'url("/images/we-serve-best-cakes.jpg")' }}>
       <div className="absolute inset-0 bg-black opacity-50"></div>
       <div className="relative z-10 text-white text-center p-8">
-        <h1 className="text-4xl font-bold mb-4">Transform your business with Panda Partner</h1>
+        <h1 className="text-4xl font-bold mb-4">Transform your business with E-Com Partner</h1>
         <p className="text-xl mb-8">
           Sign in and unlock the benefits of being a partner with E-com delivery service.
         </p>
@@ -63,13 +66,28 @@ export default function VendorLogin() {
             </div>
             <div>
               <Input
-                type="password"
+            type={isVisible ? "text" : "password"}
                 name="password"
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
                 required
                 className="w-full"
+          
+                endContent={
+                  <button
+                    aria-label="toggle password visibility"
+                    className="focus:outline-none"
+                    type="button"
+                    onClick={toggleVisibility}
+                  >
+                    {isVisible ? (
+                      <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                    ) : (
+                      <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                    )}
+                  </button>
+                }
               />
             </div>
             <Button type="submit" className="w-full bg-primary" disabled={loading}>
@@ -83,7 +101,7 @@ export default function VendorLogin() {
             <p>
               <span>Don't have an account? </span>
               <a href="/register" className="text-primary hover:underline">
-                Partner with Foodpanda
+                Partner with E-com Delivery Service
               </a>
             </p>
           </div>
