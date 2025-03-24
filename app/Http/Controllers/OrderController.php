@@ -205,13 +205,14 @@ class OrderController extends Controller
     {
         Log::info("Checkout Request Payload", $request->all());
 
+        // ✅ Validate request
         $validated = $request->validate([
             'restaurant_id' => 'required|exists:restaurants,id',
             'cart_items' => 'required|array|min:1',
             'cart_items.*.menu_id' => 'required|exists:menus,id',
             'cart_items.*.quantity' => 'required|integer|min:1',
             'cart_items.*.price' => 'required|numeric|min:0',
-            'customer_address_id' => 'required|exists:customer_addresses,id',
+            'customer_address_id' => $request->order_type === 'delivery' ? 'required|exists:customer_addresses,id' : 'nullable',
             'order_type' => 'required|in:delivery,pickup',
             'payment_method' => 'required|in:cash,gcash,card,maya',
             'rider_tip' => 'required|numeric|min:0',
@@ -221,7 +222,6 @@ class OrderController extends Controller
             'discount_on_subtotal' => 'nullable|numeric|min:0',
             'total_price' => 'required|numeric|min:0',
             'scheduled_time' => 'nullable|date|after:now',
-
         ]);
 
         $user = Auth::user(); // ✅ Get authenticated user
@@ -232,7 +232,7 @@ class OrderController extends Controller
             // ✅ Fetch Restaurant
             $restaurant = Restaurant::findOrFail($validated['restaurant_id']);
 
-            // ❌ Prevent order if the restaurant is closed
+            // ❌ Prevent order if restaurant is closed
             if ($restaurant->status === 'closed') {
                 DB::rollBack();
                 return response()->json([
@@ -241,10 +241,27 @@ class OrderController extends Controller
                 ], 403);
             }
 
-            // ✅ Compute Subtotal Dynamically
+            // ❌ Ensure restaurant supports the selected order type
+            if ($validated['order_type'] === 'delivery' && $restaurant->service_type === 'pickup') {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => "This restaurant does not support delivery.",
+                ], 400);
+            }
+
+            if ($validated['order_type'] === 'pickup' && $restaurant->service_type === 'delivery') {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => "This restaurant does not support pickup.",
+                ], 400);
+            }
+
+            // ✅ Compute subtotal dynamically
             $subtotal = collect($validated['cart_items'])->sum(fn($item) => $item['price'] * $item['quantity']);
 
-            // ✅ Ensure discounts have a default value
+            // ✅ Ensure discounts have default values
             $validated['discount_on_subtotal'] = $validated['discount_on_subtotal'] ?? 0;
             $validated['discount_on_shipping'] = $validated['discount_on_shipping'] ?? 0;
 
@@ -271,10 +288,12 @@ class OrderController extends Controller
             }
 
             // ✅ **Create Order**
+            $customerAddressId = $validated['order_type'] === 'pickup' ? null : $validated['customer_address_id'];
+
             $order = Order::create([
                 'customer_id' => $user->id,
                 'restaurant_id' => $validated['restaurant_id'],
-                'customer_address_id' => $validated['customer_address_id'],
+                'customer_address_id' => $customerAddressId,
                 'order_type' => $validated['order_type'],
                 'total_price' => $validated['total_price'],
                 'delivery_fee' => $validated['delivery_fee'],
@@ -285,7 +304,6 @@ class OrderController extends Controller
                 'order_status' => 'pending',
                 'payment_status' => 'pending',
                 'scheduled_time' => $validated['scheduled_time'] ?? null, // ✅ Store the scheduled time if provided
-
             ]);
 
             // ✅ **Insert Order Items & Deduct Stock**
@@ -329,6 +347,13 @@ class OrderController extends Controller
             // ✅ **Clear User's Cart After Order**
             Cart::where('user_id', $user->id)->delete();
 
+            // ✅ **Notify Vendor/Rider**
+            // if ($validated['order_type'] === 'delivery') {
+            //     Notification::send($restaurant->owner, new NewDeliveryOrderNotification($order));
+            // } else {
+            //     Notification::send($restaurant->owner, new NewPickupOrderNotification($order));
+            // }
+
             DB::commit();
 
             return response()->json([
@@ -344,6 +369,7 @@ class OrderController extends Controller
             ], 500);
         }
     }
+
     /**
      * ✅ Get all orders for the vendor's restaurant
      */

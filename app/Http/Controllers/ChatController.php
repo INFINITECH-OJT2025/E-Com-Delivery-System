@@ -39,19 +39,24 @@ class ChatController extends Controller
     {
         $userId = Auth::id();
 
-        $chat = Chat::with(['messages.sender'])->find($chatId);
+        $chat = Chat::find($chatId);
 
         if (!$chat || ($chat->sender_id !== $userId && $chat->receiver_id !== $userId && !Auth::user()->isAdmin())) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
+        // ✅ Update unread messages before loading them
         Message::where('chat_id', $chatId)
             ->where('is_read', false)
             ->where('sender_id', '!=', $userId)
             ->update(['is_read' => true]);
 
+        // ✅ Load messages + sender after update
+        $chat->load(['messages.sender']);
+
         return response()->json(['success' => true, 'messages' => $chat->messages]);
     }
+
 
 
     /**
@@ -89,11 +94,28 @@ class ChatController extends Controller
      */
     public function getActiveChats()
     {
-        $chats = Chat::with(['sender', 'messages' => function ($query) {
-            $query->latest()->limit(1);
-        }])->orderByDesc('updated_at')->get();
+        $adminId = auth()->id(); // or 1 if fixed admin
 
-        return response()->json(['success' => true, 'chats' => $chats]);
+        $chats = Chat::with(['sender', 'messages' => function ($query) {
+            $query->latest()->limit(1); // grab latest message only
+        }])
+            ->orderByDesc('updated_at')
+            ->get()
+            ->map(function ($chat) use ($adminId) {
+                $latestMessage = $chat->messages->first();
+
+                // ✅ Add computed unread flag: message exists, not read, and not from admin
+                $chat->has_unread = $latestMessage &&
+                    !$latestMessage->is_read &&
+                    $latestMessage->sender_id !== $adminId;
+
+                return $chat;
+            });
+
+        return response()->json([
+            'success' => true,
+            'chats' => $chats
+        ]);
     }
 
 

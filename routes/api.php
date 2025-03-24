@@ -67,6 +67,7 @@ Route::prefix('restaurants')->group(function () {
     Route::get('/{slug}/menu', [RestaurantController::class, 'menu'])->name('restaurants.menu');
     Route::get('/{slug}/reviews', [RestaurantController::class, 'reviews'])->name('restaurants.reviews');
     Route::get('/{restaurantId}/delivery-fee', [DeliveryFeeController::class, 'calculateFee']);
+    Route::get('/by-id/{id}', [RestaurantController::class, 'getById']);
 });
 
 // ✅ Protected Routes (Require Authentication)
@@ -194,6 +195,10 @@ Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
 Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
     Route::get('/riders', [RiderController::class, 'getAllRidersWithEarnings']); // ✅ Fetch all riders with earnings
 });
+Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
+    Route::post('/riders/{id}/status', [RiderController::class, 'updateStatus']);
+});
+
 Route::middleware('auth:sanctum')->group(function () {
 
     // 🔹 USER ROUTES

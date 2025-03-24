@@ -513,6 +513,7 @@ class RiderController extends Controller
                 'status' => $rider->status,
                 'vehicle_type' => $rider->vehicle_type,
                 'profile_image' => $rider->profile_image,
+                'liscence_image' => $rider->license_image,
                 'total_earnings' => round($totalEarnings, 2),
                 'total_completed_orders' => $completedOrders->count()
             ];
@@ -526,5 +527,24 @@ class RiderController extends Controller
                 'total_platform_earnings' => round($platformEarnings, 2),
             ]
         ], 200);
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'action' => 'required|in:approve,ban',
+        ]);
+
+        $rider = User::where('role', 'rider')->findOrFail($id);
+
+        $newStatus = $request->action === 'approve' ? 'approved' : 'banned';
+        $rider->status = $newStatus;
+        $rider->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Rider has been {$newStatus}.",
+            'rider' => $rider,
+        ]);
     }
 }

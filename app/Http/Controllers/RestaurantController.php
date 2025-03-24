@@ -212,4 +212,38 @@ class RestaurantController extends Controller
         $categories = RestaurantCategory::all();
         return response()->json($categories);
     }
+    public function getById($id)
+    {
+        $restaurant = Restaurant::find($id);
+
+        if (!$restaurant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Restaurant not found',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $restaurant->id,
+                'name' => $restaurant->name,
+                'slug' => $restaurant->slug,
+                'order_types' => $this->getOrderTypes($restaurant),
+            ],
+        ]);
+    }
+    private function getOrderTypes($restaurant)
+    {
+        switch ($restaurant->service_type) {
+            case 'delivery':
+                return ['delivery'];
+            case 'pickup':
+                return ['pickup'];
+            case 'both':
+                return ['delivery', 'pickup'];
+            default:
+                return [];
+        }
+    }
 }
