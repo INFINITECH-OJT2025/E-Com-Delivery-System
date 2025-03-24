@@ -30,24 +30,44 @@ export default function CheckoutModal({ isOpen, onClose }) {
     const [loading, setLoading] = useState(false); // ✅ Loading state for button
     const [scheduleTime, setScheduleTime] = useState(""); // Store selected time
     const [isScheduled, setIsScheduled] = useState(false); // Track if scheduling is enabled
-    
+    const [restaurant, setRestaurant] = useState(null);
+    const [orderType, setOrderType] = useState("delivery");
+
  
-    // ✅ Fetch Addresses on Load
     useEffect(() => {
-        async function fetchAddresses() {
-            const response = await addressService.fetchAddresses();
-            if (response.success) {
-                setAddresses(response.data);
-                setSelectedAddress(response.data.find(addr => addr.is_default) || response.data[0]);
+        async function fetchInitialData() {
+            if (!isOpen || !cart?.restaurant_id) return;
+    
+            // Fetch Addresses
+            const addressResponse = await addressService.fetchAddresses();
+            if (addressResponse.success) {
+                setAddresses(addressResponse.data);
+                setSelectedAddress(addressResponse.data.find(addr => addr.is_default) || addressResponse.data[0]);
+            }
+    
+            // Fetch Restaurant Details
+            const restaurantResponse = await checkoutService.fetchRestaurant(cart.restaurant_id);
+            if (restaurantResponse.success) {
+                const resData = restaurantResponse.data;
+                setRestaurant(resData);
+    
+                // Set default order type
+                if (resData.order_types.includes("pickup") && !resData.order_types.includes("delivery")) {
+                    setOrderType("pickup");
+                } else {
+                    setOrderType("delivery");
+                }
             }
         }
-        if (isOpen) fetchAddresses();
+    
+        fetchInitialData();
     }, [isOpen]);
+    
 
     // ✅ Fetch Delivery Fee when Address Changes
     useEffect(() => {
         async function fetchDeliveryFee() {
-            if (!selectedAddress || !cart?.restaurant_id) return;
+            if (orderType !== "delivery" || !selectedAddress || !cart?.restaurant_id) return;
             const response = await deliveryFeeService.fetchDeliveryFee(
                 cart.restaurant_id,
                 selectedAddress.latitude,
@@ -55,8 +75,14 @@ export default function CheckoutModal({ isOpen, onClose }) {
             );
             if (response.success) setDeliveryFee(response.data.delivery_fee);
         }
+    
         fetchDeliveryFee();
-    }, [selectedAddress]);
+    
+        if (orderType === "pickup") {
+            setDeliveryFee(0); // Reset if pickup
+        }
+    }, [selectedAddress, orderType]);
+    
 
     // ✅ Compute Discounts
     const subtotal = cart?.cart_items?.reduce((acc, item) => acc + parseFloat(item.subtotal), 0) || 0;
@@ -108,18 +134,19 @@ export default function CheckoutModal({ isOpen, onClose }) {
         const payload = {
             restaurant_id: cart.restaurant_id,
             cart_items: cartItems,
-            customer_address_id: selectedAddress.id,
-            order_type: "delivery",
+            customer_address_id: orderType === "delivery" ? selectedAddress.id : null,
+            order_type: orderType,
             total_price: totalPrice,
-            delivery_fee: deliveryFee,
+            delivery_fee: orderType === "delivery" ? deliveryFee : 0,
             subtotal: subtotal,
             discount_on_subtotal: discountOnSubtotal,
-            discount_on_shipping: discountOnShipping,
-            rider_tip: riderTip,
+            discount_on_shipping: orderType === "delivery" ? discountOnShipping : 0,
+            rider_tip: orderType === "delivery" ? riderTip : 0,
             voucher_codes: Object.values(appliedVouchers).map(voucher => voucher.code),
             payment_method: "cash",
-            scheduled_time: isScheduled ? scheduleTime : null, // ✅ Add scheduled time if selected
+            scheduled_time: orderType === "delivery" && isScheduled ? scheduleTime : null,
         };
+        
         
         
     
@@ -155,7 +182,34 @@ export default function CheckoutModal({ isOpen, onClose }) {
                 {/* ✅ Scrollable Body */}
                 <ModalBody className="p-4 h-[calc(100vh-160px)] overflow-y-auto bg-gray-50">
                     
+                {restaurant && restaurant.order_types?.length > 1 && (
+    <div className="bg-white p-4 rounded-lg shadow-md mb-4">
+        <h2 className="text-lg font-semibold">Order Type</h2>
+        <div className="flex gap-2 mt-2">
+            {restaurant.order_types.includes("delivery") && (
+                <button
+                    onClick={() => setOrderType("delivery")}
+                    className={`px-4 py-2 rounded-lg border ${orderType === "delivery" ? "bg-primary text-white border-primary" : "border-gray-300 bg-gray-100"}`}
+                >
+                    Delivery
+                </button>
+            )}
+            {restaurant.order_types.includes("pickup") && (
+                <button
+                    onClick={() => setOrderType("pickup")}
+                    className={`px-4 py-2 rounded-lg border ${orderType === "pickup" ? "bg-primary text-white border-primary" : "border-gray-300 bg-gray-100"}`}
+                >
+                    Pickup
+                </button>
+            )}
+        </div>
+    </div>
+)}
+
+{orderType === "delivery" && (
+      <>
                     {/* 🚚 Delivery Address */}
+
                     <div className="bg-white p-4 rounded-lg shadow-md mb-4">
                         <h2 className="text-lg font-semibold">Delivery Address</h2>
                         {selectedAddress ? (
@@ -191,7 +245,8 @@ export default function CheckoutModal({ isOpen, onClose }) {
         />
     )}
 </div>
-
+</>
+)}
                     {/* 🎟 Apply Voucher */}
                     <div className="bg-white p-4 rounded-lg shadow-md mb-4">
                         <h2 className="text-lg font-semibold">Vouchers</h2>
@@ -210,6 +265,8 @@ export default function CheckoutModal({ isOpen, onClose }) {
                     </div>
 
                    {/* 🚴 Tip Your Rider (Chip Buttons) */}
+                   {orderType === "delivery" && (
+
 <div className="bg-white p-4 rounded-lg shadow-md mb-4">
     <h2 className="text-lg font-semibold">Tip Your Rider</h2>
     <div className="mt-2 overflow-x-auto whitespace-nowrap">
@@ -226,7 +283,7 @@ export default function CheckoutModal({ isOpen, onClose }) {
         </div>
     </div>
 </div>
-
+)}
 
                     {/* 🛍️ Order Summary */}
                     <div className="bg-white p-4 rounded-lg shadow-md">

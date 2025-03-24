@@ -50,5 +50,28 @@ export const checkoutService = {
             console.error("Error fetching orders:", error);
             return { success: false, message: "Failed to fetch orders" };
         }
-    }
+    },
+        /**
+     * ✅ Fetch restaurant details (to check order types like pickup/delivery)
+     */
+        async fetchRestaurant(restaurantId: number) {
+            const token = localStorage.getItem("auth_token");
+            if (!token) return { success: false, message: "Unauthorized" };
+    
+            try {
+                const res = await fetch(`${API_URL}/api/restaurants/by-id/${restaurantId}`, {
+                    method: "GET",
+                    headers: {
+                        "Accept": "application/json",
+                        "Authorization": `Bearer ${token}`,
+                    },
+                });
+    
+                return await apiHelper.handleResponse(res);
+            } catch (error) {
+                console.error("Error fetching restaurant:", error);
+                return { success: false, message: "Failed to fetch restaurant details" };
+            }
+        }
+    
 };

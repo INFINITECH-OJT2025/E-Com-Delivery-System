@@ -50,6 +50,7 @@ export default function FilterComponent({
       .filter(({ id }) => filters.category.includes(id))
       .map(({ name }) => name)
       .join(", ");
+      console.log(selectedNames);
     return selectedNames.length > 20 ? selectedNames.substring(0, 20) + "..." : selectedNames; // Limit text length
   }, [filters.category, categories]);
 

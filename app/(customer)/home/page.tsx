@@ -89,6 +89,14 @@ export default function HomePage() {
     if (loading) return <div className="flex justify-center py-10"><Spinner size="lg" /></div>;
     if (error) return <div className="text-center text-red-500 py-10">{error}</div>;
 
+        // Handle category selection
+        const handleCategorySelect = (categoryId: number) => {
+            setFilters((prevFilters) => ({
+                ...prevFilters,
+                category: [categoryId], // Set the category ID directly in the filters
+            }));
+        };
+
     return (
         <div className="w-full h-screen flex flex-col bg-white">
             <div className="">
@@ -113,7 +121,7 @@ export default function HomePage() {
                     {data.categories?.length > 0 && (
                         <>
                             <h2 className="text-sm font-bold mt-4 mb-2 md:text-base">Your Favorite Cuisines</h2>
-                            <Categories categories={data.categories} />
+                        <Categories categories={data.categories} onCategorySelect={handleCategorySelect} />
                         </>
                     )}
 
