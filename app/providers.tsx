@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { ToastProvider} from "@heroui/react";
 import { PendingTicketsProvider } from "@/context/PendingTicketsContext";
+import { AdminChatProvider } from "@/context/AdminChatContext";
 
 export interface ProvidersProps {
   children: React.ReactNode;
@@ -27,11 +28,16 @@ export function Providers({ children, themeProps }: ProvidersProps) {
 
   return (
     <HeroUIProvider navigate={router.push}>
+      <AdminChatProvider>
       <PendingTicketsProvider>
+    
+
               <ToastProvider />
 
       <NextThemesProvider {...themeProps}>{children}</NextThemesProvider>
       </PendingTicketsProvider>
+      </AdminChatProvider>
+ 
     </HeroUIProvider>
   );
 }

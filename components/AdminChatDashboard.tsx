@@ -1,43 +1,42 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { fetchActiveChats } from '@/services/supportService';
+import React from 'react';
+import { useAdminChat } from '@/context/AdminChatContext';
 
-const AdminChatDashboard = ({ onSelectChat }) => {
-  const [chats, setChats] = useState([]);
+const AdminChatDashboard = () => {
+  const { chats, selectedChatId, setSelectedChatId, refreshChats } = useAdminChat();
 
-  useEffect(() => {
-    loadChats();
-  }, []);
-
-  const loadChats = async () => {
-    const response = await fetchActiveChats();
-    if (response.success) {
-      setChats(response.chats);
-    }
-  };
-
-  const handleSelectChat = async (chatId) => {
-    onSelectChat(chatId);
-    await loadChats(); // Refresh chat list to remove unread messages after opening
+  const handleSelectChat = async (chatId: number) => {
+    setSelectedChatId(chatId);
+    await refreshChats();
   };
 
   return (
-    <div >
+    <div className="h-full overflow-y-auto space-y-2 pr-2">
       {chats.length > 0 ? (
         chats.map((chat) => {
-          const lastMessage = chat.messages.length > 0 ? chat.messages[0] : null;
-          const unreadCount = chat.messages.filter((msg) => !msg.is_read).length;
+          const lastMessage = chat.messages[0];
+          const unreadCount = chat.messages.filter(
+            (msg) => !msg.is_read && msg.sender_id !== 1 // ✅ Only count messages not sent by admin
+          ).length;
+          const isSelected = chat.id === selectedChatId;
+
           return (
             <button
               key={chat.id}
               onClick={() => handleSelectChat(chat.id)}
-              className="flex justify-between items-center w-full text-left p-3 border-b hover:bg-gray-100 rounded-md transition duration-200"
+              className={`w-full text-left p-3 rounded-lg border transition flex justify-between items-center
+                ${isSelected
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:bg-gray-100'}
+              `}
             >
-              <div>
-                <p className="font-bold text-lg">{chat.sender.name}</p>
-                <p className="text-sm text-gray-600">
-                  {lastMessage ? lastMessage.message : "No messages yet"}
+              <div className="flex-1">
+                <p className={`font-semibold text-base ${isSelected ? 'text-blue-600' : 'text-primary'}`}>
+                  {chat.sender.name}
+                </p>
+                <p className="text-sm text-gray-600 truncate">
+                  {lastMessage?.message || 'No messages yet'}
                 </p>
                 {lastMessage && (
                   <p className="text-xs text-gray-400 mt-1">
@@ -46,15 +45,15 @@ const AdminChatDashboard = ({ onSelectChat }) => {
                 )}
               </div>
               {unreadCount > 0 && (
-                <span className="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
-                  {unreadCount} new
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full ml-3">
+                  {unreadCount}
                 </span>
               )}
             </button>
           );
         })
       ) : (
-        <p className="text-gray-500">No active chats</p>
+        <p className="text-gray-500">No active chats available.</p>
       )}
     </div>
   );

@@ -47,15 +47,10 @@ export default function RootLayout({
             <main className="  ">
               {children}
             </main>
-            <footer className="w-full  text-gray-300 py-4 flex flex-col items-center text-center">
-      {/* ✅ Business Name */}
-      <p className="text-lg font-semibold text-default-600 ">E-Com Delivery Admin Portal</p>
-
-      {/* ✅ Copyright */}
-      <p className="text-sm text-default-600 mt-1">© {new Date().getFullYear()} E-Com Delivery. All rights reserved.</p>
-
- 
-    </footer>
+            <footer className="mt-auto w-full text-gray-300 py-4 flex flex-col items-center text-center">
+            <p className="text-lg font-semibold text-default-600">E-Com Delivery Admin Portal</p>
+            <p className="text-sm text-default-600 mt-1">© {new Date().getFullYear()} E-Com Delivery. All rights reserved.</p>
+          </footer>
           </div>
         </Providers>
       </body>

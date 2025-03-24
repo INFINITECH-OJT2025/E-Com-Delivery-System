@@ -33,6 +33,7 @@ const statusColorMap: Record<'Pending' | 'In Progress' | 'Resolved', string> = {
   'In Progress': 'warning',
   'Resolved': 'success',
 };
+import { addToast } from "@heroui/react";
 
 const AdminSupportTickets = () => {
   interface Ticket {
@@ -74,16 +75,43 @@ const AdminSupportTickets = () => {
         await loadTickets();
         refreshPendingCount(); // ✅ Refresh pending count
         setShowModal(false);
+  
+        addToast({
+          title: "Status Updated",
+          description: `Ticket #${selectedTicket.id} is now marked as "${newStatus}".`,
+          color: "success",
+        });
+      } else {
+        addToast({
+          title: "Error",
+          description: "Failed to update ticket status. Please try again.",
+          color: "danger",
+        });
       }
     }
   };
+  
   const handleDelete = async (ticketId: number) => {
     const response = await deleteTicket(ticketId);
-    if (response.success) {
-      setTickets((prev) => prev.filter((t) => t.id !== ticketId));
-      refreshPendingCount(); // ✅ Refresh pending count
+    if (response.message) {
+      await loadTickets(); // 🔁 Reload tickets
+      refreshPendingCount(); // ✅ Refresh count
+  
+      addToast({
+        title: "Ticket Deleted",
+        description: `Ticket #${ticketId} has been removed successfully.`,
+        color: "danger",
+      });
+    } else {
+      addToast({
+        title: "Error",
+        description: "Failed to delete ticket. Please try again.",
+        color: "danger",
+      });
     }
   };
+  
+  
 
   const filteredTickets = useMemo(() => {
     let filtered = [...tickets];
