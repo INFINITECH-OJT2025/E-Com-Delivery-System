@@ -65,4 +65,19 @@ fetchUsers: async (
       return { status: "error", message: "Failed to delete user." };
     }
   },
+   // ✅ Get all riders (role = 'rider')
+   async getRiders() {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const res = await axios.get(`${API_URL}/api/admin/riders/all`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return res.data.riders;
+    } catch (error) {
+      console.error('Failed to fetch riders:', error);
+      return [];
+    }
+  },
 };

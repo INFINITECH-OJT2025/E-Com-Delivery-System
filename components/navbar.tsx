@@ -20,7 +20,7 @@ import { ThemeSwitch } from '@/components/theme-switch';
 import { usePendingTickets } from '@/context/PendingTicketsContext';
 import { useAdminChat } from '@/context/AdminChatContext';
 
-import { Users, Bike, Ticket, MessageCircle, LogIn, UserPlus } from 'lucide-react';
+import { Users, Bike, Ticket, MessageCircle, LogIn, UserPlus, HandCoins } from 'lucide-react';
 
 interface AdminRoute {
   name: string;
@@ -66,7 +66,13 @@ export default function AdminNavbar() {
       showBadge: unreadCount > 0,
       badgeCount: unreadCount,
     },
+    {
+      name: 'Remittance',
+      path: '/admin/remittance',
+      icon: <HandCoins size={18} />,
+    },
   ];
+  
 
   const guestRoutes: AdminRoute[] = [
     { name: 'Login', path: '/login', icon: <LogIn size={18} /> },
