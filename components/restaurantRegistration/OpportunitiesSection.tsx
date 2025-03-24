@@ -8,7 +8,7 @@ export const OpportunitiesSection = () => (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-12">
           <div className="flex flex-col items-center">
             <img
-              src="/images/main_icon.png" // Replace with your image path
+              src="/images/main_icon.png"
               alt="Connect With New Customers"
               className="w-16 h-16 mb-4"
             />
@@ -21,7 +21,7 @@ export const OpportunitiesSection = () => (
   
           <div className="flex flex-col items-center">
             <img
-              src="/images/main_icon.png" // Replace with your image path
+              src="/images/main_icon.png"
               alt="Unlock Revenue"
               className="w-16 h-16 mb-4"
             />
@@ -33,7 +33,7 @@ export const OpportunitiesSection = () => (
   
           <div className="flex flex-col items-center">
             <img
-              src="/images/main_icon.png" // Replace with your image path
+              src="/images/main_icon.png"
               alt="Focus on Your Business"
               className="w-16 h-16 mb-4"
             />
