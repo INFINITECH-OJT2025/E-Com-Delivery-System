@@ -77,23 +77,5 @@ export const RiderDashboardService = {
     /**
    * ✅ Fetch Nearby Orders that Riders Can Accept
    */
-    async getNearbyOrders(lat: number, lng: number) {
-        try {
-          const token = localStorage.getItem("riderToken");
-          if (!token) return { success: false, message: "Unauthorized" };
     
-          const response = await axios.get(`${API_URL}/api/riders/nearby-orders`, {
-            params: { lat, lng }, // ✅ Send location to fetch nearby orders
-            headers: { Authorization: `Bearer ${token}` },
-          });
-    
-          if (response.data.status === "success") {
-            return { success: true, data: response.data.data };
-          }
-          return { success: false, message: response.data.message };
-        } catch (error) {
-          console.error("Error fetching nearby orders:", error);
-          return { success: false, message: "Failed to fetch nearby orders." };
-        }
-      }
 };
