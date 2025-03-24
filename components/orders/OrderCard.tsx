@@ -1,9 +1,11 @@
 "use client";
 
-import { Button, Chip } from "@heroui/react";
+import { useState } from "react";
+import { Button, Chip, Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
 import {
-    Clock, CheckCircle, XCircle, CalendarClock, CreditCard, MapPin, Truck, Package
+    Clock, CheckCircle, XCircle, CalendarClock, CreditCard, Truck
 } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
 import { capitalize, getRefundStatusColor } from "@/components/orders/OrderUtils";
 
 interface OrderCardProps {
@@ -15,6 +17,7 @@ interface OrderCardProps {
         delivery_status?: string;
         scheduled_time?: string | null;
         total_price: number;
+        order_type?: string;
         payment?: { payment_method: string; payment_status: string } | null;
         refund?: { status: "pending" | "approved" | "denied" } | null;
     };
@@ -22,71 +25,115 @@ interface OrderCardProps {
 }
 
 export default function OrderCard({ order, onOpen }: OrderCardProps) {
+    const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+
     return (
-        <div className="p-5 border rounded-lg shadow-sm bg-white flex flex-col space-y-3">
-            {/* ✅ Order ID & Restaurant Name */}
-            <div className="flex justify-between items-center">
-                <h3 className="text-lg font-bold">{order.restaurant?.name || "Unknown Restaurant"}</h3>
-                <Chip color="default" className="text-xs">#{order.id}</Chip>
-            </div>
+        <>
+            <div className="p-5 border rounded-lg shadow-sm bg-white flex flex-col space-y-3">
+                {/* ✅ Order ID & Restaurant Name */}
+                <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-bold">{order.restaurant?.name || "Unknown Restaurant"}</h3>
+                    <Chip color="default" className="text-xs">#{order.id}</Chip>
+                </div>
 
-            {/* ✅ Order Date */}
-            <p className="text-sm text-gray-600 flex items-center">
-                <Clock className="w-4 h-4 mr-1 text-gray-500" />
-                Ordered on {new Date(order.created_at).toLocaleString()}
-            </p>
-
-            {/* ✅ Scheduled Order Info */}
-            {order.scheduled_time && (
-                <p className="text-sm text-blue-600 flex items-center">
-                    <CalendarClock className="w-4 h-4 mr-1 text-blue-500" />
-                    Scheduled for {new Date(order.scheduled_time).toLocaleString()}
+                {/* ✅ Order Date */}
+                <p className="text-sm text-gray-600 flex items-center">
+                    <Clock className="w-4 h-4 mr-1 text-gray-500" />
+                    Ordered on {new Date(order.created_at).toLocaleString()}
                 </p>
-            )}
 
-            {/* ✅ Order Status */}
-            <div className="flex items-center space-x-2">
-                <OrderStatusIcon status={order.order_status} />
-                <Chip color={getOrderStatusColor(order.order_status)} className="capitalize text-sm">
-                    {capitalize(order.order_status)}
-                </Chip>
-            </div>
+                {/* ✅ Scheduled Order Info */}
+                {order.scheduled_time && (
+                    <p className="text-sm text-blue-600 flex items-center">
+                        <CalendarClock className="w-4 h-4 mr-1 text-blue-500" />
+                        Scheduled for {new Date(order.scheduled_time).toLocaleString()}
+                    </p>
+                )}
 
-            {/* ✅ Delivery Status (If Available) */}
-            {order.delivery_status && (
+                {/* ✅ Order Type */}
+                {order.order_type && (
+                    <p className="text-sm text-gray-700 capitalize">
+                        Type: {order.order_type}
+                    </p>
+                )}
+
+                {/* ✅ Pickup Reminder */}
+                {order.order_type === "pickup" && order.order_status !== "completed" && (
+                    <p className="text-sm text-orange-600 font-medium">
+                        The restaurant is waiting for you to pick up your order.
+                    </p>
+                )}
+
+                {/* ✅ Order Status */}
                 <div className="flex items-center space-x-2">
-                    <Truck className="w-5 h-5 text-indigo-500" />
-                    <Chip color={getDeliveryStatusColor(order.delivery_status)} className="capitalize text-sm">
-                        {capitalize(order.delivery_status.replace("_", " "))}
+                    <OrderStatusIcon status={order.order_status} />
+                    <Chip color={getOrderStatusColor(order.order_status)} className="capitalize text-sm">
+                        {capitalize(order.order_status)}
                     </Chip>
                 </div>
-            )}
 
-            {/* ✅ Refund Status (If Applicable) */}
-            {order.refund && (
-                <p className={`text-sm font-semibold ${getRefundStatusColor(order.refund.status)}`}>
-                    Refund {capitalize(order.refund.status)}
-                </p>
-            )}
+                {/* ✅ Delivery Status */}
+                {order.delivery_status && (
+                    <div className="flex items-center space-x-2">
+                        <Truck className="w-5 h-5 text-indigo-500" />
+                        <Chip color={getDeliveryStatusColor(order.delivery_status)} className="capitalize text-sm">
+                            {capitalize(order.delivery_status.replace("_", " "))}
+                        </Chip>
+                    </div>
+                )}
 
-            {/* ✅ Payment Status */}
-            <div className="flex items-center space-x-2 text-gray-700 text-sm">
-                <CreditCard className="w-5 h-5 text-gray-500" />
-                <p className={`font-semibold ${getPaymentStatusColor(order.payment?.payment_status)}`}>
-                    {order.payment?.payment_status === "success"
-                        ? `Paid via ${order.payment?.payment_method}`
-                        : "Payment Pending"}
-                </p>
+                {/* ✅ Refund Status */}
+                {order.refund && (
+                    <p className={`text-sm font-semibold ${getRefundStatusColor(order.refund.status)}`}>
+                        Refund {capitalize(order.refund.status)}
+                    </p>
+                )}
+
+                {/* ✅ Payment Status */}
+                <div className="flex items-center space-x-2 text-gray-700 text-sm">
+                    <CreditCard className="w-5 h-5 text-gray-500" />
+                    <p className={`font-semibold ${getPaymentStatusColor(order.payment?.payment_status)}`}>
+                        {order.payment?.payment_status === "success"
+                            ? `Paid via ${order.payment?.payment_method}`
+                            : "Payment Pending"}
+                    </p>
+                </div>
+
+                {/* ✅ Total Price */}
+                <p className="text-xl font-bold text-primary">₱{order.total_price.toFixed(2)}</p>
+
+                {/* ✅ Action Buttons */}
+                <div className="flex flex-col space-y-2">
+                    <Button onPress={onOpen} className="w-full bg-primary text-white">
+                        View Order
+                    </Button>
+
+                    {order.order_type === "pickup" && (
+                        <Button onPress={() => setIsQRModalOpen(true)} className="w-full bg-gray-100 text-gray-800">
+                            Show QR
+                        </Button>
+                    )}
+                </div>
             </div>
 
-            {/* ✅ Total Price */}
-            <p className="text-xl font-bold text-primary">₱{order.total_price.toFixed(2)}</p>
+            {/* ✅ QR Code Modal */}
+            <Modal isOpen={isQRModalOpen} onOpenChange={() => setIsQRModalOpen(false)} size="sm">
+                <ModalContent className="p-4 rounded-lg">
+                    <ModalHeader className="text-lg font-bold text-center">Pickup QR Code</ModalHeader>
+                    <ModalBody className="flex justify-center items-center py-6">
+                    <QRCodeCanvas
+    value={JSON.stringify({ orderId: order.id })}
+    size={180}
+    bgColor="#ffffff"
+    fgColor="#000000"
+    level="H"
+    includeMargin={true}
+/>
 
-            {/* ✅ View Order Button */}
-            <Button onPress={onOpen} className="w-full bg-primary text-white">
-                View Order
-            </Button>
-        </div>
+                    </ModalBody>
+                </ModalContent>
+            </Modal>
+        </>
     );
 }
 

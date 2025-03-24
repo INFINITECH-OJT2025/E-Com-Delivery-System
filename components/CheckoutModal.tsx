@@ -182,29 +182,49 @@ export default function CheckoutModal({ isOpen, onClose }) {
                 {/* ✅ Scrollable Body */}
                 <ModalBody className="p-4 h-[calc(100vh-160px)] overflow-y-auto bg-gray-50">
                     
-                {restaurant && restaurant.order_types?.length > 1 && (
-    <div className="bg-white p-4 rounded-lg shadow-md mb-4">
+                {restaurant && restaurant.order_types?.length > 0 && (
+  <>
+    {/* If multiple order types, show toggle buttons */}
+    {restaurant.order_types.length > 1 ? (
+      <div className="bg-white p-4 rounded-lg shadow-md mb-4">
         <h2 className="text-lg font-semibold">Order Type</h2>
         <div className="flex gap-2 mt-2">
-            {restaurant.order_types.includes("delivery") && (
-                <button
-                    onClick={() => setOrderType("delivery")}
-                    className={`px-4 py-2 rounded-lg border ${orderType === "delivery" ? "bg-primary text-white border-primary" : "border-gray-300 bg-gray-100"}`}
-                >
-                    Delivery
-                </button>
-            )}
-            {restaurant.order_types.includes("pickup") && (
-                <button
-                    onClick={() => setOrderType("pickup")}
-                    className={`px-4 py-2 rounded-lg border ${orderType === "pickup" ? "bg-primary text-white border-primary" : "border-gray-300 bg-gray-100"}`}
-                >
-                    Pickup
-                </button>
-            )}
+          {restaurant.order_types.includes("delivery") && (
+            <button
+              onClick={() => setOrderType("delivery")}
+              className={`px-4 py-2 rounded-lg border ${
+                orderType === "delivery"
+                  ? "bg-primary text-white border-primary"
+                  : "border-gray-300 bg-gray-100"
+              }`}
+            >
+              Delivery
+            </button>
+          )}
+          {restaurant.order_types.includes("pickup") && (
+            <button
+              onClick={() => setOrderType("pickup")}
+              className={`px-4 py-2 rounded-lg border ${
+                orderType === "pickup"
+                  ? "bg-primary text-white border-primary"
+                  : "border-gray-300 bg-gray-100"
+              }`}
+            >
+              Pickup
+            </button>
+          )}
         </div>
-    </div>
+      </div>
+    ) : (
+      // If only one order type is available, show alert
+      <div className="bg-yellow-100 border-l-4 border-yellow-400 text-yellow-800 p-4 rounded-md mb-4 text-sm">
+        This restaurant only supports <strong>{restaurant.order_types[0]}</strong>. This order will be placed as <strong>{restaurant.order_types[0]}</strong>.
+      </div>
+    )}
+  </>
 )}
+
+      
 
 {orderType === "delivery" && (
       <>
