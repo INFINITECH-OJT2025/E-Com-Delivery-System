@@ -370,21 +370,93 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * ✅ Get all orders for the vendor's restaurant
-     */
     public function getOrders(Request $request)
     {
-        $vendor = Auth::user(); // 🔥 Get authenticated user using Bearer token
+        $vendor = Auth::user(); // 🔥 Authenticated vendor
         $restaurant = Restaurant::where('owner_id', $vendor->id)->firstOrFail();
 
         $orders = Order::where('restaurant_id', $restaurant->id)
-            ->with(['customer', 'orderItems.menu', 'payment'])
+            ->with([
+                'customer:id,name,email,phone_number',
+                'orderItems.menu:id,name,price,image',
+                'payment:id,order_id,payment_method,payment_status',
+                'customerAddress:id,address,latitude,longitude',
+                'delivery:id,order_id,status,proof_image,delivery_time',
+                'refund' => function ($query) {
+                    $query->select('id', 'order_id', 'status', 'admin_status', 'amount', 'reason', 'image_proof', 'created_at', 'updated_at')
+                        ->orderBy('created_at', 'desc');
+                }
+            ])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'customer' => $order->customer ? [
+                        'id' => $order->customer->id,
+                        'name' => $order->customer->name,
+                        'email' => $order->customer->email,
+                        'phone_number' => $order->customer->phone_number,
+                    ] : null,
+                    'restaurant' => [
+                        'id' => $order->restaurant_id,
+                        'name' => optional($order->restaurant)->name ?? 'N/A',
+                    ],
+                    'customer_address' => $order->customerAddress ? [
+                        'id' => $order->customerAddress->id,
+                        'address' => $order->customerAddress->address,
+                        'latitude' => (float) $order->customerAddress->latitude,
+                        'longitude' => (float) $order->customerAddress->longitude,
+                    ] : null,
+                    'order_type' => $order->order_type,
+                    'order_status' => $order->order_status,
+                    'delivery_status' => optional($order->delivery)->status ?? 'not_assigned',
+                    'scheduled_time' => $order->scheduled_time ? Carbon::parse($order->scheduled_time)->format('Y-m-d H:i:s') : null,
+                    'delivery_proof' => $order->delivery && $order->delivery->proof_image
+                        ? asset('storage/' . $order->delivery->proof_image)
+                        : null,
+                    'delivered_at' => $order->delivery && $order->delivery->delivery_time
+                        ? Carbon::parse($order->delivery->delivery_time)->format('Y-m-d H:i:s')
+                        : null,
+                    'total_price' => (float) $order->total_price,
+                    'subtotal' => (float) $order->subtotal,
+                    'delivery_fee' => (float) $order->delivery_fee,
+                    'rider_tip' => (float) $order->rider_tip,
+                    'payment' => $order->payment ? [
+                        'payment_method' => $order->payment->payment_method,
+                        'payment_status' => $order->payment->payment_status,
+                    ] : [
+                        'payment_method' => 'Not available',
+                        'payment_status' => 'pending',
+                    ],
+                    'order_items' => $order->orderItems->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'menu_id' => $item->menu->id ?? null,
+                            'name' => $item->menu->name ?? 'Unknown Item',
+                            'price' => (float) $item->price,
+                            'quantity' => $item->quantity,
+                            'subtotal' => (float) $item->subtotal,
+                            'image' => $item->menu->image ?? null,
+                        ];
+                    }),
+                    'refund' => $order->refund ? [
+                        'id' => $order->refund->id,
+                        'status' => $order->refund->status,
+                        'admin_status' => $order->refund->admin_status,
+                        'amount' => (float) $order->refund->amount,
+                        'reason' => $order->refund->reason,
+                        'image_proof' => $order->refund->image_proof,
+                        'created_at' => $order->refund->created_at->format('Y-m-d H:i:s'),
+                        'updated_at' => $order->refund->updated_at->format('Y-m-d H:i:s'),
+                    ] : null,
+                    'created_at' => $order->created_at->format('Y-m-d H:i:s'),
+                ];
+            });
 
         return response()->json(['orders' => $orders]);
     }
+
 
     /**
      * ✅ Get a specific order's details
@@ -413,7 +485,7 @@ class OrderController extends Controller
             ->findOrFail($id);
 
         $request->validate([
-            'order_status' => 'required|in:pending,confirmed,preparing,delivered,canceled'
+            'order_status' => 'required|in:pending,confirmed,preparing,completed,canceled'
         ]);
 
         $order->update([

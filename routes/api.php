@@ -139,7 +139,17 @@ Route::middleware(['auth:sanctum'])->prefix('vendor')->group(function () {
     Route::get('/dashboard/pending-orders', [RestaurantDashboardController::class, 'pendingOrders']);
     Route::get('/dashboard/total-revenue', [RestaurantDashboardController::class, 'totalRevenue']);
     Route::get('/dashboard/recent-orders', [RestaurantDashboardController::class, 'recentOrders']);
+
+    // 📊 New Analytics
+    Route::get('/dashboard/top-selling-menus', [RestaurantDashboardController::class, 'topSellingMenus']);
+    Route::get('/dashboard/most-searched-keywords', [RestaurantDashboardController::class, 'mostSearchedKeywords']);
+    Route::get('/dashboard/average-rating', [RestaurantDashboardController::class, 'averageRating']);
+    Route::get('/dashboard/order-trends-by-hour', [RestaurantDashboardController::class, 'orderTrendsByHour']);
+    Route::get('/dashboard/order-type-distribution', [RestaurantDashboardController::class, 'orderTypeDistribution']);
+    Route::get('/dashboard/payment-method-stats', [RestaurantDashboardController::class, 'paymentMethodStats']);
+    Route::get('/dashboard/refund-summary', [RestaurantDashboardController::class, 'refundSummary']);
 });
+
 // Vendor Routes for Restaurant Management
 Route::middleware(['auth:sanctum'])->prefix('vendor')->group(function () {
     // Restaurant Management Routes
