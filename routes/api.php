@@ -17,6 +17,7 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PromoController;
 use App\Http\Controllers\RefundController;
+use App\Http\Controllers\RemittanceController;
 use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\RestaurantDashboardController;
 use App\Http\Controllers\RiderController;
@@ -149,6 +150,24 @@ Route::middleware(['auth:sanctum'])->prefix('vendor')->group(function () {
     Route::get('/dashboard/payment-method-stats', [RestaurantDashboardController::class, 'paymentMethodStats']);
     Route::get('/dashboard/refund-summary', [RestaurantDashboardController::class, 'refundSummary']);
 });
+// 🔒 Rider-only access
+Route::middleware(['auth:sanctum'])->prefix('rider')->group(function () {
+    Route::get('/remittances', [RemittanceController::class, 'index']);     // List their own remittances
+    Route::post('/remittances', [RemittanceController::class, 'store']);    // Submit new remittance
+});
+
+// 🔐 Admin-only access
+Route::middleware(['auth:sanctum'])->prefix('admin')->group(function () {
+    Route::get('/remittances/expected', [RemittanceController::class, 'expected']);
+
+    Route::get('/remittances', [RemittanceController::class, 'index']);
+    Route::get('/remittances/{id}', [RemittanceController::class, 'show']);
+    Route::post('/remittances', [RemittanceController::class, 'store']);
+    Route::put('/remittances/{id}', [RemittanceController::class, 'update']);
+    Route::get('/riders/all', [RiderController::class, 'all']);
+});
+
+
 
 // Vendor Routes for Restaurant Management
 Route::middleware(['auth:sanctum'])->prefix('vendor')->group(function () {

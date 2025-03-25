@@ -18,6 +18,15 @@ use Illuminate\Support\Facades\Storage;
 
 class RiderController extends Controller
 {
+    public function all()
+    {
+        $riders = User::where('role', 'rider')
+            ->select('id', 'name', 'email', 'phone_number', 'created_at', 'status')
+            ->latest()
+            ->get();
+
+        return response()->json(['riders' => $riders]);
+    }
     /**
      * ✅ Get Rider Profile
      */
