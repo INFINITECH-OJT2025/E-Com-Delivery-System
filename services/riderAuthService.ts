@@ -21,7 +21,7 @@ export const RiderAuthService = {
       return response.data;
     } catch (error) {
       console.error("Rider Login Error:", error);
-      return { success: false, message: "Something went wrong. Please try again." };
+      return { success: false, message: "Invalid Credentials" };
     }
   },
 

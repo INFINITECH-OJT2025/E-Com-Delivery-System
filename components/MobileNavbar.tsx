@@ -52,11 +52,11 @@ export default function MobileNavbar() {
               <FiList /> Orders
             </Link>
           </li>
-          <li>
+          {/* <li>
             <Link href="/earnings" className="flex items-center gap-2 hover:text-gray-300 transition">
               <FiDollarSign /> Earnings
             </Link>
-          </li>
+          </li> */}
         </ul>
 
         {/* 🖥️ Desktop Logout Button */}
@@ -81,11 +81,11 @@ export default function MobileNavbar() {
                 <FiList /> Orders
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link href="/earnings" className="flex items-center gap-2 text-white" onClick={toggleMenu}>
                 <FiDollarSign /> Earnings
               </Link>
-            </li>
+            </li> */}
             <li>
               <Button variant="flat" onPress={handleLogout} className="flex items-center gap-2">
                 <FiLogOut /> Logout

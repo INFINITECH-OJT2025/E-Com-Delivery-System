@@ -72,7 +72,7 @@ export default function RiderRegister() {
           timeout: 5000,
         });
 
-        setTimeout(() => router.push("/dashboard"), 2000); // Redirect after 2s
+        setTimeout(() => router.push("/login"), 2000); // Redirect after 2s
       } else {
         addToast({
           title: "⚠️ Registration Failed",
@@ -160,7 +160,10 @@ export default function RiderRegister() {
             <Button type="submit" color="primary" className="w-full" isDisabled={loading}>
               {loading ? <Spinner size="sm" /> : "Register"}
             </Button>
-
+   {/* Sign Up Link */}
+   <p className="text-gray-500 text-center text-sm mt-4">
+            Already registered? <a href="/login" className="text-secondary font-medium">Sign in</a>
+          </p>
           </form>
         </CardBody>
       </Card>
