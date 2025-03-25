@@ -60,6 +60,7 @@ export default function HorizontalScrollList({ items }: HorizontalScrollListProp
                                 fill
                                 className="object-cover"
                                 loading="lazy"
+                                unoptimized
                             />
                             {!item.is_open && (
                                 <div className="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center text-white text-xs font-semibold">

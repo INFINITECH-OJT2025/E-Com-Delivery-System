@@ -6,6 +6,7 @@ import { Lock, LogIn, AlertCircle } from "lucide-react";
 import { authService } from "@/services/authService";
 import { useRouter } from "next/navigation";
 import ForgotPasswordModal from "./ForgotPasswordModal";
+import { X } from "lucide-react";
 
 interface LoginModalProps {
     isOpen: boolean;
@@ -54,17 +55,31 @@ export default function LoginModal({ isOpen, email, onClose }: LoginModalProps) 
     }, [email, password, router, onClose]);
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onClose} placement="bottom" size="full">
-            <ModalContent>
+<Modal
+  isOpen={isOpen}
+  onOpenChange={onClose}
+  placement="top"
+  size="full"
+  scrollBehavior="outside"
+  classNames={{
+    base: "h-[100dvh] m-0",
+    wrapper: "h-[100dvh] m-0 p-0",
+    body: "p-0",
+  }}
+>
+<ModalContent className="m-0 rounded-t-xl h-full flex flex-col">
                 {/* ✅ Header */}
-                <ModalHeader className="text-center text-primary font-bold text-xl flex items-center justify-center gap-2">
-                    <Lock className="text-primary w-8 h-8" />
-                    Log in with your email
-                </ModalHeader>
+                <ModalHeader className="text-center text-primary font-bold text-xl flex items-center justify-center gap-2 relative">
+  <Lock className="text-primary w-8 h-8" />
+  Log in with your email
+
+
+</ModalHeader>
+
 
                 {/* ✅ Body */}
-                <ModalBody className="p-6 flex flex-col items-center">
-                    <p className="text-gray-500 text-center">
+                <ModalBody className="flex-1 overflow-y-auto p-6 flex flex-col items-center">
+                <p className="text-gray-500 text-center">
                         Enter your password for <strong>{email}</strong>
                     </p>
 
@@ -109,16 +124,17 @@ export default function LoginModal({ isOpen, email, onClose }: LoginModalProps) 
                 </ModalBody>
 
                 {/* ✅ Footer */}
-                <ModalFooter className="p-4 border-t flex flex-col gap-2">
-                    <Button 
-                        variant="light" 
-                        className="w-full text-red-500" 
-                        onPress={() => setIsForgotPasswordOpen(true)}
-                    >
-                        Forgot password?
-                    </Button>                      
-                    <Button variant="light" className="w-full" onPress={onClose}>Cancel</Button>
-                </ModalFooter>
+                <ModalFooter className="sticky bottom-0 bg-white border-t p-4 flex flex-col gap-2 z-10">
+  <Button 
+    variant="light" 
+    className="w-full text-red-500" 
+    onPress={() => setIsForgotPasswordOpen(true)}
+  >
+    Forgot password?
+  </Button>                      
+  <Button variant="light" className="w-full" onPress={onClose}>Cancel</Button>
+</ModalFooter>
+
             </ModalContent>
 
             {/* ✅ Forgot Password Modal */}

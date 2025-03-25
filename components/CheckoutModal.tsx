@@ -374,6 +374,45 @@ export default function CheckoutModal({ isOpen, onClose }) {
     </div>
 </div>
 
+{/* 💳 Payment Method Options */}
+<div className="bg-white p-4 rounded-lg shadow-md mt-4">
+  <h2 className="text-lg font-semibold mb-2">Payment Method</h2>
+  <div className="space-y-2 text-sm text-gray-700">
+
+    {/* ✅ Cash on Delivery - SELECTED */}
+    <label className="flex items-center gap-3">
+      <input
+        type="radio"
+        name="payment_method"
+        checked
+        readOnly
+        className="accent-primary"
+      />
+      <span>Cash on Delivery</span>
+    </label>
+
+    {/* ❌ GCash - DISABLED */}
+    <label
+      className="flex items-center gap-3 text-gray-400 cursor-not-allowed"
+    >
+      <input type="radio" name="payment_method" disabled />
+      <span>GCash (Unavailable)</span>
+    </label>
+
+    {/* ❌ Credit/Debit Card - DISABLED */}
+    <label
+      className="flex items-center gap-3 text-gray-400 cursor-not-allowed"
+
+    >
+      <input type="radio" name="payment_method" disabled />
+      <span>Credit / Debit Card (Unavailable)</span>
+    </label>
+  </div>
+
+  <p className="text-xs text-gray-500 mt-2">
+    You’ll pay the rider directly upon delivery.
+  </p>
+</div>
 
                     {/* ✅ Terms Checkbox */}
                     <div className="mt-4">

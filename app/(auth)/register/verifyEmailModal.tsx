@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, InputOtp } from "@heroui/react";
-import { CheckCircle, Mail, RefreshCw, Send } from "lucide-react";
+import { CheckCircle, Mail, RefreshCw, Send, X } from "lucide-react";
 import { authService } from "@/services/authService";
 import LoginModal from "./loginModal"; // ✅ Import LoginModal
 
@@ -78,69 +78,90 @@ export default function VerifyEmailModal({ isOpen, email, onClose }: VerifyEmail
     return (
         <>
             {/* ✅ Verify Email Modal */}
-            <Modal isOpen={isOpen} onOpenChange={onClose} placement="bottom" size="full">
-                <ModalContent>
-                    <ModalHeader className="text-center text-primary font-bold text-xl flex items-center justify-center gap-2">
-                        {isVerified ? <CheckCircle className="text-green-500 w-8 h-8" /> : <Mail className="text-primary w-8 h-8" />}
-                        Verify Your Email
-                    </ModalHeader>
+            <Modal
+  isOpen={isOpen}
+  onOpenChange={onClose}
+  placement="top"
+  size="full"
+  scrollBehavior="outside"
+  classNames={{
+    base: "h-[100dvh] m-0",
+    wrapper: "h-[100dvh] m-0 p-0",
+    body: "p-0",
+  }}
+>
+  <ModalContent className="m-0 rounded-t-xl h-full flex flex-col">
+    {/* ✅ Header */}
+    <ModalHeader className="text-center text-primary font-bold text-xl flex items-center justify-center gap-2 relative">
+      {isVerified ? (
+        <CheckCircle className="text-green-500 w-8 h-8" />
+      ) : (
+        <Mail className="text-primary w-8 h-8" />
+      )}
+      Verify Your Email
+      <button
+        onClick={onClose}
+        className="absolute right-4 top-1/2 -translate-y-1/2 text-default-500 hover:text-danger"
+      >
+        <X className="w-5 h-5" />
+      </button>
+    </ModalHeader>
 
-                    <ModalBody className="p-6 flex flex-col items-center">
-                        {isVerified ? (
-                            <p className="text-green-600 text-center font-semibold">{message}</p>
-                        ) : (
-                            <>
-                                <p className="text-gray-500 text-center">
-                                    We’ve sent a verification link to <strong>{email}</strong>.
-                                    Please check your inbox and click the link to verify your account.
-                                </p>
+    {/* ✅ Body with scroll support */}
+    <ModalBody className="flex-1 overflow-y-auto p-6 flex flex-col items-center">
+      {isVerified ? (
+        <p className="text-green-600 text-center font-semibold">{message}</p>
+      ) : (
+        <>
+          <p className="text-gray-500 text-center">
+            We’ve sent a verification link to <strong>{email}</strong>. Please check your inbox and click the link to verify your account.
+          </p>
 
-                                <p className="text-gray-600 mt-4 text-center">Or enter the OTP sent to your email:</p>
+          <p className="text-gray-600 mt-4 text-center">Or enter the OTP sent to your email:</p>
 
-                                {/* ✅ OTP Input Field */}
-                                <InputOtp
-                                    length={6}
-                                    isRequired
-                                    color="primary"
-                                    value={otp}
-                                    onValueChange={setOtp}
-                                    className="mt-2 w-3/4 text-center"
-                                    placeholder="Enter OTP"
-                                />
+          <InputOtp
+            length={6}
+            isRequired
+            color="primary"
+            value={otp}
+            onValueChange={setOtp}
+            className="mt-2 w-3/4 text-center"
+            placeholder="Enter OTP"
+          />
 
-                                {/* ✅ Error Message Below OTP */}
-                                {errorMessage && <p className="text-red-500 text-sm mt-2">{errorMessage}</p>}
+          {errorMessage && <p className="text-red-500 text-sm mt-2">{errorMessage}</p>}
 
-                                {/* ✅ Submit OTP Button */}
-                                <Button 
-                                    className="w-full bg-primary text-white mt-4 flex items-center justify-center gap-2" 
-                                    onPress={handleVerifyOtp} 
-                                    isLoading={otpLoading}
-                                >
-                                    <Send className="w-5 h-5" /> Verify OTP
-                                </Button>
-                            </>
-                        )}
+          <Button
+            className="w-full bg-primary text-white mt-4 flex items-center justify-center gap-2"
+            onPress={handleVerifyOtp}
+            isLoading={otpLoading}
+          >
+            <Send className="w-5 h-5" /> Verify OTP
+          </Button>
+        </>
+      )}
 
-                        {/* ✅ Success Message */}
-                        {!isVerified && message && <p className="text-green-600 text-sm text-center mt-3">{message}</p>}
-                    </ModalBody>
+      {!isVerified && message && <p className="text-green-600 text-sm text-center mt-3">{message}</p>}
+    </ModalBody>
 
-                    {/* ✅ Footer Buttons */}
-                    {!isVerified && (
-                        <ModalFooter className="p-4 border-t flex flex-col gap-2">
-                            <Button
-                                className="w-full bg-secondary text-white flex items-center justify-center gap-2"
-                                onPress={handleResendVerification}
-                                isLoading={loading}
-                            >
-                                <RefreshCw className="w-5 h-5" /> Resend Verification Email & OTP
-                            </Button>
-                            <Button variant="light" className="w-full" onPress={onClose}>Cancel</Button>
-                        </ModalFooter>
-                    )}
-                </ModalContent>
-            </Modal>
+    {/* ✅ Sticky Footer */}
+    {!isVerified && (
+      <ModalFooter className="sticky bottom-0 bg-white border-t p-4 flex flex-col gap-2 z-10">
+        <Button
+          className="w-full bg-secondary text-white flex items-center justify-center gap-2"
+          onPress={handleResendVerification}
+          isLoading={loading}
+        >
+          <RefreshCw className="w-5 h-5" /> Resend Verification Email & OTP
+        </Button>
+        <Button variant="light" className="w-full" onPress={onClose}>
+          Cancel
+        </Button>
+      </ModalFooter>
+    )}
+  </ModalContent>
+</Modal>
+
 
             {/* ✅ Open Login Modal directly after verification */}
             <LoginModal 

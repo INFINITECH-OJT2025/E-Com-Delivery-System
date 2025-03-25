@@ -4,6 +4,7 @@ import React, { useState, useCallback } from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Form, Input, Button } from "@heroui/react";
 import { Mail, Send } from "lucide-react";
 import { authService } from "@/services/authService";
+import { X } from "lucide-react";
 
 interface EmailModalProps {
     isOpen: boolean;
@@ -67,46 +68,71 @@ export default function EmailModal({ isOpen, onClose, onOpenLogin, onOpenVerifyE
     }, [email, onOpenLogin, onOpenVerifyEmail, onOpenRegister]);
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onClose} placement="bottom" size="full">
-            <ModalContent>
-                <ModalHeader className="text-center text-primary font-bold text-xl flex items-center justify-center gap-2">
-                    <Mail className="text-primary w-8 h-8" />
-                    What's your email?
-                </ModalHeader>
+        <Modal
+        isOpen={isOpen}
+        onOpenChange={onClose}
+        placement="top"
+        size="full"
+        scrollBehavior="outside"
+        classNames={{
+          base: "h-[100dvh] m-0",
+          wrapper: "h-[100dvh] m-0 p-0",
+          body: "p-0",
+        }}
+        hideCloseButton={true}
+      >
+        <ModalContent className="m-0 rounded-none h-full flex flex-col">
+          <ModalHeader className="text-center text-primary font-bold text-xl flex items-center justify-center gap-2 sticky top-0 bg-white z-10 border-b">
+            <Mail className="text-primary w-8 h-8" />
+            What's your email?
+            <button
+    onClick={onClose}
+    className="absolute right-4 top-1/2 -translate-y-1/2 text-default-500 hover:text-danger"
+  ><X className="w-5 h-5" />
 
-                <ModalBody className="p-6 flex flex-col items-center">
-                    <p className="text-gray-500 text-center">
-                        We’ll check if you have an account associated with <strong>{email || "your email"}</strong>.
-                    </p>
-
-                    <Form onSubmit={handleSubmit} className="w-full max-w-md space-y-4 mt-4">
-                        <Input
-                            isRequired
-                            label="Email"
-                            name="email"
-                            type="email"
-                            placeholder="Enter your email"
-                            autoFocus
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            errorMessage={errors.email}
-                        />
-
-                        <Button type="submit" className="w-full bg-primary text-white flex items-center justify-center gap-2" isLoading={loading}>
-                            <Send className="w-5 h-5" />
-                            Continue
-                        </Button>
-                    </Form>
-
-                    {message && <p className="text-green-600 text-sm text-center mt-3">{message}</p>}
-                </ModalBody>
-
-                <ModalFooter className="p-4 border-t flex flex-col gap-2">
-                    <Button variant="light" className="w-full" onPress={onClose}>
-                        Cancel
-                    </Button>
-                </ModalFooter>
-            </ModalContent>
-        </Modal>
+  </button>
+          </ModalHeader>
+      
+          {/* ✅ Make ModalBody scrollable */}
+          <ModalBody className="flex-1 overflow-y-auto p-6 flex flex-col items-center">
+            <p className="text-gray-500 text-center">
+              We’ll check if you have an account associated with <strong>{email || "your email"}</strong>.
+            </p>
+      
+            <Form onSubmit={handleSubmit} className="w-full max-w-md space-y-4 mt-4">
+              <Input
+                isRequired
+                label="Email"
+                name="email"
+                type="email"
+                placeholder="Enter your email"
+                autoFocus
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                errorMessage={errors.email}
+              />
+      
+              <Button
+                type="submit"
+                className="w-full bg-primary text-white flex items-center justify-center gap-2"
+                isLoading={loading}
+              >
+                <Send className="w-5 h-5" />
+                Continue
+              </Button>
+            </Form>
+      
+            {message && <p className="text-green-600 text-sm text-center mt-3">{message}</p>}
+          </ModalBody>
+      
+          {/* ✅ Sticky footer that doesn't jump above keyboard */}
+          <ModalFooter className="sticky bottom-0 bg-white p-4 border-t flex flex-col gap-2 z-10">
+            <Button variant="light" className="w-full" onPress={onClose}>
+              Cancel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      
     );
 }
