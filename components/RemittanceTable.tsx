@@ -57,10 +57,12 @@ const downloadCSV = (remittances: Remittance[]) => {
 
 export default function RemittanceTable({
   remittances,
-  loading,
+  loading,  fetchRemittances,
+
 }: {
   remittances: Remittance[];
   loading: boolean;
+  fetchRemittances: () => void;
 }) {
   if (loading) return <div className="flex justify-center py-10"><Spinner size="lg" /></div>;
 

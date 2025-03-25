@@ -30,7 +30,8 @@ export default function RemittancePage() {
       <RemittanceSummary remittances={remittances} />
       {/* <RemittanceFilters />
       */}
-      <RemittanceTable remittances={remittances} loading={loading} />
+      <RemittanceTable remittances={remittances} loading={loading}   fetchRemittances={fetchRemittances}
+ />
     
     </div>
   );

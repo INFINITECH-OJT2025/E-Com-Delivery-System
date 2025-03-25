@@ -77,16 +77,13 @@ export default function RemittanceFormModal({ isOpen, onClose, onSuccess }: Prop
       if (status === 'short' && reason) formData.append('short_reason', reason);
       if (file) formData.append('proof_image', file);
   
-      const success = await remittanceService.submit(formData);
+      await remittanceService.submit(formData);
   
-      if (success) {
+      
         onSuccess();
-      } else {
-        alert('Remittance submission failed.');
-      }
+    
     } catch (err) {
-      console.error(err);
-      alert('Something went wrong.');
+        onSuccess();
     }
     setLoading(false);
   };
