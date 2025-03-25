@@ -21,8 +21,7 @@ export const VendorAuthService = {
       return response.data;
     } catch (error) {
       console.error("Login Error:", error);
-      return { success: false, message: "Something went wrong. Please try again." };
-    }
+      return response.data;    }
   },
 
   // ✅ Register Vendor

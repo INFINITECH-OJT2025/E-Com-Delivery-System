@@ -32,7 +32,7 @@ export default function VendorLogin() {
         addToast({ title: "Login Failed", description: result.message || "Invalid credentials", color: "danger" });
       }
     } catch (error) {
-      addToast({ title: "Login Failed", description: "Something went wrong, please try again.", color: "danger" });
+      addToast({ title: "Login Failed", description: "Invalid username or email", color: "danger" });
     } finally {
       setLoading(false);
     }
