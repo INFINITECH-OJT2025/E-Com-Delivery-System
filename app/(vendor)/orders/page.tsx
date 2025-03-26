@@ -9,7 +9,8 @@ import {
 import { FaEye, FaCheck, FaTimes, FaTruck, FaClipboardCheck, FaClock } from "react-icons/fa";
 import Image from "next/image";
 import { Scanner } from '@yudiel/react-qr-scanner';
-
+import { addToast } from "@heroui/react";
+import { Pagination } from "@heroui/react";
 
 
 
@@ -24,7 +25,11 @@ export default function OrdersPage() {
   const [showScanner, setShowScanner] = useState(false);
   const [qrInput, setQrInput] = useState("");
   
-  
+  const [page, setPage] = useState(1);
+const [rowsPerPage, setRowsPerPage] = useState(10);
+
+const paginatedOrders = orders.slice((page - 1) * rowsPerPage, (page - 1) * rowsPerPage + rowsPerPage);
+
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -83,17 +88,43 @@ export default function OrdersPage() {
     }
   };
 
-  const handleScanQR = () => {
-    const orderId = parseInt(qrInput);
-    const found = LOCAL_ORDERS.find((order) => order.id === orderId);
-    if (found) {
-      setSelectedOrder(found);
-      setViewModalOpen(true);
-    } else {
-      alert("Order not found!");
-    }
-  };
 
+  useEffect(() => {
+    const reminderInterval = setInterval(() => {
+      orders.forEach(order => {
+        // Only check orders with a scheduled time and status "pending" or "confirmed"
+        if (order.scheduled_time && (order.order_status === "pending" || order.order_status === "confirmed")) {
+          const scheduledTime = new Date(order.scheduled_time);
+          const now = new Date();
+          const diffMinutes = (scheduledTime - now) / (1000 * 60); // Difference in minutes
+  
+          console.log(`Order ${order.order_status} #${order.id} is scheduled in ${diffMinutes} minutes`);
+  
+          // Trigger notification when the order has less than 1 hour remaining
+          if (diffMinutes < 60 && diffMinutes > 0) {
+            // Only notify if permission is granted
+            if (Notification.permission === "granted") {
+              new Notification(`Reminder: Order #${order.id}`, {
+                body: `Scheduled at ${scheduledTime.toLocaleTimeString()}. Less than 1 hour left!`,
+                icon: "/images/delivery-panda.png", // Path to your logo image
+                badge: "/images/delivery-panda.png", // Optional badge image
+                vibrate: [200, 100, 200],   // Vibration pattern (works on supported devices)
+                tag: `order-reminder-${order.id}`, // Prevents duplicate notifications for the same order
+                data: {
+                  orderId: order.id,
+                  scheduledTime: order.scheduled_time,
+                  orderStatus: order.order_status,
+                },
+              });
+            }
+          }
+        }
+      });
+    }, 10000); // Check every 10 seconds for debugging; adjust as needed
+  
+    return () => clearInterval(reminderInterval);
+  }, [orders]);
+  
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold text-center mb-6">Orders Management</h1>
@@ -122,7 +153,12 @@ export default function OrdersPage() {
           setSelectedOrder(found);
           setViewModalOpen(true);
         } else {
-          alert("Order not found!");
+          addToast({
+            title: "Order not found!",
+            description: "We couldn't locate an order with the provided details.",
+            variant: "bordered",
+            color:'danger' // Optional: depending on your toast options
+          });
         }
       }}
     >
@@ -170,11 +206,34 @@ export default function OrdersPage() {
 
 </div>
 
-  
+<div className="flex justify-between items-center mb-4">
+  {/* Refresh Button */}
+  <Button color="primary" onPress={fetchOrders}>
+    Refresh
+  </Button>
+
+  {/* Rows per page selector */}
+  <div className="flex items-center">
+    <span>Rows per page: </span>
+    <select
+      value={rowsPerPage}
+      onChange={(e) => {
+        setRowsPerPage(Number(e.target.value));
+        setPage(1); // Reset to first page on rows-per-page change
+      }}
+      className="ml-2"
+    >
+      <option value="5">5</option>
+      <option value="10">10</option>
+      <option value="15">15</option>
+    </select>
+  </div>
+</div>
 {loading ? (
   <div className="flex justify-center items-center h-40">
     <Spinner size="lg" />
   </div>
+  
 ) : (
   <Table isStriped aria-label="Orders Table">
   <TableHeader>
@@ -190,8 +249,8 @@ export default function OrdersPage() {
     <TableColumn>Actions</TableColumn>
   </TableHeader>
   <TableBody>
-    {orders.length > 0 ? (
-      orders.map((order) => (
+  {paginatedOrders.length > 0 ? (
+  paginatedOrders.map((order) => (
         <TableRow key={order.id}>
           <TableCell>#{order.id}</TableCell>
           <TableCell>{order.customer?.name || "Unknown"}</TableCell>
@@ -302,9 +361,23 @@ export default function OrdersPage() {
   </TableBody>
 </Table>
 
-)}
+)}<div className="flex justify-between items-center mt-4">
+<Button isDisabled={page <= 1} onPress={() => setPage(page - 1)}>
+  Previous
+</Button>
 
-<Modal isOpen={viewModalOpen} onOpenChange={setViewModalOpen} size="5xl">
+<Pagination
+  page={page}
+  total={Math.ceil(orders.length / rowsPerPage)}
+  onChange={setPage}
+/>
+
+<Button isDisabled={page >= Math.ceil(orders.length / rowsPerPage)} onPress={() => setPage(page + 1)}>
+  Next
+</Button>
+</div>
+
+<Modal isOpen={viewModalOpen} onOpenChange={setViewModalOpen} size="5xl" scrollBehavior="inside">
   <ModalContent className="max-w-6xl w-full mx-auto">
     <ModalHeader className="text-2xl font-bold border-b pb-4">Order Details</ModalHeader>
     <ModalBody className="space-y-8 p-6">

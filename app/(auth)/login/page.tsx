@@ -27,6 +27,7 @@ export default function VendorLogin() {
       // If login is successful, we check the 'status' instead of 'success'
       if (result.status === "success") {
         addToast({ title: "Login Successful", description: "Welcome back!", color: "success" });
+    
         router.push("/dashboard"); // Redirect after successful login
       } else {
         addToast({ title: "Login Failed", description: result.message || "Invalid credentials", color: "danger" });
