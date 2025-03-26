@@ -20,6 +20,7 @@ use App\Http\Controllers\RefundController;
 use App\Http\Controllers\RemittanceController;
 use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\RestaurantDashboardController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\RiderController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SupportController;
@@ -256,3 +257,21 @@ Route::get('/test-event', function () {
     return "Event broadcasted!";
 });
 Route::middleware('auth:sanctum')->post('/chat/test', [ChatController::class, 'testSend']);
+Route::middleware('auth:sanctum')->post('/reviews', [ReviewController::class, 'store']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/vendor/reviews', [ReviewController::class, 'getVendorReviews']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    // ... other vendor routes
+
+    // Route for review insights
+    Route::get('/vendor/review-insights', [ReviewController::class, 'getVendorReviewInsights']);
+});
+Route::middleware('auth:sanctum')->get('/rider/history', [RiderController::class, 'getDeliveryHistory']);
+// Rider Remittance Endpoints
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/rider/remittance/request', [RiderController::class, 'requestRemittance']);
+    Route::get('/rider/remittance/history', [RiderController::class, 'getRemittanceHistory']);
+    Route::get('/rider/remittance/today', [RiderController::class, 'getExpectedRemittanceSinceLast']);
+});

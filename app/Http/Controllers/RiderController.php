@@ -8,6 +8,7 @@ use App\Models\Delivery;
 use App\Models\Notification;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Remittance;
 use App\Models\User;
 use App\Services\DeliveryService;
 use Illuminate\Http\Request;
@@ -554,6 +555,117 @@ class RiderController extends Controller
             'status' => 'success',
             'message' => "Rider has been {$newStatus}.",
             'rider' => $rider,
+        ]);
+    }
+    public function getDeliveryHistory()
+    {
+        $rider = Auth::user();
+
+        if (!$rider || $rider->role !== 'rider') {
+            return ResponseHelper::error("Unauthorized access", 403);
+        }
+
+        $completedOrders = Order::selectRaw("
+            orders.id AS order_id,
+            orders.total_price,
+            orders.delivery_fee,
+            orders.rider_tip,
+            orders.updated_at,
+            restaurants.name AS restaurant_name,
+            customer_addresses.address AS customer_address
+        ")
+            ->join('restaurants', 'orders.restaurant_id', '=', 'restaurants.id')
+            ->join('customer_addresses', 'orders.customer_address_id', '=', 'customer_addresses.id')
+            ->where('orders.delivery_rider_id', $rider->id)
+            ->where('orders.order_status', 'completed')
+            ->orderBy('orders.updated_at', 'desc')
+            ->get();
+
+        foreach ($completedOrders as $order) {
+            $order->earnings = round((floatval($order->delivery_fee) * 0.9) + floatval($order->rider_tip), 2);
+            $order->items = DB::table('order_items')
+                ->join('menus', 'order_items.menu_id', '=', 'menus.id')
+                ->select('menus.name as item_name', 'order_items.quantity', 'order_items.subtotal')
+                ->where('order_items.order_id', $order->order_id)
+                ->get();
+        }
+
+        $totalEarnings = $completedOrders->sum('earnings');
+
+        return ResponseHelper::success("Delivery history fetched successfully", [
+            'orders' => $completedOrders,
+            'total_earnings' => round($totalEarnings, 2),
+        ]);
+    }
+    public function requestRemittance(Request $request)
+    {
+        $rider = Auth::user();
+
+        $request->validate([
+            'amount' => 'required|numeric|min:0',
+            'remit_date' => 'required|date',
+            'proof_image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $path = $request->file('proof_image')->store('remittances', 'public');
+
+        $remittance = Remittance::create([
+            'rider_id' => $rider->id,
+            'amount' => $request->amount,
+            'expected_amount' => $request->amount, // assume no short unless admin flags it
+            'remit_date' => $request->remit_date,
+            'status' => 'pending',
+            'proof_image' => $path,
+            'notes' => $request->notes,
+            'is_short' => 0,
+        ]);
+
+        return ResponseHelper::success('Remittance request submitted.', $remittance);
+    }
+    public function getRemittanceHistory()
+    {
+        $rider = Auth::user();
+
+        $remittances = Remittance::where('rider_id', $rider->id)
+            ->orderByDesc('remit_date')
+            ->get();
+
+        return ResponseHelper::success('Remittance history fetched.', $remittances);
+    }
+    public function getExpectedRemittanceSinceLast()
+    {
+        $rider = Auth::user();
+
+        // Get last remittance date
+        $lastRemittance = Remittance::where('rider_id', $rider->id)
+            ->orderByDesc('remit_date')
+            ->first();
+
+        $startDate = $lastRemittance ? $lastRemittance->remit_date : now()->subMonths(3)->toDateString();
+
+        // Fetch completed orders since last remittance
+        $orders = Order::where('delivery_rider_id', $rider->id)
+            ->whereDate('updated_at', '>', $startDate)
+            ->where('order_status', 'completed')
+            ->get(['delivery_fee', 'rider_tip', 'updated_at']);
+
+        // 💰 Total delivery fee and tips
+        $totalDeliveryFees = $orders->sum('delivery_fee');
+        $totalTips = $orders->sum('rider_tip');
+
+        // 💵 Rider earns 90% of delivery fee + 100% tips
+        $riderShare = ($totalDeliveryFees * 0.9) + $totalTips;
+
+        // 🧾 System keeps 10% of delivery fee
+        $expectedRemittance = $totalDeliveryFees * 0.1;
+
+        return ResponseHelper::success('Expected remittance since last remittance date.', [
+            'since' => $startDate,
+            'total_delivery_fees' => round($totalDeliveryFees, 2),
+            'total_tips' => round($totalTips, 2),
+            'rider_share' => round($riderShare, 2),
+            'expected_remittance' => round($expectedRemittance, 2),
         ]);
     }
 }
