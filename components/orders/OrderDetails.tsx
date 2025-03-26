@@ -1,9 +1,12 @@
 "use client";
 
 import { Button } from "@heroui/react";
-import { MapPin, CreditCard, RotateCw, X, FileText } from "lucide-react";
+import { MapPin, CreditCard, RotateCw, X, FileText, Star } from "lucide-react";
 import { capitalize, getRefundStatusColor } from "@/components/orders/OrderUtils";
 import { orderService } from "@/services/orderService";
+import ReviewModal from "@/components/orders/ReviewModal";
+import { useState, useEffect } from "react";
+import { differenceInDays, parseISO } from "date-fns";
 
 interface OrderDetailsProps {
     order: any;
@@ -34,7 +37,27 @@ export default function OrderDetails({ order, onBack, openRefundModal, fetchOrde
             },
         });
     };
+    const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
+    const deliveredAt = order.ordered_at
+    ? parseISO(order.ordered_at)
+    : order.created_at
+    ? parseISO(order.created_at)
+    : null;
+  
+  const daysSinceDelivered =
+    deliveredAt && !isNaN(deliveredAt.getTime())
+      ? differenceInDays(new Date(), deliveredAt)
+      : Infinity;
+
+  const within7Days = daysSinceDelivered <= 7;
+  
+  const canRequestRefund =
+    order.order_status === "completed" && !order.refund && within7Days;
+ 
+  const canReview =
+    order.order_status === "completed" && !order.review && within7Days;
+      
     return (
         <div className="space-y-3">
             <h3 className="text-lg font-bold text-gray-900">Order #{order.id}</h3>
@@ -96,18 +119,38 @@ export default function OrderDetails({ order, onBack, openRefundModal, fetchOrde
                 </Button>
             )}
 
-            {/* ✅ Request Refund Button (Only for Completed Orders with No Refund) */}
-            {order.order_status === "completed" && !order.refund && (
-                <Button className="w-full bg-yellow-500 text-white flex items-center justify-center" onPress={() => openRefundModal(order)}>
-                    <RotateCw className="w-5 h-5 mr-2" />
-                    Request Refund
-                </Button>
-            )}
+{canRequestRefund &&  ( 
+  <Button
+    className="w-full bg-yellow-500 text-white flex items-center justify-center"
+    onPress={() => openRefundModal(order)}
+  >
+    <RotateCw className="w-5 h-5 mr-2" />
+    Request Refund
+  </Button>
+  
+)}
+
+{canReview && (
+  <Button
+    className="w-full bg-blue-500 text-white flex items-center justify-center"
+    onPress={() => setReviewModalOpen(true)}
+  >
+    <Star className="w-5 h-5 mr-2" />
+    Add Review
+  </Button>
+)}
 
             {/* ✅ Back Button */}
             <Button variant="bordered" onPress={onBack} className="w-full">
                 Back
-            </Button>
+            </Button><ReviewModal
+  isOpen={reviewModalOpen}
+  onClose={() => setReviewModalOpen(false)}
+  order={order}
+  openAlert={openAlert}
+  onSubmitted={fetchOrders}
+/>
+
         </div>
     );
 }

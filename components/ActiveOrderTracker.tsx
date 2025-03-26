@@ -27,6 +27,15 @@ const UserOrderTracking = () => {
 
     const { isLoaded } = useJsApiLoader({ googleMapsApiKey: GOOGLE_MAPS_API_KEY });
 
+    const previousOrderStatusRef = useRef<string | null>(null);
+const previousDeliveryStatusRef = useRef<string | null>(null);
+useEffect(() => {
+    if ("Notification" in window && Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+  }, []);
+  
+
     useEffect(() => {
         fetchCurrentOrder();
         const interval = setInterval(fetchCurrentOrder, 5000);
@@ -35,26 +44,96 @@ const UserOrderTracking = () => {
 
     const fetchCurrentOrder = async () => {
         try {
-            const token = localStorage.getItem("auth_token");
-            const res = await fetch(`${API_URL}/api/getCurrentOrder`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            const data = await res.json();
-
-            if (
-                data.status === "success" &&
-                data.data?.order_status === "out_for_delivery" &&
-                data.data?.delivery_status === "in_delivery"
-            ) {
-                setOrder(data.data);
-            } else {
-                setOrder(null);
+          const token = localStorage.getItem("auth_token");
+          const res = await fetch(`${API_URL}/api/getCurrentOrder`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = await res.json();
+      
+          if (data.status === "success" && data.data) {
+            const newOrder = data.data;
+      
+            // === Check for order_status notifications ===
+            if (newOrder.order_status !== previousOrderStatusRef.current) {
+              previousOrderStatusRef.current = newOrder.order_status;
+      
+              if (Notification.permission === "granted") {
+                let message = "";
+      
+                switch (newOrder.order_status) {
+                  case "pending":
+                    message = "📦 Order received! We’ll start processing it.";
+                    break;
+                  case "confirmed":
+                    message = "✅ Order confirmed by the restaurant.";
+                    break;
+                  case "preparing":
+                    if (newOrder.delivery_status === "arrived_at_vendor") {
+                      message = "🏍️ Rider arrived at the restaurant!";
+                    } else {
+                      message = "👨‍🍳 Your order is being prepared!";
+                    }
+                    break;
+                  case "out_for_delivery":
+                    // Will handle below with delivery_status
+                    break;
+                }
+      
+                if (message) {
+                  new Notification(`Order #${newOrder.order_id}`, {
+                    body: message,
+                    icon: "/icons/order.png",
+                    tag: `order-${newOrder.order_id}`,
+                  });
+                }
+              }
             }
+      
+            // === Check for delivery_status notifications ===
+            if (newOrder.delivery_status && newOrder.delivery_status !== previousDeliveryStatusRef.current) {
+              previousDeliveryStatusRef.current = newOrder.delivery_status;
+      
+              if (Notification.permission === "granted") {
+                let message = "";
+      
+                switch (newOrder.delivery_status) {
+                  case "picked_up":
+                    message = "🚴 Your rider has picked up the order!";
+                    break;
+                  case "in_delivery":
+                    message = "📍 Your rider is coming to you!";
+                    break;
+                  case "arrived_at_customer":
+                    message = "✅ Your rider has arrived!";
+                    break;
+                  case "delivered":
+                    message = "🎉 Your order has been delivered!";
+                    break;
+                }
+      
+                if (message) {
+                  new Notification(`Order #${newOrder.order_id}`, {
+                    body: message,
+                    icon: "/icons/rider-right.png",
+                    tag: `delivery-${newOrder.order_id}`,
+                  });
+                }
+              }
+            }
+      
+            if (newOrder.order_id === null || newOrder.order_status === null) {
+                setOrder(null);
+              } else {
+                setOrder(newOrder);
+              }
+            }             
         } catch (error) {
-            console.error("Error fetching order:", error);
+          console.error("Error fetching order:", error);
         }
+      
         setLoading(false);
-    };
+      };
+      
 
     useEffect(() => {
         if (isLoaded && order && !directions) {
@@ -130,11 +209,12 @@ const UserOrderTracking = () => {
     if (!order) return null;
 
     return (
-        <>
+        <>{order && order.order_status === "out_for_delivery" && (
+
             <ActiveOrderFooter
                 status={`Rider is heading towards your location (ETA: ${eta})`}
                 onClick={() => setModalOpen(true)}
-            />
+            />)}
 
             <Modal isOpen={modalOpen} onOpenChange={() => setModalOpen(false)} size="full">
                 <ModalContent>
