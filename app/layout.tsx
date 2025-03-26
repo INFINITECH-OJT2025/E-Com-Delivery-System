@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { fontSans } from "@/config/fonts";
 import Head from "next/head";
 import React from "react";
+import MobileGuard from "./MobileGuard";
 
 export const metadata: Metadata = {
   title: "E-Com Delivery System",
@@ -26,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
           {/* ✅ Ensure full-page layout supports scrolling */}
           <div className="flex flex-col min-h-screen">
-            <main className="flex-grow">{children}</main>
+          <MobileGuard>     <main className="flex-grow">{children}</main>  </MobileGuard> 
           </div>
         </Providers>
       </body>

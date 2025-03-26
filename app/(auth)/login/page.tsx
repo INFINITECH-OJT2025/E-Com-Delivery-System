@@ -7,11 +7,13 @@ import { FaFacebook, FaApple } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { addToast } from "@heroui/react";
 import { RiderAuthService } from "@/services/riderAuthService";
+import ForgotPasswordModal from "@/components/ForgotPasswordModal"; // ✅ make sure this path is correct
 
 export default function RiderLogin() {
   const router = useRouter();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [isForgotOpen, setForgotOpen] = useState(false); // ✅ modal toggle state
 
   // Handle Input Change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,9 +75,11 @@ export default function RiderLogin() {
             </Button>
           </form>
 
-          {/* Forgot Password */}
-          <p className="text-gray-500 text-center text-sm mt-4">
-            <a href="#" className="text-secondary font-medium">Forgot password?</a>
+         {/* Forgot Password */}
+         <p className="text-gray-500 text-center text-sm mt-4">
+            <button type="button" className="text-secondary font-medium" onClick={() => setForgotOpen(true)} variant="light">
+              Forgot password?
+            </button>
           </p>
 
           {/* Divider */}
@@ -101,6 +105,8 @@ export default function RiderLogin() {
           </p>
         </CardBody>
       </Card>
+            <ForgotPasswordModal isOpen={isForgotOpen} onClose={() => setForgotOpen(false)} />
+
     </div>
   );
 }
