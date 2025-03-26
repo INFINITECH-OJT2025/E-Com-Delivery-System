@@ -172,5 +172,64 @@ async updateRiderLocation(orderId: number, lat: number, lng: number) {
     };
   }
 },
+async getDeliveryHistory() {
+  const token = localStorage.getItem("riderToken");
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/rider/history`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
+  const data = await res.json();
+  return data;
+},
+
+
+// ✅ Get today's expected remittance
+async getTodayExpectedRemittance() {
+  const token = localStorage.getItem("riderToken");
+  const res = await fetch(`${API_URL}/api/rider/remittance/today`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return await res.json();
+},
+
+// ✅ Submit remittance
+async requestRemittance(payload: {
+  amount: string;
+  remit_date: string;
+  file: File;
+  notes?: string;
+}) {
+  const token = localStorage.getItem("riderToken");
+  const formData = new FormData();
+
+  formData.append("amount", payload.amount);
+  formData.append("remit_date", payload.remit_date);
+  formData.append("proof_image", payload.file);
+  if (payload.notes) formData.append("notes", payload.notes);
+
+  const res = await fetch(`${API_URL}/api/rider/remittance/request`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  return await res.json();
+},
+
+// ✅ Remittance history
+async getRemittanceHistory() {
+  const token = localStorage.getItem("riderToken");
+  const res = await fetch(`${API_URL}/api/rider/remittance/history`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return await res.json();
+},
 };

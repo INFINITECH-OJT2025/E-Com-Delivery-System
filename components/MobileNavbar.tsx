@@ -1,11 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@heroui/react";
-import { FiMenu, FiX, FiUser, FiHome, FiList, FiDollarSign, FiLogOut } from "react-icons/fi";
+import { Button, addToast } from "@heroui/react";
+import {
+  FiMenu,
+  FiX,
+  FiHome,
+  FiList,
+  FiDollarSign,
+  FiCreditCard,
+  FiLogOut,
+} from "react-icons/fi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { addToast } from "@heroui/react";
 import { RiderAuthService } from "@/services/riderAuthService";
 
 export default function MobileNavbar() {
@@ -29,10 +36,9 @@ export default function MobileNavbar() {
   return (
     <nav className="bg-primary text-white p-4 shadow-lg fixed top-0 left-0 w-full z-50">
       <div className="container mx-auto flex justify-between items-center">
-        
-        {/* 🚴‍♂️ Logo */}
+        {/* 🚚 Logo */}
         <Link href="/dashboard" className="text-xl font-bold flex items-center gap-2">
-          🚴‍♂️ <span>Rider App</span>
+          🚚 <span>E-Com Rider</span>
         </Link>
 
         {/* 📱 Mobile Menu Button */}
@@ -52,11 +58,16 @@ export default function MobileNavbar() {
               <FiList /> Orders
             </Link>
           </li>
-          {/* <li>
-            <Link href="/earnings" className="flex items-center gap-2 hover:text-gray-300 transition">
-              <FiDollarSign /> Earnings
+          <li>
+            <Link href="/history" className="flex items-center gap-2 hover:text-gray-300 transition">
+              <FiDollarSign /> History
             </Link>
-          </li> */}
+          </li>
+          <li>
+            <Link href="/payout" className="flex items-center gap-2 hover:text-gray-300 transition">
+              <FiCreditCard /> Payouts
+            </Link>
+          </li>
         </ul>
 
         {/* 🖥️ Desktop Logout Button */}
@@ -81,11 +92,16 @@ export default function MobileNavbar() {
                 <FiList /> Orders
               </Link>
             </li>
-            {/* <li>
-              <Link href="/earnings" className="flex items-center gap-2 text-white" onClick={toggleMenu}>
-                <FiDollarSign /> Earnings
+            <li>
+              <Link href="/history" className="flex items-center gap-2 text-white" onClick={toggleMenu}>
+                <FiDollarSign /> History
               </Link>
-            </li> */}
+            </li>
+            <li>
+              <Link href="/payout" className="flex items-center gap-2 text-white" onClick={toggleMenu}>
+                <FiCreditCard /> Payouts
+              </Link>
+            </li>
             <li>
               <Button variant="flat" onPress={handleLogout} className="flex items-center gap-2">
                 <FiLogOut /> Logout

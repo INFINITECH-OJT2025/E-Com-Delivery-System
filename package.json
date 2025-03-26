@@ -26,6 +26,7 @@
     "@react-google-maps/api": "^2.20.6",
     "axios": "^1.8.3",
     "clsx": "2.1.1",
+    "dayjs": "^1.11.13",
     "framer-motion": "^11.13.1",
     "intl-messageformat": "^10.5.0",
     "lucide-react": "^0.482.0",
