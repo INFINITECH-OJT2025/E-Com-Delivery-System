@@ -63,7 +63,8 @@ export default function VoucherModal({ isOpen, onClose, onSelectVoucher, orderTo
     // };
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onClose} placement="bottom" size="full" isDismissable={true}>
+        <Modal isOpen={isOpen} onOpenChange={onClose}   placement="top"
+        size="full"  scrollBehavior="inside" classNames={{ base: "h-[100vh] m-0", wrapper: "h-[100vh] m-0 p-0", body: "p-0" } } isDismissable={true}>
             <ModalContent className="rounded-none shadow-none">
                 <ModalHeader className="flex items-center justify-between p-4 border-b shadow-sm bg-white">
                     <h2 className="text-lg font-bold">Vouchers & Offers</h2>

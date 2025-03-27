@@ -183,10 +183,11 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     };
     
 return (
-    <Modal isOpen={isOpen} onOpenChange={onClose} size="full" hideCloseButton={true}>
-        <ModalContent className="h-full flex flex-col">
+    <Modal isOpen={isOpen} onOpenChange={onClose}   placement="top"
+    size="full" hideCloseButton={true}  scrollBehavior="inside" classNames={{ base: "h-[100vh] m-0", wrapper: "h-[100vh] m-0 p-0", body: "p-0" } }>
+        <ModalContent className="m-0 rounded-none h-full flex flex-col">
             {/* ✅ Search Bar */}
-            <ModalHeader className="flex items-center justify-between p-4 border-b">
+            <ModalHeader className="sticky top-0 z-10 bg-white border-b p-4">
                 <div className="flex items-center gap-3 w-full">
                     <IoSearch className="text-gray-500 text-xl" />
                     <Input
@@ -209,7 +210,7 @@ return (
             <FilterComponent categories={categories} onApplyFilters={handleApplyFilters} />
 
             {/* ✅ Modal Body */}
-            <ModalBody className="flex-1 p-4 overflow-y-auto">
+            <ModalBody className="flex-1 overflow-y-auto p-4">
                 {/* ⏳ Loading Indicator */}
                 {loading && (
     <div className="text-gray-500 text-center mt-4 flex items-center justify-center gap-2">

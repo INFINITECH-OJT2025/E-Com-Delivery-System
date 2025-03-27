@@ -17,6 +17,12 @@ const nextConfig = {
           hostname: "indigo-goat-875822.hostingersite.com",
           pathname: "/storage/**", // ✅ This was missing
         },
+        {
+          protocol: "https",
+          hostname: "infinitech-api2.site", // ✅ should NOT have https://
+          pathname: "/storage/**",
+        }
+         
       ],
     },
   };

@@ -66,14 +66,21 @@ export default function LoginModal({ isOpen, email, onClose }: LoginModalProps) 
     wrapper: "h-[100dvh] m-0 p-0",
     body: "p-0",
   }}
+  hideCloseButton={true}
+
 >
-<ModalContent className="m-0 rounded-t-xl h-full flex flex-col">
+<ModalContent className="m-0 rounded-t-xl h-full flex flex-col" >
                 {/* ✅ Header */}
                 <ModalHeader className="text-center text-primary font-bold text-xl flex items-center justify-center gap-2 relative">
   <Lock className="text-primary w-8 h-8" />
   Log in with your email
 
-
+      <button
+            onClick={onClose}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-default-500 hover:text-danger"
+          >
+            <X className="w-5 h-5" />
+          </button>
 </ModalHeader>
 
 

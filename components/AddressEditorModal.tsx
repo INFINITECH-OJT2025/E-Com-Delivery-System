@@ -154,7 +154,7 @@ export default function AddressEditorModal({ isOpen, onClose, addressId }: Addre
         });
 
         // ✅ Enable Google Maps Autocomplete
-        if (autocompleteRef.current) {
+        if (autocompleteRef.current && window.google?.maps?.places?.Autocomplete) {
             const autocomplete = new google.maps.places.Autocomplete(autocompleteRef.current, {
                 types: ["geocode"],
                 componentRestrictions: { country: "PH" },

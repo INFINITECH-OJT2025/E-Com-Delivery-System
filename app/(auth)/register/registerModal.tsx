@@ -111,6 +111,8 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, email })
         wrapper: "h-[100dvh] m-0 p-0",
         body: "p-0",
       }}
+      hideCloseButton={true}
+
     >
       <ModalContent className="m-0 rounded-t-xl h-full flex flex-col">
         {/* ✅ Header with Close Button */}

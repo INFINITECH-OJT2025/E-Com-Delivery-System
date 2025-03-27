@@ -111,7 +111,7 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
 
     return (
         <>
-            <Modal isDismissable="false" isOpen={isOpen} onOpenChange={onClose} placement="bottom">
+            <Modal isDismissable={false} isOpen={isOpen} onOpenChange={onClose} placement="bottom" scrollBehavior="inside" >
                 <ModalContent className="rounded-t-2xl bg-white shadow-lg">
                     <ModalHeader className="flex items-center justify-between p-4">
                         <h2 className="text-lg font-bold text-gray-900">Where should we deliver your order?</h2>
@@ -131,13 +131,14 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
 
                         {/* 📍 Use Current Location */}
                         <Button
-                            variant="bordered"
-                            className="w-full flex items-center gap-2 rounded-lg border-primary text-primary"
-                            onPress={handleUseCurrentLocation}
-                            isLoading={loadingLocation}
-                        >
-                            <MapPin className="text-primary w-5 h-5" /> Use my current location
-                        </Button>
+  variant="bordered"
+  className="w-full  min-h-[2.7rem] h-12 flex items-center justify-center gap-2 rounded-lg border-primary text-primary font-medium text-sm"
+  onPress={handleUseCurrentLocation}
+  isLoading={loadingLocation}
+>
+  <MapPin className="text-primary w-5 h-5" />
+  Use my current location
+</Button>
 
                         {/* 📍 Saved Addresses List */}
                         <div className="space-y-2">
@@ -173,13 +174,16 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
                         </div>
 
                         {/* ➕ Add New Address */}
-                        <Button
-                            variant="ghost"
-                            className="w-full flex items-center gap-2 text-primary hover:bg-primary/10"
-                            onPress={() => openEditor()}
-                        >
-                            <Plus className="w-5 h-5" /> Add a new address
-                        </Button>
+                   <Button
+  variant="ghost"
+  className="w-full min-h-[2.7rem] flex items-center justify-center gap-2 text-primary font-medium text-sm rounded-lg hover:bg-primary/10"
+  onPress={() => openEditor()}
+>
+  <Plus className="w-5 h-5" />
+  Add a new address
+</Button>
+
+
                     </ModalBody>
                 </ModalContent>
             </Modal>
