@@ -21,6 +21,7 @@ export default function AdminLoginPage() {
     const response = await authService.login(email, password);
 
     if (response.status === "success") {
+      
       router.push("/admin/dashboard");
     } else {
       setError(response.message);

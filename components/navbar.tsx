@@ -20,7 +20,15 @@ import { ThemeSwitch } from '@/components/theme-switch';
 import { usePendingTickets } from '@/context/PendingTicketsContext';
 import { useAdminChat } from '@/context/AdminChatContext';
 
-import { Users, Bike, Ticket, MessageCircle, LogIn, UserPlus, HandCoins } from 'lucide-react';
+import {
+  Users,
+  Bike,
+  Ticket,
+  MessageCircle,
+  LogIn,
+  HandCoins,
+  TicketPercent,
+} from 'lucide-react';
 
 interface AdminRoute {
   name: string;
@@ -71,19 +79,22 @@ export default function AdminNavbar() {
       path: '/admin/remittance',
       icon: <HandCoins size={18} />,
     },
+    {
+      name: 'Vouchers',
+      path: '/admin/vouchers',
+      icon: <TicketPercent size={18} />,
+    },
   ];
-  
 
   const guestRoutes: AdminRoute[] = [
     { name: 'Login', path: '/login', icon: <LogIn size={18} /> },
-    // { name: 'Register', path: '/register', icon: <UserPlus size={18} /> },
   ];
 
   const renderNavItem = (route: AdminRoute) => (
-    <NextLink href={route.path} className="flex items-center" key={route.path}>
+    <NextLink href={route.path} className="flex items-center w-full" key={route.path}>
       <Button
         variant="light"
-        className="text-white hover:bg-primary/80 flex items-center gap-2"
+        className="text-white hover:bg-primary/80 flex items-center gap-2 w-full justify-start"
         isIconOnly={false}
       >
         {route.showBadge && route.badgeCount ? (
@@ -108,10 +119,10 @@ export default function AdminNavbar() {
       isMenuOpen={isMenuOpen}
       onMenuOpenChange={setIsMenuOpen}
     >
-      {/* 🔹 Brand */}
+      {/* 🔹 Brand & Toggle */}
       <NavbarContent>
-        <NavbarMenuToggle className="md:hidden" />
-        <NavbarBrand>
+      <NavbarMenuToggle className="block lg:hidden" />
+      <NavbarBrand>
           <NextLink href="/" className="flex items-center gap-2">
             <Image
               src="/images/delivery-panda.png"
@@ -125,8 +136,13 @@ export default function AdminNavbar() {
         </NavbarBrand>
       </NavbarContent>
 
-      {/* 🔹 Desktop Menu */}
-      <NavbarContent className="hidden md:flex" justify="end">
+      {/* 🔹 Always show mobile menu on md and below */}
+      <NavbarContent className="hidden md:hidden" justify="end">
+        {/* intentionally hidden on md+ */}
+      </NavbarContent>
+
+      {/* 🔹 Desktop Menu - Hidden for md and below */}
+      <NavbarContent className="hidden lg:flex" justify="end">
         {routesToShow.map((route) => (
           <NavbarItem key={route.path}>{renderNavItem(route)}</NavbarItem>
         ))}
@@ -139,9 +155,7 @@ export default function AdminNavbar() {
         )}
       </NavbarContent>
 
-      {/* 🔹 Theme */}
-  
-      {/* 🔹 Mobile Menu */}
+      {/* 🔹 Mobile Menu (also used on md screens now) */}
       <NavbarMenu className="bg-primary text-white">
         {routesToShow.map((route) => (
           <NavbarMenuItem key={route.path}>

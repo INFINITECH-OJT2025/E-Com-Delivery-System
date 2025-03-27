@@ -8,6 +8,7 @@ import { Providers } from "./providers";
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 import  AdminNavbar  from "@/components/navbar";
+import Head from "next/head";
 
 export const metadata: Metadata = {
   title: {
@@ -34,7 +35,13 @@ export default function RootLayout({
 }) {
   return (
     <html suppressHydrationWarning lang="en">
-      <head />
+      <Head>
+        <meta charSet="UTF-8" />
+         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="theme-color" content="#ffffff" />
+        <meta name="apple-mobile-web-app-title" content="E-Com" />
+        <link rel="manifest" href="/manifest.json"/>
+      </Head>
       <body
         className={clsx(
           "min-h-screen bg-background font-sans antialiased",
