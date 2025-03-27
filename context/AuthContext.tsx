@@ -2,11 +2,27 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { VendorAuthService } from "../services/vendorAuthService";
 
 interface VendorAuthContextType {
+  success?: boolean;
   vendor: any;
   login: (email: string, password: string) => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => void;
 }
+type VendorUser = {
+  id: number;
+  name: string;
+  email: string;
+  // Add more fields as needed from your vendor user object
+};
+
+type VendorLoginResponse = {
+  status: "success" | "error";
+  message?: string;
+  data?: {
+    access_token: string;
+    user: VendorUser;
+  };
+};
 
 const VendorAuthContext = createContext<VendorAuthContextType | null>(null);
 
@@ -21,16 +37,20 @@ export const VendorAuthProvider = ({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const data = await VendorAuthService.login(email, password);
-    if (data.success) {
-      setVendor(data.user); // Store the vendor data immediately after login
-      // Optionally store vendor data in localStorage
-      localStorage.setItem("vendor", JSON.stringify(data.user));
-      localStorage.setItem("vendorToken", data.access_token);
+  const login = async (email: string, password: string): Promise<VendorLoginResponse> => {
+    const response = await VendorAuthService.login(email, password);
+  
+    if (response.status === "success" && response.data) {
+      const { access_token, user } = response.data;
+  
+      setVendor(user); // Set vendor context
+      localStorage.setItem("vendor", JSON.stringify(user));
+      localStorage.setItem("vendorToken", access_token);
     }
-    return data;
+  
+    return response;
   };
+  
 
   const register = async (data: any) => {
     await VendorAuthService.register(data);

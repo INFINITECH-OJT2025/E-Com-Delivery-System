@@ -1,29 +1,38 @@
 import axios from "axios";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/vendor";
+type VendorLoginResponse = {
+  success?: boolean;
+  status: "success" | "error";
+  message?: string;
+  data?: {
+    access_token: string;
+    user: any; // Replace `any` with your actual vendor user type
+  };
+};
 
 export const VendorAuthService = {
   // ✅ Login
-  async login(email: string, password: string) {
+  async login(email: string, password: string): Promise<VendorLoginResponse> {
     try {
       const response = await axios.post(`${API_URL}/api/vendor/auth/login`, { email, password });
-
-      if (response.data.status) {
-        console.log("Login successful, storing data...");
-        // Store the access token and vendor data in localStorage
-        localStorage.setItem("vendorToken", response.data.data.access_token);
-        localStorage.setItem("vendor", JSON.stringify(response.data.data.user));
-
-        console.log("Stored Token:", response.data.data.access_token);
-        console.log("Stored Vendor:", response.data.data.user);
+  
+      if (response.data.status === "success") {
+        const { access_token, user } = response.data.data;
+        localStorage.setItem("vendorToken", access_token);
+        localStorage.setItem("vendor", JSON.stringify(user));
       }
-
+  
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login Error:", error);
-      return response.data;    }
+      return {
+        status: "error",
+        message: error?.response?.data?.message || "Login failed",
+      };
+    }
   },
-
+  
   // ✅ Register Vendor
   async register(vendorData: any) {
     try {

@@ -12,6 +12,7 @@ export default function VendorLogin() {
   const router = useRouter();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -24,22 +25,33 @@ export default function VendorLogin() {
     try {
       const result = await login(formData.email, formData.password);
 
-      // If login is successful, we check the 'status' instead of 'success'
-      if (result.status === "success") {
-        addToast({ title: "Login Successful", description: "Welcome back!", color: "success" });
-    
-        router.push("/dashboard"); // Redirect after successful login
+      if (result?.status === "success") {
+        addToast({
+          title: "Login Successful",
+          description: "Welcome back!",
+          color: "success",
+        });
+        router.push("/dashboard");
       } else {
-        addToast({ title: "Login Failed", description: result.message || "Invalid credentials", color: "danger" });
+        addToast({
+          title: "Login Failed",
+          description: result?.message || "Invalid credentials",
+          color: "danger",
+        });
       }
     } catch (error) {
-      addToast({ title: "Login Failed", description: "Invalid username or email", color: "danger" });
+      console.error("Unexpected error during login:", error);
+      addToast({
+        title: "Login Failed",
+        description: "Unexpected error. Please try again.",
+        color: "danger",
+      });
     } finally {
       setLoading(false);
     }
-  };  const [isVisible, setIsVisible] = React.useState(false);
+  };
 
-  const toggleVisibility = () => setIsVisible(!isVisible);
+  const toggleVisibility = () => setIsVisible((prev) => !prev);
 
   return (
     <div className="relative flex justify-center items-center bg-cover bg-center h-screen px-4" style={{ backgroundImage: 'url("/images/we-serve-best-cakes.jpg")' }}>
@@ -67,14 +79,13 @@ export default function VendorLogin() {
             </div>
             <div>
               <Input
-            type={isVisible ? "text" : "password"}
+                type={isVisible ? "text" : "password"}
                 name="password"
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
                 required
                 className="w-full"
-          
                 endContent={
                   <button
                     aria-label="toggle password visibility"
@@ -111,3 +122,7 @@ export default function VendorLogin() {
     </div>
   );
 }
+function setIsVisible(arg0: boolean) {
+  throw new Error("Function not implemented.");
+}
+
