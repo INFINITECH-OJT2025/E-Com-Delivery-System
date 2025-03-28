@@ -43,7 +43,7 @@ const PendingOrder = () => {
       try {
         const response = await homeService.getPendingOrder();
 console.log(response)
-        if (response.success  && response.data) {
+        if (response.success  && response.data.order_id !== null) {
           setOrder(response.data);
         } else if (response.message === 'Unauthorized') {
           setError('❌ Please log in to view your orders.');
@@ -74,26 +74,26 @@ console.log(response)
   return (
     <div className="bg-green-100 text-green-800 p-4 rounded-md shadow-md">
       <h2 className="text-lg font-semibold">🚀 Active Order Details</h2>
-      <p><strong>🛒 Order from:</strong> {order.restaurant_location.name}</p>
-      <p><strong>📌 Order ID:</strong> #{order.order_id}</p>
-      <p><strong>🔄 Order Status:</strong> {order.order_status}</p>
-      <p><strong>🚦 Delivery Status:</strong> {order.delivery_status || 'Not Assigned Yet'}</p>
-
+      <p><strong>🛒 Order from:</strong> {order?.restaurant_location?.name || "N/A"}</p>
+      <p><strong>📌 Order ID:</strong> #{order?.order_id}</p>
+      <p><strong>🔄 Order Status:</strong> {order?.order_status}</p>
+      <p><strong>🚦 Delivery Status:</strong> {order?.delivery_status || 'Not Assigned Yet'}</p>
+  
       <div className="mt-3">
         <h3 className="text-md font-semibold">📍 Customer Location</h3>
-        <p>{order.customer_location.address}</p>
+        <p>{order?.customer_location?.address || "Unknown address"}</p>
       </div>
-
+  
       <div className="mt-3">
         <h3 className="text-md font-semibold">🏢 Restaurant Info</h3>
-        <p><strong>Name:</strong> {order.restaurant_location.name}</p>
-        <p><strong>Address:</strong> {order.restaurant_location.address}</p>
-        <p><strong>Phone:</strong> {order.restaurant_location.phone}</p>
+        <p><strong>Name:</strong> {order?.restaurant_location?.name || "N/A"}</p>
+        <p><strong>Address:</strong> {order?.restaurant_location?.address || "N/A"}</p>
+        <p><strong>Phone:</strong> {order?.restaurant_location?.phone || "N/A"}</p>
       </div>
-
+  
       <div className="mt-3">
         <h3 className="text-md font-semibold">🛵 Rider Info</h3>
-        {order.rider.name ? (
+        {order?.rider?.name ? (
           <>
             <p><strong>Name:</strong> {order.rider.name}</p>
             <p><strong>Phone:</strong> {order.rider.phone}</p>
@@ -103,13 +103,14 @@ console.log(response)
           <p>🚴 No rider assigned yet.</p>
         )}
       </div>
-
+  
       <div className="mt-3 p-3 bg-white text-gray-800 rounded-md shadow-md">
         <h3 className="text-md font-semibold">ℹ️ Order Update</h3>
-        <p>{getOrderStatusMessage(order.order_status, order.delivery_status)}</p>
+        <p>{getOrderStatusMessage(order?.order_status, order?.delivery_status)}</p>
       </div>
     </div>
   );
+  
 };
 
 export default PendingOrder;

@@ -7,7 +7,7 @@ import { authService } from "@/services/authService";
 import { useRouter } from "next/navigation";
 import ForgotPasswordModal from "./ForgotPasswordModal";
 import { X } from "lucide-react";
-
+import { EyeSlashFilledIcon, EyeFilledIcon } from "@/components/passwordIcons";
 interface LoginModalProps {
     isOpen: boolean;
     email: string;
@@ -20,6 +20,8 @@ export default function LoginModal({ isOpen, email, onClose }: LoginModalProps) 
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+    const [isVisible, setIsVisible] = React.useState(false);
+    const toggleVisibility = () => setIsVisible(!isVisible);
 
     const handleLogin = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
@@ -110,12 +112,26 @@ export default function LoginModal({ isOpen, email, onClose }: LoginModalProps) 
                         <Input
                             label="Password"
                             name="password"
-                            type="password"
+                            type={isVisible ? "text" : "password"}
                             placeholder="Enter your password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             errorMessage={errors.password}
                             isRequired
+                            endContent={
+                                <button
+                                  aria-label="toggle password visibility"
+                                  className="focus:outline-none"
+                                  type="button"
+                                  onClick={toggleVisibility}
+                                >
+                                  {isVisible ? (
+                                    <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                                  ) : (
+                                    <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                                  )}
+                                </button>
+                              }
                         />
 
                         <Button

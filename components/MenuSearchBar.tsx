@@ -24,7 +24,7 @@ export default function MenuSearchBar({ isOpen, onClose, menuItems }: MenuSearch
     }, [searchQuery, menuItems]);
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onClose} size="full" hideCloseButton={true}>
+        <Modal isOpen={isOpen} onOpenChange={onClose} size="full" placement="top" hideCloseButton={true} scrollBehavior="inside" isDismissable={false}>
             <ModalContent>
                 {/* ✅ Modal Header (Contains Search Bar) */}
                 <ModalHeader className="p-4 border-b">

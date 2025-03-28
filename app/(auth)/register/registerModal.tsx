@@ -16,6 +16,7 @@ import VerifyEmailModal from "./verifyEmailModal";
 import { authService } from "@/services/authService";
 import { validateEmail, validatePassword, validatePhone, validateConfirmPassword, ValidationErrors } from "@/utils/validation";
 import { X } from "lucide-react";
+import TermsModal from "@/components/TermsModal";
 interface RegisterModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -37,7 +38,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, email })
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [apiErrors, setApiErrors] = useState<string[]>([]);
-
+    const [agreed, setAgreed] = useState(false);
+    const [showTerms, setShowTerms] = useState(false);
+    
     useEffect(() => {
         setFormData((prev) => ({ ...prev, email }));
     }, [email]);
@@ -214,7 +217,26 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, email })
               }
               errorMessage={errors.confirmPassword}
             />
-
+  {/* Terms Agreement */}
+  <div className="flex items-start text-sm text-gray-600">
+          <input
+            id="agree"
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-1 mr-2 h-4 w-4 rounded border-gray-300"
+          />
+          <label htmlFor="agree">
+            I agree to the{" "}
+            <button
+              type="button"
+              onClick={() => setShowTerms(true)}
+              className="text-blue-600 hover:underline"
+            >
+              Terms and Conditions
+            </button>
+          </label>
+        </div>
             <Button
               type="submit"
               className="w-full bg-primary text-white flex items-center justify-center gap-2"
@@ -234,6 +256,7 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ isOpen, onClose, email })
         </ModalFooter>
       </ModalContent>
     </Modal>
+      <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
 
             {/* ✅ Open Verify Email Modal when registration is successful */}
             <VerifyEmailModal isOpen={isVerifying} email={formData.email} onClose={() => setIsVerifying(false)} />

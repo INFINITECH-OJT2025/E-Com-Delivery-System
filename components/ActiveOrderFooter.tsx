@@ -18,7 +18,6 @@ const ActiveOrderFooter = ({ status, onClick }: ActiveOrderFooterProps) => {
                 <FaMotorcycle className="text-xl" />
                 <span className="truncate font-medium">{status}</span>
             </div>
-            <Button size="sm" variant="flat" className="bg-white">Track</Button>
         </div>
     );
 };

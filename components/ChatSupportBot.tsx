@@ -21,7 +21,19 @@ const ChatSupportBot = () => {
 
     loadUserTickets();
   }, []);
-
+  const settings = {
+    header: {
+      title: " PandaBot Support", // 👈 Your custom chatbot name here
+      showAvatar: true,
+      avatar: "/images/delivery-panda.png", // optional image
+    },
+    general: {
+      primaryColor: "#42b0c5",
+      secondaryColor: "#491d8d",
+      showHeader: true,
+    },
+  };
+  
   const handleTicketSubmission = async () => {
     if (!ticketSubject || !ticketMessage) return "error"; // Ensure both fields are filled
 
@@ -168,7 +180,7 @@ const ChatSupportBot = () => {
 
   return (
     <ChatBotProvider>
-      <ChatBot id="ecom-support" flow={flow} />
+      <ChatBot id="ecom-support" flow={flow} settings={settings} />
     </ChatBotProvider>
   );
 };
