@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 import PWAInstallModal from "@/components/PWAInstallModal";
 
+declare global {
+  interface Window {
+    deferredPrompt?: Event;
+  }
+}
+
 export default function MobileGuard({ children }: { children: React.ReactNode }) {
   const [showModal, setShowModal] = useState(false);
 

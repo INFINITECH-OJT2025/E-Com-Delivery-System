@@ -1,5 +1,10 @@
 "use client";
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => void;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
 import { useEffect, useState } from "react";
 import { Modal, Button, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
 
@@ -10,14 +15,15 @@ export default function PWAInstallModal({ isOpen, onClose }: { isOpen: boolean; 
 
   useEffect(() => {
     setIsIOS(/iPhone|iPad|iPod/.test(navigator.userAgent));
-    setIsAndroid(/Android/.test(navigator.userAgent));
+      const deferredPrompt = window.deferredPrompt as any; // Temporary fix for missing type
   }, []);
 
   const handleAndroidInstall = () => {
     if (window.deferredPrompt) {
-      window.deferredPrompt.prompt();
-      window.deferredPrompt.userChoice.then(() => {
-        window.deferredPrompt = null;
+      const deferredPrompt = window.deferredPrompt as BeforeInstallPromptEvent;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        (window as any).deferredPrompt = null;
       });
     } else {
       alert("PWA installation is not available on this browser.");

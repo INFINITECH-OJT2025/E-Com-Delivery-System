@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { RiderAuthService } from "@/services/riderAuthService"; // Import the RiderAuthService
 import { addToast } from "@heroui/react";
+import TermsModal from "@/components/TermsModal";
 
 
 export default function RiderRegister() {
@@ -26,7 +27,9 @@ export default function RiderRegister() {
     profile: "",
     license: "",
   });
-
+  const [agreed, setAgreed] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  
   const [loading, setLoading] = useState(false);
 
   // Handle Input Changes
@@ -127,9 +130,9 @@ export default function RiderRegister() {
   }}
   isRequired
 >
-  <SelectItem key="motorcycle" value="motorcycle">Motorcycle</SelectItem>
-  <SelectItem key="bicycle" value="bicycle">Bicycle</SelectItem>
-  <SelectItem key="car" value="car">Car</SelectItem>
+  <SelectItem key="motorcycle">Motorcycle</SelectItem>
+  <SelectItem key="bicycle">Bicycle</SelectItem>
+  <SelectItem key="car">Car</SelectItem>
 </Select>
 
 
@@ -155,7 +158,26 @@ export default function RiderRegister() {
               <a href="#" className="text-secondary font-medium">Terms & Conditions</a> and{" "}
               <a href="#" className="text-secondary font-medium">Privacy Policy</a>.
             </p>
-
+    {/* Terms Agreement */}
+    <div className="flex items-start text-sm text-gray-600">
+          <input
+            id="agree"
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-1 mr-2 h-4 w-4 rounded border-gray-300"
+          />
+          <label htmlFor="agree">
+            I agree to the{" "}
+            <button
+              type="button"
+              onClick={() => setShowTerms(true)}
+              className="text-blue-600 hover:underline"
+            >
+              Terms and Conditions
+            </button>
+          </label>
+        </div>
             {/* Register Button */}
             <Button type="submit" color="primary" className="w-full" isDisabled={loading}>
               {loading ? <Spinner size="sm" /> : "Register"}
@@ -166,7 +188,8 @@ export default function RiderRegister() {
           </p>
           </form>
         </CardBody>
-      </Card>
+      </Card>  {/* Terms Modal */}
+      <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { fontSans } from "@/config/fonts";
 import Head from "next/head";
 import React from "react";
 import MobileGuard from "./MobileGuard";
-
+import AuthGuard from "@/context/AuthGuard";
 export const metadata: Metadata = {
   title: "E-Com Delivery System",
   description: "Fast and reliable food delivery service",
@@ -26,9 +26,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={clsx("min-h-screen bg-background font-sans antialiased overflow-auto", fontSans.variable)}>
         <Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
           {/* ✅ Ensure full-page layout supports scrolling */}
+          <AuthGuard>
+
           <div className="flex flex-col min-h-screen">
           <MobileGuard>     <main className="flex-grow">{children}</main>  </MobileGuard> 
           </div>
+          </AuthGuard>
         </Providers>
       </body>
     </html>

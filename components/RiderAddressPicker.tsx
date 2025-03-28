@@ -6,7 +6,7 @@ import {
   Button, Input
 } from "@heroui/react";
 import { googleMapsService } from "@/services/googleMapsService";
-import { IoLocationOutline } from "react-icons/io5";
+import { IoLocateOutline, IoLocationOutline } from "react-icons/io5";
 import { FaMapMarkerAlt } from "react-icons/fa";
 
 const mapContainerStyle = {
@@ -107,7 +107,7 @@ export default function RiderAddressPicker({ onSelect }: {
       {/* ✅ Location Selector Button (Always Shows Last Known Address) */}
       <div
         onClick={() => setIsOpen(true)}
-        className="w-full flex items-center gap-3 px-4 py-3 cursor-pointer bg-secondary text-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
+        className="w-full flex items-center gap-3 px-4 py-3 cursor-pointer bg-primary text-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
       >
         <FaMapMarkerAlt className="text-white text-xl flex-shrink-0" />
         <p className="text-base font-semibold truncate flex-1">{formattedAddress}</p>
@@ -115,7 +115,8 @@ export default function RiderAddressPicker({ onSelect }: {
       </div>
 
       {/* ✅ Location Picker Modal */}
-      <Modal isOpen={isOpen} onOpenChange={setIsOpen} size="md" isDismissable={false}>
+      <Modal  isOpen={isOpen} onOpenChange={setIsOpen}   placement="bottom"
+        size="md"  scrollBehavior="inside" classNames={{ base: "h-[100vh] m-0", wrapper: "h-[100vh] m-0 p-0", body: "p-0" } } isDismissable={true}>
         <ModalContent>
           <ModalHeader className="flex justify-between p-4">
             <h2 className="text-lg font-bold">Set Your Delivery Location</h2>
@@ -134,10 +135,10 @@ export default function RiderAddressPicker({ onSelect }: {
           </ModalBody>
           <ModalFooter className="p-4 flex justify-between">
             <Button className="bg-gray-300" onPress={() => setIsOpen(false)}>Cancel</Button>
-            <Button className="bg-secondary text-white flex items-center" onPress={getCurrentLocation}>
-              <IoLocationOutline className="mr-2" /> Use My Location
+            <Button className="bg-danger text-white flex items-center" onPress={getCurrentLocation}>
+              <IoLocateOutline className="mr-2" /> 
             </Button>
-            <Button className="bg-primary text-white" onPress={handleSave}>Set Location</Button>
+            <Button className="bg-primary text-white" onPress={handleSave}>Set</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

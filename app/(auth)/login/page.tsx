@@ -77,7 +77,7 @@ export default function RiderLogin() {
 
          {/* Forgot Password */}
          <p className="text-gray-500 text-center text-sm mt-4">
-            <button type="button" className="text-secondary font-medium" onClick={() => setForgotOpen(true)} variant="light">
+            <button type="button" className="text-secondary font-medium" onClick={() => setForgotOpen(true)} >
               Forgot password?
             </button>
           </p>
