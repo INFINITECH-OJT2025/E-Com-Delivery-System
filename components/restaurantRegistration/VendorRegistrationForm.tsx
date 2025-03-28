@@ -40,8 +40,9 @@ export default function VendorRegister() {
   const markerRef = useRef<google.maps.Marker | null>(null);
   const mapInstance = useRef<google.maps.Map | null>(null);
   const [isVisible, setIsVisible] = React.useState(false);
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  
 
   const toggleVisibility = () => setIsVisible(!isVisible);
   useEffect(() => {
@@ -142,10 +143,7 @@ export default function VendorRegister() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    if (!agreedToTerms) {
-      addToast({ title: "Agreement Required", description: "Please agree to the Terms and Conditions.", color: "warning" });
-      return;
-    }
+   
     
     // ✅ Ensure all required fields are filled
     if (!formData.restaurant_category_id) {
@@ -268,25 +266,19 @@ export default function VendorRegister() {
   
               <Input label="Search Address" placeholder="Type your address" ref={autocompleteRef} />
               <Textarea label="Restaurant Address" value={formData.restaurant_address} readOnly className="resize-none" />
-              <div className="flex items-start text-sm text-gray-600 mt-2">
-  <input
-    id="agree"
-    type="checkbox"
-    checked={agreedToTerms}
-    onChange={(e) => setAgreedToTerms(e.target.checked)}
-    className="mt-1 mr-2 h-4 w-4 rounded border-gray-300"
-  />
-  <label htmlFor="agree">
-    I agree to the{" "}
-    <button
-      type="button"
-      onClick={onOpen}
-      className="text-blue-600 hover:underline"
-    >
-      Terms and Conditions
-    </button>
-  </label>
-</div>
+              <p className="text-gray-500 text-center text-sm mt-2">
+              By signing up you agree to our{" "}
+              <label htmlFor="agree">
+            I agree to the{" "}
+            <button
+              type="button"
+              onClick={() => setShowTerms(true)}
+              className="text-secondary hover:underline"
+            >
+              Terms and Conditions
+            </button>
+          </label>
+            </p>
 
               <Button type="submit" className="w-full" color="primary" disabled={loading}>
                 {loading ? "Registering..." : "Register"}
@@ -294,7 +286,8 @@ export default function VendorRegister() {
             </div>
           </Form>
         </CardBody>
-      </Card><TermsModal isOpen={isOpen} onClose={onOpenChange} />
+      </Card>      <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
+
 
     </div>
   );
