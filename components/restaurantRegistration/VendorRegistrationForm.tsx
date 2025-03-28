@@ -4,16 +4,23 @@ import { useEffect, useRef, useState } from "react";
 import { useVendorAuth } from "@/context/AuthContext";
 import { googleMapsService } from "@/services/googleMapsService";
 import { categoryService } from "@/services/categoryService"; // ✅ Import Category Service
-import { Button, Card, CardBody, Form, Input, Select, SelectItem ,Textarea } from "@heroui/react";
+import { Button, Card, CardBody, Form, Input, Select, SelectItem ,Textarea, useDisclosure } from "@heroui/react";
 import { addToast } from "@heroui/toast";
 import { useRouter } from "next/navigation";
 import { EyeFilledIcon, EyeSlashFilledIcon } from "@/components/passwordIcons";
+import TermsModal from "@/components/TermsModal";
+
 import React from "react";
 export default function VendorRegister() {
   const { register } = useVendorAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState([]);
+  interface Category {
+    id: string;
+    name: string;
+  }
+  
+  const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -33,6 +40,8 @@ export default function VendorRegister() {
   const markerRef = useRef<google.maps.Marker | null>(null);
   const mapInstance = useRef<google.maps.Map | null>(null);
   const [isVisible, setIsVisible] = React.useState(false);
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const toggleVisibility = () => setIsVisible(!isVisible);
   useEffect(() => {
@@ -133,6 +142,10 @@ export default function VendorRegister() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    if (!agreedToTerms) {
+      addToast({ title: "Agreement Required", description: "Please agree to the Terms and Conditions.", color: "warning" });
+      return;
+    }
     
     // ✅ Ensure all required fields are filled
     if (!formData.restaurant_category_id) {
@@ -158,44 +171,39 @@ export default function VendorRegister() {
   };
 
   return (
-    <div className="relative flex justify-center items-center bg-cover bg-center h-screen px-4" style={{ backgroundImage: 'url("/images/we-serve-best-cakes.jpg")' }}>
+    <div
+      className="relative flex flex-col lg:flex-row items-start bg-cover bg-center min-h-screen px-4 py-10 overflow-y-auto"
+      style={{ backgroundImage: 'url("/images/we-serve-best-cakes.jpg")' }}
+    >
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black opacity-50"></div>
-      <div className="relative z-10 text-white text-center p-8">
-        <h1 className="text-4xl font-bold mb-4">Boost your revenue with E-com delivery service!</h1>
-        <p className="text-xl mb-8">
+      <div className="absolute inset-0 bg-black opacity-60"></div>
+  
+      {/* Left Promo Text (only on large screens) */}
+      <div className="hidden lg:flex flex-col justify-center max-w-lg px-8 z-10 ml-9 mt-2 text-white items-center">
+        <h1 className="text-4xl font-bold mb-4 text-center ">
+          Boost your revenue with E-com delivery service!
+        </h1>
+        <p className="text-xl text-center">
           Sign up now and start earning more with the leading food delivery service E-com delivery service.
         </p>
+        <img
+    src="/images/delivery-panda.png"
+    alt="Delivery Panda"
+    className="w-100 h-100 mb-4 rounded-full object-contain"
+  />
       </div>
-      <Card className="w-full max-w-screen-xl shadow-lg p-6">
+  
+      {/* Registration Form Card */}
+      <Card className="relative z-10 w-full lg:w-2/3 max-w-screen-xl shadow-lg p-6 bg-white dark:bg-gray-900 lg:ml-auto">
         <CardBody>
           <h2 className="text-2xl font-bold text-center mb-6">Vendor Registration</h2>
+  
           <Form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column: Vendor Info */}
             <div className="space-y-4">
-              <Input
-                label="Full Name"
-                name="name"
-                value={formData.name}
-                onValueChange={(val) => handleChange("name", val)}
-                required
-              />
-              <Input
-                label="Email"
-                type="email"
-                name="email"
-                value={formData.email}
-                onValueChange={(val) => handleChange("email", val)}
-                required
-              />
-              <Input
-                label="Phone Number"
-                type="tel"
-                name="phone_number"
-                value={formData.phone_number}
-                onValueChange={(val) => handleChange("phone_number", val)}
-                required
-              />
+              <Input label="Full Name" name="name" value={formData.name} onValueChange={(val) => handleChange("name", val)} required />
+              <Input label="Email" type="email" name="email" value={formData.email} onValueChange={(val) => handleChange("email", val)} required />
+              <Input label="Phone Number" type="tel" name="phone_number" value={formData.phone_number} onValueChange={(val) => handleChange("phone_number", val)} required />
               <Input
                 label="Password"
                 type={isVisible ? "text" : "password"}
@@ -204,12 +212,7 @@ export default function VendorRegister() {
                 onValueChange={(val) => handleChange("password", val)}
                 required
                 endContent={
-                  <button
-                    aria-label="toggle password visibility"
-                    className="focus:outline-none"
-                    type="button"
-                    onClick={toggleVisibility}
-                  >
+                  <button aria-label="toggle password visibility" className="focus:outline-none" type="button" onClick={toggleVisibility}>
                     {isVisible ? (
                       <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
                     ) : (
@@ -226,12 +229,7 @@ export default function VendorRegister() {
                 onValueChange={(val) => handleChange("password_confirmation", val)}
                 required
                 endContent={
-                  <button
-                    aria-label="toggle password visibility"
-                    className="focus:outline-none"
-                    type="button"
-                    onClick={toggleVisibility}
-                  >
+                  <button aria-label="toggle password visibility" className="focus:outline-none" type="button" onClick={toggleVisibility}>
                     {isVisible ? (
                       <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
                     ) : (
@@ -241,61 +239,54 @@ export default function VendorRegister() {
                 }
               />
             </div>
-
+  
             {/* Right Column: Restaurant Info */}
             <div className="space-y-4">
-              <Input
-                label="Restaurant Name"
-                name="restaurant_name"
-                value={formData.restaurant_name}
-                onValueChange={(val) => handleChange("restaurant_name", val)}
-                required
-              />
-              <Input
-                label="Restaurant Phone"
-                name="restaurant_phone"
-                type="tel"
-                value={formData.restaurant_phone}
-                onValueChange={(val) => handleChange("restaurant_phone", val)}
-                required
-              />
-{/* Category Selection */}
-<Select
-  label="Restaurant Category"
-  name="restaurant_category_id"
-  selectedKeys={[formData.restaurant_category_id]} // ✅ Ensure selection works
-  onSelectionChange={(keys) => handleChange("restaurant_category_id", Array.from(keys)[0])}
-  isRequired
->
-  <SelectItem key="" value="">Select a category</SelectItem> {/* Placeholder */}
-
-  {Array.isArray(categories) && categories.length > 0 ? (
-    categories.map((category) => (
-      <SelectItem key={category.id} value={category.id}>
-        {category.name}
-      </SelectItem>
-    ))
-  ) : (
-    <SelectItem key="loading" value="" disabled>
-      Loading categories...
-    </SelectItem>
-  )}
-</Select>
-
-              {/* Google Maps */}
+              <Input label="Restaurant Name" name="restaurant_name" value={formData.restaurant_name} onValueChange={(val) => handleChange("restaurant_name", val)} required />
+              <Input label="Restaurant Phone" name="restaurant_phone" type="tel" value={formData.restaurant_phone} onValueChange={(val) => handleChange("restaurant_phone", val)} required />
+  
+              <Select
+                label="Restaurant Category"
+                name="restaurant_category_id"
+                onChange={(val) => handleChange("restaurant_category_id", val)}
+                value={formData.restaurant_category_id}
+              >
+                {categories.length > 0 ? (
+                  categories.map((category: Category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem key="loading" value="" disabled>
+                    Loading categories...
+                  </SelectItem>
+                )}
+              </Select>
+  
               <div ref={mapRef} className="w-full h-[250px] bg-gray-200 rounded-lg shadow"></div>
-
-              <Input
-                label="Search Address"
-                placeholder="Type your address"
-                ref={autocompleteRef}
-              />
-              <Textarea
-                label="Restaurant Address"
-                value={formData.restaurant_address}
-                readOnly
-                className="resize-none"
-              />
+  
+              <Input label="Search Address" placeholder="Type your address" ref={autocompleteRef} />
+              <Textarea label="Restaurant Address" value={formData.restaurant_address} readOnly className="resize-none" />
+              <div className="flex items-start text-sm text-gray-600 mt-2">
+  <input
+    id="agree"
+    type="checkbox"
+    checked={agreedToTerms}
+    onChange={(e) => setAgreedToTerms(e.target.checked)}
+    className="mt-1 mr-2 h-4 w-4 rounded border-gray-300"
+  />
+  <label htmlFor="agree">
+    I agree to the{" "}
+    <button
+      type="button"
+      onClick={onOpen}
+      className="text-blue-600 hover:underline"
+    >
+      Terms and Conditions
+    </button>
+  </label>
+</div>
 
               <Button type="submit" className="w-full" color="primary" disabled={loading}>
                 {loading ? "Registering..." : "Register"}
@@ -303,8 +294,8 @@ export default function VendorRegister() {
             </div>
           </Form>
         </CardBody>
-      </Card>
+      </Card><TermsModal isOpen={isOpen} onClose={onOpenChange} />
+
     </div>
-  
   );
-}
+}  

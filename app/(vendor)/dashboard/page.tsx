@@ -177,21 +177,32 @@ export default function VendorDashboard() {
 
         {/* Recent Orders */}
         <div className="mt-8">
-          <h2 className="text-2xl font-semibold mb-4">Recent Orders</h2>
-          <div className="bg-white p-6 rounded-2xl shadow-lg">
-            {recentOrders.length === 0 ? (
-              <p>No recent orders yet.</p>
-            ) : (
-              <ul>
-                {recentOrders.map((order) => (
-                  <li key={order.id}>
-                    <p>Order #{order.id} - {order.order_status}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
+  <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
+    Recent Orders
+  </h2>
+
+  <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-md transition-all">
+    {recentOrders.length === 0 ? (
+      <p className="text-gray-500 dark:text-gray-400">No recent orders yet.</p>
+    ) : (
+      <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+        {recentOrders.map((order) => (
+          <li key={order.id} className="py-3">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-800 dark:text-white font-medium">
+                Order #{order.id}
+              </span>
+              <span className="text-sm text-gray-500 dark:text-gray-400 capitalize">
+                {order.order_status}
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+</div>
+
     </div>
     
   );

@@ -134,8 +134,8 @@ const paginatedOrders = orders.slice((page - 1) * rowsPerPage, (page - 1) * rows
   <p className="text-center font-medium">Lookup Order by QR or Manual ID</p>
 
   <div className="flex gap-2 items-center">
-    <Button onPress={() => setShowScanner(!showScanner)}>
-      {showScanner ? "Hide Scanner" : "Scan QR"}
+    <Button onPress={() => setShowScanner(!showScanner)} color="danger">
+      {showScanner ? "Hide" : "Scan QR"}
     </Button>
 
     <Input

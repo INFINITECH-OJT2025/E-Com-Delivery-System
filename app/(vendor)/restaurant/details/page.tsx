@@ -131,14 +131,15 @@ export default function RestaurantDetailsPage() {
   }
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-lg max-w-3xl mx-auto">
-      <h1 className="text-3xl font-semibold mb-6 text-center">Restaurant Details</h1>
+<div className="p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-md max-w-3xl mx-auto transition-all">
+<h1 className="text-3xl font-semibold mb-6 text-center">Restaurant Details</h1>
 
       <div className="space-y-6">
         {/* Restaurant Info Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Restaurant Name</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+Restaurant Name</label>
             <input
               type="text"
               name="name"
@@ -149,7 +150,8 @@ export default function RestaurantDetailsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Slug (SEO-friendly URL)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+Slug (SEO-friendly URL)</label>
             <input
               type="text"
               name="slug"
@@ -161,7 +163,8 @@ export default function RestaurantDetailsPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Description</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+Description</label>
           <textarea
             name="description"
             value={restaurant.description || ""}
@@ -172,7 +175,8 @@ export default function RestaurantDetailsPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Address</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+Address</label>
           <input
             type="text"
             name="address"
@@ -183,7 +187,8 @@ export default function RestaurantDetailsPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+Phone Number</label>
           <input
             type="text"
             name="phone_number"
@@ -194,7 +199,8 @@ export default function RestaurantDetailsPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Status</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+Status</label>
           <select
             name="status"
             value={restaurant.status}
@@ -207,7 +213,8 @@ export default function RestaurantDetailsPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Service Type</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+Service Type</label>
           <select
             name="service_type"
             value={restaurant.service_type}
@@ -221,7 +228,8 @@ export default function RestaurantDetailsPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Minimum Order for Delivery</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+Minimum Order for Delivery</label>
           <input
             type="number"
             name="minimum_order_for_delivery"
@@ -233,7 +241,8 @@ export default function RestaurantDetailsPage() {
 
         {/* Category Select */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">Category</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+Category</label>
           <select
             name="restaurant_category_id"
             value={restaurant.restaurant_category_id || ""}
@@ -252,7 +261,8 @@ export default function RestaurantDetailsPage() {
         {/* Image Previews */}
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Logo</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+Logo</label>
             <input
               type="file"
               accept="image/*"
@@ -267,7 +277,8 @@ export default function RestaurantDetailsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Banner Image</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+Banner Image</label>
             <input
               type="file"
               accept="image/*"
@@ -286,7 +297,7 @@ export default function RestaurantDetailsPage() {
         <div className="mt-6 text-center">
           <button
             onClick={handleSave}
-            className="inline-flex items-center justify-center px-6 py-3 bg-indigo-600 text-white rounded-md shadow-md hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
+            className="inline-flex block items-center justify-center px-6 py-3 bg-indigo-600 text-white rounded-md shadow-md hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
             disabled={isSaving}
           >
             <FaSave className="mr-2" />

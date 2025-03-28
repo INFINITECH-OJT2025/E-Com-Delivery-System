@@ -56,10 +56,12 @@ const DashboardCharts: FC<DashboardChartsProps> = ({ totalOrders, pendingOrders,
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-lg mt-8">
-      <h2 className="text-2xl font-semibold mb-4">Dashboard Metrics</h2>
-      <Bar data={chartData} options={options} />
-    </div>
+    <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-md mt-8 transition-all duration-300">
+    <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">
+      Dashboard Metrics
+    </h2>
+    <Bar data={chartData} options={options} />
+  </div>
   );
 };
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Card, CardBody, Button } from "@heroui/react";
+import { Card, CardBody, Button, Spinner } from "@heroui/react";
 import { Star, MessageCircle, Users } from "lucide-react";
 import { Bar } from "react-chartjs-2";
 import {
@@ -166,14 +166,41 @@ export default function VendorReviewsPage() {
   const handlePrevPage = () => {
     if (currentPage > 1) setCurrentPage((prev) => prev - 1);
   };
+  const ReviewComment = ({ comment }) => {
+    const [expanded, setExpanded] = useState(false);
+    const maxLength = 150;
+    const isLong = comment.length > maxLength;
+    const displayText = expanded || !isLong ? comment : comment.substring(0, maxLength) + "...";
+  
+    return (
+      <div className="mt-1">
+        <p className="text-gray-700 flex items-center gap-2">
+          <MessageCircle className="w-4 h-4" />
+          {displayText}
+        </p>
+        {isLong && (
+          <div className="text-right mt-1">
+            <span
+              onClick={() => setExpanded(!expanded)}
+              className="text-blue-500 cursor-pointer"
+            >
+              {expanded ? "See less" : "See more"}
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };
 
+  
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold mb-4">Vendor Reviews & Insights</h1>
 
       {insightsLoading ? (
-        <div className="flex justify-center py-4">Loading insights...</div>
-      ) : (
+  <div className="flex justify-center items-center w-full h-64">
+  <Spinner size="lg" />
+</div>      ) : (
         <>
           <div className="grid md:grid-cols-3 gap-4">
             <Card>
@@ -206,14 +233,17 @@ export default function VendorReviewsPage() {
             </Card>
           </div>
 
-          <div className="mt-4 p-4 border rounded-lg bg-white">
-            <p className="text-md font-semibold">AI Summary: {summary}</p>
-            <div className="flex gap-4 text-sm mt-2">
-              <span>😊 Positive: {sentimentCounts.positive}</span>
-              <span>😐 Neutral: {sentimentCounts.neutral}</span>
-              <span>😞 Negative: {sentimentCounts.negative}</span>
-            </div>
-          </div>
+          <div className="mt-4 p-4 border rounded-xl bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 transition-all">
+  <p className="text-base font-semibold text-gray-800 dark:text-white">
+    AI Summary: {summary}
+  </p>
+  <div className="flex gap-4 text-sm mt-2 text-gray-700 dark:text-gray-300">
+    <span>😊 Positive: {sentimentCounts.positive}</span>
+    <span>😐 Neutral: {sentimentCounts.neutral}</span>
+    <span>😞 Negative: {sentimentCounts.negative}</span>
+  </div>
+</div>
+
         </>
       )}
 
@@ -233,10 +263,8 @@ export default function VendorReviewsPage() {
               <p className="text-xs text-gray-500">
                 {new Date(review.created_at).toLocaleDateString()}
               </p>
-              <p className="text-gray-700 mt-1 flex items-center gap-2">
-                <MessageCircle className="w-4 h-4" />
-                {review.comment}
-              </p>
+              <ReviewComment comment={review.comment} />
+
 
               {/* AI Sentiment label */}
               <p className="text-sm font-semibold">
