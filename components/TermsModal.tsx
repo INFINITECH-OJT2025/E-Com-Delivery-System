@@ -21,7 +21,7 @@ export default function TermsModal({ isOpen, onClose }: { isOpen: boolean; onClo
             </ModalHeader>
             <ModalBody className="max-h-[60vh] overflow-y-auto text-sm space-y-4">
               <p>
-                By registering as a user, you agree to the following terms:
+                By registering as a rider, you agree to the following terms:
               </p>
               <ul className="list-disc ml-5 space-y-2">
                 <li>All information provided must be accurate and truthful.</li>

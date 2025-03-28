@@ -155,29 +155,18 @@ export default function RiderRegister() {
             {/* Terms & Conditions */}
             <p className="text-gray-500 text-center text-sm mt-2">
               By signing up you agree to our{" "}
-              <a href="#" className="text-secondary font-medium">Terms & Conditions</a> and{" "}
-              <a href="#" className="text-secondary font-medium">Privacy Policy</a>.
-            </p>
-    {/* Terms Agreement */}
-    <div className="flex items-start text-sm text-gray-600">
-          <input
-            id="agree"
-            type="checkbox"
-            checked={agreed}
-            onChange={(e) => setAgreed(e.target.checked)}
-            className="mt-1 mr-2 h-4 w-4 rounded border-gray-300"
-          />
-          <label htmlFor="agree">
+              <label htmlFor="agree">
             I agree to the{" "}
             <button
               type="button"
               onClick={() => setShowTerms(true)}
-              className="text-blue-600 hover:underline"
+              className="text-secondary hover:underline"
             >
               Terms and Conditions
             </button>
           </label>
-        </div>
+            </p>
+   
             {/* Register Button */}
             <Button type="submit" color="primary" className="w-full" isDisabled={loading}>
               {loading ? <Spinner size="sm" /> : "Register"}
