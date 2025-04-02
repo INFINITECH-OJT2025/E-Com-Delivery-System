@@ -147,19 +147,20 @@ export default function MenuPage() {
       <div className="flex justify-between mb-4">
         {/* Category Filter */}
         <Select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="w-1/4"
-          required
-          placeholder="Select Category"
-        >
+  value={selectedCategory}
+  onChange={(e) => setSelectedCategory(e.target.value)}
+  className="w-1/4"
+  required
+  placeholder="Select Category"
+>
+  <SelectItem key="" value="">All Categories</SelectItem>
+  {categories.map((cat) => (
+    <SelectItem key={cat.id} value={cat.id}>
+      {cat.name}
+    </SelectItem>
+  ))}
+</Select>
 
-          {categories.map((cat) => (
-            <SelectItem key={cat.id} value={cat.id}>
-              {cat.name}
-            </SelectItem>
-          ))}
-        </Select>
 
         {/* Search Bar */}
         <Input
@@ -185,46 +186,51 @@ export default function MenuPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center h-40">
-          <Spinner size="lg" />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMenuItems.map((menu: any) => (
-            <Card key={menu.id} className="shadow-lg transition-transform hover:scale-105 hover:shadow-xl border border-gray-200">
-              <CardBody className="p-4">
-              <PhotoProvider>
-  <PhotoView src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${menu.image}`}>
-    <img
-      src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${menu.image}`}
-      alt={menu.name}
-      className="w-full h-auto max-h-60 object-contain rounded-lg mb-4 cursor-pointer"
-    />
-  </PhotoView>
-</PhotoProvider>
+  <div className="flex justify-center items-center h-40">
+    <Spinner size="lg" />
+  </div>
+) : filteredMenuItems.length === 0 ? (
+  <div className="text-center text-gray-500 col-span-full py-10">
+    No menu items found {selectedCategory ? "in this category" : ""}.
+  </div>
+) : (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {filteredMenuItems.map((menu: any) => (
+      <Card key={menu.id} className="shadow-lg transition-transform hover:scale-105 hover:shadow-xl border border-gray-200">
+        <CardBody className="p-4">
+          <PhotoProvider>
+            <PhotoView src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${menu.image}`}>
+              <img
+                src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${menu.image}`}
+                alt={menu.name}
+                className="w-full h-auto max-h-60 object-contain rounded-lg mb-4 cursor-pointer"
+              />
+            </PhotoView>
+          </PhotoProvider>
 
-                <div className="space-y-1">
-                  <h3 className="text-xl font-bold text-gray-800">{menu.name}</h3>
-                  <p className="text-gray-500 text-sm">{menu.description}</p>
-                  <p className="text-lg font-semibold text-primary">₱{menu.price}</p>
-                  <span className={`text-sm font-medium ${menu.stock > 0 ? "text-green-600" : "text-red-500"}`}>
-                    {menu.stock > 0 ? `In Stock (${menu.stock})` : "Out of Stock"}
-                  </span>
-                </div>
+          <div className="space-y-1">
+            <h3 className="text-xl font-bold text-gray-800">{menu.name}</h3>
+            <p className="text-gray-500 text-sm">{menu.description}</p>
+            <p className="text-lg font-semibold text-primary">₱{menu.price}</p>
+            <span className={`text-sm font-medium ${menu.stock > 0 ? "text-green-600" : "text-red-500"}`}>
+              {menu.stock > 0 ? `In Stock (${menu.stock})` : "Out of Stock"}
+            </span>
+          </div>
 
-                <div className="flex justify-end gap-2 mt-4">
-                  <Button size="sm" color="warning" onPress={() => handleEdit(menu)}>
-                    <FaEdit className="mr-2" /> Edit
-                  </Button>
-                  <Button size="sm" color="danger" onPress={() => handleDelete(menu.id)}>
-                    <FaTrash className="mr-2" /> Delete
-                  </Button>
-                </div>
-              </CardBody>
-            </Card>
-          ))}
-        </div>
-      )}
+          <div className="flex justify-end gap-2 mt-4">
+            <Button size="sm" color="warning" onPress={() => handleEdit(menu)}>
+              <FaEdit className="mr-2" /> Edit
+            </Button>
+            <Button size="sm" color="danger" onPress={() => handleDelete(menu.id)}>
+              <FaTrash className="mr-2" /> Delete
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
+    ))}
+  </div>
+)}
+
 
       {/* ✅ Modal */}
       <Modal isOpen={modalOpen} onOpenChange={setModalOpen} size="lg">
