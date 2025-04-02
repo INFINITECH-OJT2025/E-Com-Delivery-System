@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Card, CardBody, Button, Spinner } from "@heroui/react";
-import { Star, MessageCircle, Users } from "lucide-react";
+import { Star, Users } from "lucide-react";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -166,31 +166,7 @@ export default function VendorReviewsPage() {
   const handlePrevPage = () => {
     if (currentPage > 1) setCurrentPage((prev) => prev - 1);
   };
-  const ReviewComment = ({ comment }) => {
-    const [expanded, setExpanded] = useState(false);
-    const maxLength = 150;
-    const isLong = comment.length > maxLength;
-    const displayText = expanded || !isLong ? comment : comment.substring(0, maxLength) + "...";
   
-    return (
-      <div className="mt-1">
-        <p className="text-gray-700 flex items-center gap-2">
-          <MessageCircle className="w-4 h-4" />
-          {displayText}
-        </p>
-        {isLong && (
-          <div className="text-right mt-1">
-            <span
-              onClick={() => setExpanded(!expanded)}
-              className="text-blue-500 cursor-pointer"
-            >
-              {expanded ? "See less" : "See more"}
-            </span>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   
   return (
@@ -263,7 +239,8 @@ export default function VendorReviewsPage() {
               <p className="text-xs text-gray-500">
                 {new Date(review.created_at).toLocaleDateString()}
               </p>
-              <ReviewComment comment={review.comment} />
+              <p className="text-gray-700 text-sm">{review.comment}</p>
+
 
 
               {/* AI Sentiment label */}

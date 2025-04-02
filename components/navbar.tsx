@@ -179,7 +179,7 @@ export default function Navbar() {
               </Link>
 
               <Link
-                href="/vendor/reviews"
+                href="/reviews"
                 className="text-white text-xl flex items-center gap-2 hover:text-primary-300 transition-colors"
                 onPress={() => setMenuOpen(false)}
               >
