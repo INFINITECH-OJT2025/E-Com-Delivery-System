@@ -58,7 +58,7 @@ export default function Deals({ promos }: DealsProps) {
 
             {/* Deal Details Modal */}
             {selectedDeal && (
-                <Modal isOpen={isOpen} onOpenChange={setIsOpen}>
+                <Modal isOpen={isOpen} onOpenChange={setIsOpen} size="md">
                     <ModalContent>
                         <ModalHeader className="text-lg font-bold text-blue-700">
                             {selectedDeal.discount_percentage

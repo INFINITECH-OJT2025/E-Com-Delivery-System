@@ -91,7 +91,7 @@ export default function AddressSelector({ isOpen, onClose }: AddressSelectorProp
     };
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onClose} placement="full">
+        <Modal isOpen={isOpen} onOpenChange={onClose} >
             <ModalContent>
                 <ModalHeader className="flex items-center justify-between p-4 bg-white shadow">
                     <h2 className="text-lg font-bold text-gray-900">Delivery Address</h2>

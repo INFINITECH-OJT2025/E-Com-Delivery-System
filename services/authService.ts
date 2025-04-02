@@ -25,7 +25,36 @@ export const authService = {
             console.error("Login Error:", error);
             return { success: false, message: "Something went wrong. Please try again." };
         }
-    },
+    },  // ✅ Login with Google (Add this method to handle Google login)
+    loginWithGoogle: async (userInfo: {
+        email: string;
+        name: string;
+        picture?: string;
+      }) => {
+        try {
+          const response = await fetch(`${API_URL}/api/login/google`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(userInfo), // send full user info
+          });
+      
+          const result = await apiHelper.handleResponse(response);
+      
+          if (result.success) {
+            localStorage.setItem("auth_token", result.data.access_token);
+            localStorage.setItem("user", JSON.stringify(result.data.user));
+          }
+      
+          return result;
+        } catch (error) {
+          console.error("Google Login Error:", error);
+          return {
+            success: false,
+            message: "Something went wrong with Google login. Please try again.",
+          };
+        }
+      },
+      
 
     // ✅ Check Email
     checkEmail: async (email: string) => {

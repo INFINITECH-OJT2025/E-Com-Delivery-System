@@ -8,6 +8,9 @@ import EmailModal from "./emailModal";
 import LoginModal from "./loginModal";
 import VerifyEmailModal from "./verifyEmailModal";
 import RegisterModal from "./registerModal";
+import GoogleLoginPopupButton from "@/components/GoogleLoginPopupButton";
+import { authService } from "@/services/authService";
+import { useRouter } from "next/navigation";
 
 export default function AuthCard() {
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -15,6 +18,7 @@ export default function AuthCard() {
     const [isVerifyEmailModalOpen, setIsVerifyEmailModalOpen] = useState(false);
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
     const [email, setEmail] = useState("");
+    const router = useRouter();
 
     // ✅ Open email modal
     const openEmailModal = () => setIsEmailModalOpen(true);
@@ -41,7 +45,26 @@ export default function AuthCard() {
         setIsEmailModalOpen(false);
         setIsRegisterModalOpen(true);
     };
-
+    const handleGooglePopupLogin = async (userInfo: any) => {
+        const result = await authService.loginWithGoogle(userInfo);
+      
+        if (result.success) {
+          // ✅ Store token and user info
+          localStorage.setItem("auth_token", result.data.access_token);
+          localStorage.setItem("user", JSON.stringify(result.data.user));
+      
+          // ✅ Redirect to home
+          router.push("/home");
+      
+          // Optional: toast or loader if needed
+          // toast.success("Welcome, " + result.data.user.name + "!");
+        } else {
+          console.error("Google login failed:", result.message);
+          // Optional: show error to user
+          // toast.error("Google login failed. Please try again.");
+        }
+      };
+      
     return (
         <>
             <Card className="w-full max-w-md p-6 bg-white rounded-t-xl shadow-lg absolute bottom-0">
@@ -49,18 +72,35 @@ export default function AuthCard() {
                 <p className="text-gray-500 text-center mb-4">Select your preferred method to continue</p>
 
                 {/* Social Login Buttons */}
-                <Button className="w-full flex items-center gap-2 bg-white text-black border border-gray-300 hover:bg-gray-100">
-                    <FcGoogle className="text-xl" />
-                    Continue with Google
-                </Button>
-                <Button className="w-full flex items-center gap-2 bg-blue-600 text-white mt-2 hover:bg-blue-700">
-                    <FaFacebook className="text-xl" />
-                    Continue with Facebook
-                </Button>
-                <Button className="w-full flex items-center gap-2 bg-black text-white mt-2 hover:bg-gray-900">
-                    <FaApple className="text-xl" />
-                    Continue with Apple
-                </Button>
+                <GoogleLoginPopupButton onLogin={handleGooglePopupLogin} />
+
+                <div className="relative w-full">
+  <Button className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white mt-2 hover:bg-blue-700 opacity-60 cursor-not-allowed relative px-4 py-2 rounded-md">
+    <FaFacebook className="text-xl" />
+    Continue with Facebook
+  </Button>
+  {/* Red Chip */}
+  <span className="absolute top-2 right-0 text-[11px] bg-red-500 text-white px-2 py-0.5 rounded-tr-md rounded-bl-md shadow-md z-10">
+    Currently unavailable
+  </span>
+  {/* White Overlay */}
+  <div className="absolute inset-0 bg-white bg-opacity-60 rounded-md z-0 pointer-events-none"></div>
+</div>
+
+<div className="relative w-full">
+  <Button className="w-full flex items-center justify-center gap-2 bg-black text-white mt-2 hover:bg-gray-900 opacity-60 cursor-not-allowed relative px-4 py-2 rounded-md">
+    <FaApple className="text-xl" />
+    Continue with Apple
+  </Button>
+  {/* Red Chip */}
+  <span className="absolute top-2 right-0 text-[11px] bg-red-500 text-white px-2 py-0.5 rounded-tr-md rounded-bl-md shadow-md z-10">
+    Currently unavailable
+  </span>
+  {/* White Overlay */}
+  <div className="absolute inset-0 bg-white bg-opacity-60 rounded-md z-0 pointer-events-none"></div>
+</div>
+
+
 
                 {/* Divider */}
                 <div className="my-4 border-b border-gray-300"></div>

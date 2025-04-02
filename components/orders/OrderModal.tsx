@@ -35,7 +35,7 @@ export default function OrderModal({ isOpen, onClose }: { isOpen: boolean; onClo
     return (
         <>
             <Modal isOpen={isOpen} onOpenChange={onClose} size="full" scrollBehavior="inside">
-                <ModalContent className="max-w-md mx-auto rounded-lg">
+                <ModalContent className=" mx-auto rounded-lg">
                     <ModalHeader className="text-lg font-bold text-gray-800 border-b">Orders</ModalHeader>
                     <ModalBody className="space-y-4">
                         {orders.length === 0 ? (

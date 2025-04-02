@@ -31,8 +31,10 @@ export default function HorizontalScrollList({ items }: HorizontalScrollListProp
                     : `${process.env.NEXT_PUBLIC_API_URL}/storage/${item.banner_image}` || "/images/default-restaurant.jpg";
 
                 // ✅ Ensure `rating` is a number, default to 0 if missing
-                const rating = typeof item.rating === "number" ? item.rating.toFixed(1) : "N/A";
-
+                const rating = item.rating != null && !isNaN(item.rating)
+                ? parseFloat(item.rating).toFixed(1)
+                : "N/A";
+                            //   console.log("Rating:", item.rating ); // Debugging line
                 // ✅ Ensure `total_reviews` is a number, default to 0 if missing
                 const totalReviews = typeof item.total_reviews === "number" ? item.total_reviews : 0;
 

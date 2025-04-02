@@ -111,8 +111,8 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
 
     return (
         <>
-            <Modal isDismissable={false} isOpen={isOpen} onOpenChange={onClose} placement="bottom" scrollBehavior="inside" >
-                <ModalContent className="rounded-t-2xl bg-white shadow-lg">
+            <Modal isDismissable={false} isOpen={isOpen} onOpenChange={onClose}  scrollBehavior="inside" size="lg">
+                <ModalContent className="rounded-t-2xl bg-white shadow-lg ">
                     <ModalHeader className="flex items-center justify-between p-4">
                         <h2 className="text-lg font-bold text-gray-900">Where should we deliver your order?</h2>
                     </ModalHeader>

@@ -25,6 +25,7 @@
   "@react-aria/ssr": "3.9.7",
   "@react-aria/visually-hidden": "3.8.19",
   "@react-google-maps/api": "^2.20.6",
+  "@react-oauth/google": "^0.12.1",
   "axios": "^1.8.2",
   "clsx": "2.1.1",
   "date-fns": "^4.1.0",
@@ -41,6 +42,7 @@
   "react": "18.3.1",
   "react-chatbotify": "^2.0.0-beta.32",
   "react-dom": "18.3.1",
+  "react-google-login": "^5.2.2",
   "react-icons": "^5.5.0",
   "recharts": "^2.15.1",
   "socket.io-client": "^4.8.1"

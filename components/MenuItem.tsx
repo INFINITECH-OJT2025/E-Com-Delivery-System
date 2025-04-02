@@ -88,7 +88,7 @@ export default function MenuItem({ menuItem }: MenuItemProps) {
             </div>
 
             {/* ✅ Modal */}
-            <Modal isOpen={isOpen} onOpenChange={handleClose} placement="bottom" size="md">
+            <Modal isOpen={isOpen} onOpenChange={handleClose}  size="md">
                 <ModalContent>
                     {/* ✅ Modal Header */}
                     <ModalHeader className="flex items-center justify-between p-3">

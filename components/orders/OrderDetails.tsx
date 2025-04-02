@@ -38,6 +38,7 @@ export default function OrderDetails({ order, onBack, openRefundModal, fetchOrde
         });
     };
     const [reviewModalOpen, setReviewModalOpen] = useState(false);
+    const [zoomedImageOpen, setZoomedImageOpen] = useState(false);
 
     const deliveredAt = order.ordered_at
     ? parseISO(order.ordered_at)
@@ -81,17 +82,36 @@ export default function OrderDetails({ order, onBack, openRefundModal, fetchOrde
 
             {/* ✅ Proof of Delivery (If Available) */}
             {order.delivery_proof && (
-                <div className="border-t pt-3 space-y-2">
-                    <p className="text-md font-semibold flex items-center">
-                        <FileText className="w-5 h-5 text-green-600 mr-2" /> Proof of Delivery:
-                    </p>
-                    <img
-                        src={order.delivery_proof}
-                        alt="Proof of Delivery"
-                        className="w-full max-h-60 object-cover rounded-md border"
-                    />
-                </div>
-            )}
+  <div className="border-t pt-3 space-y-2">
+    <p className="text-md font-semibold flex items-center">
+      <FileText className="w-5 h-5 text-green-600 mr-2" /> Proof of Delivery:
+    </p>
+    <img
+      src={order.delivery_proof}
+      alt="Proof of Delivery"
+      onClick={() => setZoomedImageOpen(true)}
+      className="w-full max-h-60 object-cover rounded-md border cursor-zoom-in transition-transform duration-200 hover:scale-105"
+    />
+  </div>
+)}
+{zoomedImageOpen && (
+  <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center">
+    <div className="relative">
+      <button
+        onClick={() => setZoomedImageOpen(false)}
+        className="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full p-1 hover:bg-opacity-70"
+      >
+        <X className="w-5 h-5" />
+      </button>
+      <img
+        src={order.delivery_proof}
+        alt="Zoomed Proof"
+        className="max-w-full max-h-screen rounded-lg shadow-lg"
+      />
+    </div>
+  </div>
+)}
+
 
             {/* ✅ Refund Status */}
             {order.refund && (
