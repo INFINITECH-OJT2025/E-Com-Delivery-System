@@ -14,6 +14,7 @@ use App\Services\DeliveryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -411,7 +412,7 @@ class RiderController extends Controller
     {
         $request->validate([
             'order_id' => 'required|exists:orders,id',
-            'proof_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'proof_image' => 'required|image|mimes:jpeg,png,jpg,webp',
         ]);
 
         // Fetch the delivery record via order_id
@@ -667,5 +668,71 @@ class RiderController extends Controller
             'rider_share' => round($riderShare, 2),
             'expected_remittance' => round($expectedRemittance, 2),
         ]);
+    }
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'phone_number' => 'nullable|string|max:20',
+            'vehicle_type' => 'nullable|string|max:50',
+            'plate_number' => 'nullable|string|max:50',
+        ]);
+
+        $user->update($request->only(['name', 'phone_number', 'vehicle_type', 'plate_number']));
+
+        return response()->json(['success' => true, 'message' => 'Profile updated successfully.']);
+    }
+
+    public function uploadProfileImage(Request $request)
+    {
+        $request->validate([
+            'profile_image' => 'required|image|max:2048',
+        ]);
+
+        $user = $request->user();
+
+        $path = $request->file('profile_image')->store('profile_images', 'public');
+
+        $user->profile_image = $path;
+        $user->save();
+
+        return response()->json(['success' => true, 'message' => 'Profile image updated.', 'image_url' => asset('storage/' . $path)]);
+    }
+
+    public function uploadLicenseImage(Request $request)
+    {
+        $request->validate([
+            'license_image' => 'required|image|max:2048',
+        ]);
+
+        $user = $request->user();
+
+        $path = $request->file('license_image')->store('license_images', 'public');
+
+        $user->license_image = $path;
+        $user->save();
+
+        return response()->json(['success' => true, 'message' => 'License image uploaded.', 'image_url' => asset('storage/' . $path)]);
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|min:6|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json(['success' => false, 'message' => 'Current password is incorrect.'], 422);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json(['success' => true, 'message' => 'Password updated successfully.']);
     }
 }

@@ -36,6 +36,8 @@ Route::prefix('google-maps')->group(function () {
 // ✅ Authentication Routes (Sanctum Token-Based)
 Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
 Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
+Route::post('/login/google', [AuthController::class, 'loginWithGoogle'])->name('auth.loginWithGoogle');
+
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum')->name('auth.logout');
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->name('auth.verify');
 Route::post('/resend-verification', [AuthController::class, 'resendVerification'])->name('auth.reverify');
@@ -94,9 +96,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/vouchers/apply', [PromoController::class, 'applyPromo']); // Apply a voucher
 
     // ✅ Admin routes (Manage vouchers)
-    Route::middleware(['admin'])->prefix('admin')->group(function () {
-        Route::apiResource('vouchers', PromoController::class)->except(['show']);
-    });
+    // Route::middleware(['admin'])->prefix('admin')->group(function () {
+    //     Route::apiResource('vouchers', PromoController::class)->except(['show']);
+    // });
 });
 // ✅ Secure API with middleware
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -274,4 +276,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/rider/remittance/request', [RiderController::class, 'requestRemittance']);
     Route::get('/rider/remittance/history', [RiderController::class, 'getRemittanceHistory']);
     Route::get('/rider/remittance/today', [RiderController::class, 'getExpectedRemittanceSinceLast']);
+});
+Route::prefix('admin/vouchers')->middleware(['auth:sanctum'])->group(function () {
+    Route::get('/', [PromoController::class, 'adminIndex']);        // List all vouchers
+    Route::post('/', [PromoController::class, 'adminStore']);       // Create voucher
+    Route::get('/{id}', [PromoController::class, 'adminShow']);     // Show single voucher
+    Route::put('/{id}', [PromoController::class, 'adminUpdate']);   // Update voucher
+    Route::delete('/{id}', [PromoController::class, 'adminDestroy']); // Delete voucher
+});
+Route::middleware(['auth:sanctum'])->group(function () {
+    // Rider Profile
+    Route::put('/rider/profile', [RiderController::class, 'updateProfile']);
+    Route::post('/rider/profile/upload-profile-image', [RiderController::class, 'uploadProfileImage']);
+    Route::post('/rider/profile/upload-license-image', [RiderController::class, 'uploadLicenseImage']);
+    Route::put('/rider/profile/password', [RiderController::class, 'updatePassword']);
 });

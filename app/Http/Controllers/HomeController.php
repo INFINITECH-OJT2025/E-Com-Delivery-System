@@ -230,12 +230,6 @@ class HomeController extends Controller
             ], false); // ✅ Marking success as false but with HTTP 200
         }
 
-        // ✅ Check if this specific order has already been reviewed
-        $hasReviewed = Review::where('user_id', $user->id)
-            ->where('restaurant_id', $currentOrder->restaurant_id)
-            ->where('order_id', $currentOrder->id)
-            ->exists();
-
         return ResponseHelper::success('Active order details fetched successfully', [
             'order_id'        => $currentOrder->id,
             'order_status'    => $currentOrder->order_status,
@@ -263,7 +257,8 @@ class HomeController extends Controller
             ],
             'pickup_time'    => optional($currentOrder->delivery)->pickup_time,
             'delivery_time'  => optional($currentOrder->delivery)->delivery_time,
-            'has_reviewed'   => $hasReviewed, // ✅ Included here
+            'has_reviewed'   => null, // ✅ Included here
+
         ]);
     }
 }

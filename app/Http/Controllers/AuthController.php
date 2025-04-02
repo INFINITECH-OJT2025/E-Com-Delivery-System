@@ -16,9 +16,11 @@ use App\Models\Restaurant;
 use Illuminate\Cache\RateLimiter;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Str;
+use Google\Client as Google_Client;
 
 class AuthController extends Controller
 {
+
     // ✅ Check if email exists and is verified
     public function checkEmail(Request $request)
     {
@@ -939,5 +941,48 @@ class AuthController extends Controller
             'access_token' => $token,
             'admin' => $admin->only(['id', 'name', 'email', 'role', 'email_verified_at']),
         ], 200);
+    }
+
+    public function loginWithGoogle(Request $request)
+    {
+        // ✅ Validate basic user info from frontend
+        $request->validate([
+            'email' => 'required|email',
+            'name' => 'required|string',
+        ]);
+
+        $email = $request->email;
+        $name = $request->name;
+
+        $user = User::where('email', $email)->first();
+
+        // ✅ Register user if not existing
+        if (!$user) {
+            try {
+                DB::beginTransaction();
+
+                $user = User::create([
+                    'name' => $name,
+                    'email' => $email,
+                    'phone_number' => '',
+                    'password' => Hash::make(Str::random(16)), // Random password (not used)
+                    'role' => 'customer',
+                    'email_verified_at' => now(),
+                ]);
+
+                DB::commit();
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return ResponseHelper::error("Error creating user: " . $e->getMessage(), 500);
+            }
+        }
+
+        // ✅ Issue Sanctum token
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return ResponseHelper::success("Login successful", [
+            'access_token' => $token,
+            'user' => $user->only(['id', 'name', 'email', 'phone_number', 'role', 'email_verified_at']),
+        ]);
     }
 }

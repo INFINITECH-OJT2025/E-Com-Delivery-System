@@ -137,4 +137,77 @@ class PromoController extends Controller
         $promo->delete();
         return ResponseHelper::success("Promo deleted successfully");
     }
+    public function adminIndex()
+    {
+        $promos = Promo::withCount([
+            'usages as usage_count' => function ($query) {
+                $query->select(DB::raw("count(*)"));
+            }
+        ])->orderByDesc('created_at')->get();
+
+        return response()->json($promos);
+    }
+
+    // POST /admin/vouchers
+    public function adminStore(Request $request)
+    {
+        $data = $request->validate([
+            'type' => 'required|in:discount,shipping',
+            'code' => 'required|string|unique:promos,code',
+            'discount_percentage' => 'nullable|numeric',
+            'discount_amount' => 'nullable|numeric',
+            'minimum_order' => 'required|numeric',
+            'max_uses' => 'required|integer',
+            'valid_until' => 'required|date',
+        ]);
+
+        $promo = Promo::create($data);
+
+        return response()->json([
+            'message' => 'Voucher created successfully',
+            'data' => $promo
+        ], 201);
+    }
+
+    // GET /admin/vouchers/{id}
+    public function adminShow($id)
+    {
+        $promo = Promo::findOrFail($id);
+
+        return response()->json($promo);
+    }
+
+    // PUT /admin/vouchers/{id}
+    public function adminUpdate(Request $request, $id)
+    {
+        $promo = Promo::findOrFail($id);
+
+        $data = $request->validate([
+            'type' => 'required|in:discount,shipping',
+            'code' => 'required|string|unique:promos,code,' . $id,
+            'discount_percentage' => 'nullable|numeric',
+            'discount_amount' => 'nullable|numeric',
+            'minimum_order' => 'required|numeric',
+            'max_uses' => 'required|integer',
+            'valid_until' => 'required|date',
+        ]);
+
+        $promo->update($data);
+
+        return response()->json([
+            'message' => 'Voucher updated successfully',
+            'data' => $promo
+        ]);
+    }
+
+    // DELETE /admin/vouchers/{id}
+    public function adminDestroy($id)
+    {
+        $promo = Promo::findOrFail($id);
+        $promo->delete();
+
+        return response()->json([
+            'message' => 'Voucher deleted successfully'
+        ]);
+    }
 }
