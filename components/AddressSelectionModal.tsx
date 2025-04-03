@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Modal, ModalContent, ModalHeader, ModalBody, Button } from "@heroui/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, Button, ModalFooter } from "@heroui/react";
 import { MapPin, Pencil, Plus, Trash } from "lucide-react";
 import { googleMapsService } from "@/services/googleMapsService";
 import { addressService } from "@/services/addressService";
@@ -111,7 +111,7 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
 
     return (
         <>
-            <Modal isDismissable={false} isOpen={isOpen} onOpenChange={onClose}  scrollBehavior="inside" size="lg">
+            <Modal isDismissable={false} isOpen={isOpen} onOpenChange={onClose}  scrollBehavior="inside" size="lg" >
                 <ModalContent className="rounded-t-2xl bg-white shadow-lg ">
                     <ModalHeader className="flex items-center justify-between p-4">
                         <h2 className="text-lg font-bold text-gray-900">Where should we deliver your order?</h2>
@@ -173,18 +173,19 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
                             ))}
                         </div>
 
-                        {/* ➕ Add New Address */}
+         
+
+
+                    </ModalBody>
+                    <ModalFooter >               {/* ➕ Add New Address */}
                    <Button
   variant="ghost"
-  className="w-full min-h-[2.7rem] flex items-center justify-center gap-2 text-primary font-medium text-sm rounded-lg hover:bg-primary/10"
+  className="w-full min-h-[2.8rem] flex items-center justify-center gap-2 text-primary font-medium text-sm rounded-lg hover:bg-primary/10"
   onPress={() => openEditor()}
 >
   <Plus className="w-5 h-5" />
   Add a new address
-</Button>
-
-
-                    </ModalBody>
+</Button></ModalFooter>
                 </ModalContent>
             </Modal>
 

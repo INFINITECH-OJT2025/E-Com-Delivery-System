@@ -133,7 +133,10 @@ export default function AddressEditorModal({ isOpen, onClose, addressId }: Addre
             center,
             zoom: 16,
             streetViewControl: false,
-            disableDefaultUI: true,
+            disableDefaultUI: true, // ✅ Enable default UI controls
+            fullscreenControl: true, // ✅ Show fullscreen control
+            zoomControl: false,
+            mapTypeControl: false,
         });
 
         // ✅ Create and store marker instance
@@ -144,14 +147,27 @@ export default function AddressEditorModal({ isOpen, onClose, addressId }: Addre
         });
 
         // ✅ Update Address When Marker Moves
-        google.maps.event.addListener(markerRef.current, "dragend", async () => {
-            const lat = markerRef.current?.getPosition()?.lat();
-            const lng = markerRef.current?.getPosition()?.lng();
-            if (lat && lng) {
-                const address = await googleMapsService.getAddressFromCoords(lat, lng);
-                setForm((prev) => ({ ...prev, latitude: lat, longitude: lng, address: address || "Unknown Location" }));
-            }
-        });
+       // ✅ Update Address When Marker Moves
+google.maps.event.addListener(markerRef.current, "dragend", async () => {
+    const latLng = markerRef.current?.getPosition();
+    if (latLng) {
+      const lat = latLng.lat();
+      const lng = latLng.lng();
+      const address = await googleMapsService.getAddressFromCoords(lat, lng);
+  
+      // ✅ Update form state
+      setForm((prev) => ({
+        ...prev,
+        latitude: lat,
+        longitude: lng,
+        address: address || "Unknown Location",
+      }));
+  
+      // ✅ Center the map to the marker
+      mapInstance.current?.setCenter(latLng);
+    }
+  });
+  
 
         // ✅ Enable Google Maps Autocomplete
         if (autocompleteRef.current && window.google?.maps?.places?.Autocomplete) {

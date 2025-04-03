@@ -242,14 +242,15 @@ return (
             {recentSearches.map((search, index) => (
                 <div key={index} className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg">
                     <button
-                        className="w-full text-left text-gray-600"
-                        onClick={() => {
-                            setSearchQuery(search);
-                            handleSearch();
-                        }}
-                    >
-                        <IoTimeOutline className="mr-2 inline" /> {search}
-                    </button>
+    className="w-full text-left text-gray-600"
+    onClick={() => {
+        setSearchQuery(search);
+        setTimeout(() => handleSearch(), 50); // ✅ Auto-search after setting
+    }}
+>
+    <IoTimeOutline className="mr-2 inline" /> {search}
+</button>
+
                     <button
                         className="text-gray-400 hover:text-red-500"
                         onClick={() => handleDeleteRecentSearch(search)} // ✅ Delete individual search
@@ -269,16 +270,17 @@ return (
                                 <h3 className="text-gray-800 font-semibold mb-2">Popular searches</h3>
                                 <div className="flex flex-wrap gap-2">
                                     {popularSearches.map((keyword, index) => (
-                                        <button 
-                                            key={index} 
-                                            className="bg-gray-200 px-3 py-2 rounded-full text-sm" 
-                                            onClick={() => {
-                                                setSearchQuery(keyword);
-                                                handleSearch();
-                                            }}
-                                        >
-                                            {keyword}
-                                        </button>
+                                       <button 
+                                       key={index} 
+                                       className="bg-gray-200 px-3 py-2 rounded-full text-sm" 
+                                       onClick={() => {
+                                           setSearchQuery(keyword);
+                                           setTimeout(() => handleSearch(), 50); // ✅ Auto-search
+                                       }}
+                                   >
+                                       {keyword}
+                                   </button>
+                                   
                                     ))}
                                 </div>
                             </div>

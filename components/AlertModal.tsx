@@ -1,17 +1,19 @@
 "use client";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from "@heroui/react";
-import { AlertTriangle, Info, CheckCircle, X } from "lucide-react";
+import { AlertTriangle, Info, CheckCircle, XCircle } from "lucide-react";
 
 // ✅ Define Props for Different Modal Types
 interface AlertModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm?: () => void; // Optional confirm action
+    onConfirm?: () => void;
     title?: string;
     message: string;
-    type?: "warning" | "info" | "success"; // Modal type
+    type?: "warning" | "info" | "success" | "error"; // ✅ Added "error"
     confirmText?: string;
     cancelText?: string;
+    hideCancel?: boolean;   // ✅ Optional hide cancel
+    hideConfirm?: boolean;  // ✅ Optional hide confirm
 }
 
 export default function AlertModal({
@@ -22,14 +24,16 @@ export default function AlertModal({
     message,
     type = "warning",
     confirmText = "OK",
-    cancelText = "Cancel"
+    cancelText = "Cancel",
+    hideCancel = false,
+    hideConfirm = false,
 }: AlertModalProps) {
-
     // ✅ Choose Icon Based on Type
     const icon = {
         warning: <AlertTriangle className="text-yellow-500 w-8 h-8" />,
         info: <Info className="text-blue-500 w-8 h-8" />,
         success: <CheckCircle className="text-green-500 w-8 h-8" />,
+        error: <XCircle className="text-red-500 w-8 h-8" />,
     }[type];
 
     return (
@@ -48,13 +52,13 @@ export default function AlertModal({
 
                 {/* ✅ Modal Footer */}
                 <ModalFooter className="p-4 flex justify-center gap-3">
-                    {/* Cancel Button */}
-                    <Button variant="light" className="px-6" onPress={onClose}>
-                        {cancelText}
-                    </Button>
+                    {!hideCancel && (
+                        <Button variant="light" className="px-6" onPress={onClose}>
+                            {cancelText}
+                        </Button>
+                    )}
 
-                    {/* Confirm Button */}
-                    {onConfirm && (
+                    {!hideConfirm && onConfirm && (
                         <Button className="bg-primary text-white px-6" onPress={onConfirm}>
                             {confirmText}
                         </Button>

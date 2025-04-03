@@ -127,7 +127,12 @@ export default function RestaurantPage() {
                 {/* ✅ Menu Items Section - Disabled if Closed */}
                 <div className={`px-4 py-2 space-y-6 ${restaurant.status === "closed" ? "opacity-50 pointer-events-none" : ""}`}>
                     {categories.map(({ name }) => (
-                        <div key={name} ref={(el) => (menuRefs.current[name] = el)}>
+                        <div
+  key={name}
+  ref={(el) => (menuRefs.current[name] = el)}
+  className="scroll-mt-[120px]" // ✅ adjust this based on your sticky header height
+>
+
                             <h3 className="text-lg font-bold text-gray-800 mt-6">{name}</h3>
                             <div className="grid grid-cols-1 gap-4">
                                 {restaurant.menus

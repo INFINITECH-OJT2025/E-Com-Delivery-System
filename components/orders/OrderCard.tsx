@@ -117,17 +117,22 @@ export default function OrderCard({ order, onOpen }: OrderCardProps) {
             </div>
 
             {/* ✅ QR Code Modal */}
-            <Modal isOpen={isQRModalOpen} onOpenChange={() => setIsQRModalOpen(false)} size="sm">
+            <Modal isOpen={isQRModalOpen} onOpenChange={() => setIsQRModalOpen(false)} size="md">
                 <ModalContent className="p-4 rounded-lg">
-                    <ModalHeader className="text-lg font-bold text-center">Pickup QR Code</ModalHeader>
+                <ModalHeader >
+  <div>
+    <h2 className="text-lg font-bold">Pickup QR Code</h2>
+    <p className="text-sm text-gray-500 mt-1">Show this QR code to the cashier</p>
+  </div>
+</ModalHeader>
                     <ModalBody className="flex justify-center items-center py-6">
                     <QRCodeCanvas
     value={JSON.stringify({ orderId: order.id })}
-    size={180}
+    size={380}
     bgColor="#ffffff"
     fgColor="#000000"
     level="H"
-    includeMargin={true}
+    marginSize = {3}
 />
 
                     </ModalBody>

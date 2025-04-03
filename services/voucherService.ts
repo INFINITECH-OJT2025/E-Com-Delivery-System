@@ -118,5 +118,23 @@ async getAvailableVouchers() {
             console.error("Error deleting voucher:", error);
             return { success: false, message: "Failed to delete voucher" };
         }
-    },
+    },async getVoucherSavings() {
+        const token = localStorage.getItem("auth_token");
+        if (!token) return { success: false, message: "Unauthorized" };
+      
+        try {
+          const res = await fetch(`${API_URL}/api/voucher-savings`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`, // ✅ Include token
+            },
+          });
+      
+          return await apiHelper.handleResponse(res);
+        } catch (error) {
+          console.error("Error fetching voucher savings:", error);
+          return { success: false, message: "Failed to fetch voucher savings" };
+        }
+      },
 };
