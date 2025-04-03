@@ -210,4 +210,66 @@ class PromoController extends Controller
             'message' => 'Voucher deleted successfully'
         ]);
     }
+
+    public function getVoucherSavings(Request $request)
+    {
+        $user = $request->user();
+
+        $ordersWithPromo = \App\Models\Order::with('usedPromo')
+            ->where('customer_id', $user->id)
+            ->where('order_status', 'completed') // Only count completed orders
+            ->whereNotNull('used_promo_id')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $totalSaved = 0;
+        $usageDetails = [];
+
+        foreach ($ordersWithPromo as $order) {
+            $promo = $order->usedPromo;
+
+            if (!$promo) continue;
+
+            $maxDiscount = floatval($promo->discount_amount ?? 0);
+            $promoType = $promo->type;
+
+            $subtotal = floatval($order->subtotal ?? 0);
+            $deliveryFee = floatval($order->delivery_fee ?? 0);
+            $discountOnSubtotal = floatval($order->discount_on_subtotal ?? 0);
+            $discountOnShipping = floatval($order->discount_on_shipping ?? 0);
+
+            $savedAmount = 0;
+            $before = 0;
+            $after = 0;
+
+            if ($promoType === 'discount') {
+                $savedAmount = min($maxDiscount, $discountOnSubtotal, $subtotal);
+                $before = $subtotal;
+                $after = $subtotal - $savedAmount;
+            } elseif ($promoType === 'shipping') {
+                $savedAmount = min($maxDiscount, $discountOnShipping, $deliveryFee);
+                $before = $deliveryFee;
+                $after = $deliveryFee - $savedAmount;
+            }
+
+            $totalSaved += $savedAmount;
+
+            $usageDetails[] = [
+                'promo_code' => $promo->code,
+                'type' => $promoType,
+                'saved_amount' => round($savedAmount, 2),
+                'used_at' => $order->created_at,
+                'details' => [
+                    'before_discount' => round($before, 2),
+                    'after_discount' => round($after, 2),
+                    'max_possible_discount' => round($maxDiscount, 2),
+                ],
+            ];
+        }
+
+        return response()->json([
+            'total_saved' => round($totalSaved, 2),
+            'usages' => $usageDetails,
+        ]);
+    }
 }

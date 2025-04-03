@@ -43,7 +43,7 @@ class FavoriteController extends Controller
                 if ($favorite->favoritable_type === "restaurant") {
                     // ✅ Calculate restaurant distance, delivery fee, and estimated time
                     $distance = DeliveryService::calculateDistance($userLat, $userLng, $item->latitude, $item->longitude);
-                    $deliveryFee = DeliveryService::calculateDeliveryFee($distance, $item->base_delivery_fee);
+                    $deliveryFee = DeliveryService::calculateDeliveryFee($distance); // ✅ Use default ₱49 base
                     $estimatedTime = DeliveryService::estimateDeliveryTime($distance);
 
                     return [

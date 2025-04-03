@@ -25,7 +25,6 @@ class OrderController extends Controller
     /**
      * ✅ Fetch all orders for the authenticated user, including restaurant, payment, customer address, and refunds
      */
-
     public function index(Request $request)
     {
         $userId = Auth::id();
@@ -50,7 +49,8 @@ class OrderController extends Controller
                 'orderItems.menu:id,name,price,image',
                 'payment:id,order_id,payment_method,payment_status',
                 'customerAddress:id,address,latitude,longitude',
-                'delivery:id,order_id,status,proof_image,delivery_time', // ✅ Include delivery proof
+                'delivery:id,order_id,status,proof_image,delivery_time',
+                'usedPromo:id,code,type,discount_percentage,discount_amount', // ✅ Include promo details
                 'refund' => function ($query) {
                     $query->select('id', 'order_id', 'status', 'admin_status', 'amount', 'reason', 'image_proof', 'created_at', 'updated_at')
                         ->orderBy('created_at', 'desc');
@@ -64,7 +64,6 @@ class OrderController extends Controller
                 $inRange = false;
 
                 if ($restaurant && $restaurant->latitude && $restaurant->longitude) {
-                    // ✅ Calculate distance between user and restaurant
                     $distance = DeliveryService::calculateDistance($userLat, $userLng, $restaurant->latitude, $restaurant->longitude);
                     $inRange = $distance <= $maxDistance;
                 }
@@ -77,8 +76,8 @@ class OrderController extends Controller
                         'address' => $restaurant->address,
                         'latitude' => (float) $restaurant->latitude,
                         'longitude' => (float) $restaurant->longitude,
-                        'distance_km' => $distance ? round($distance, 2) : null, // ✅ Include distance
-                        'in_range' => $inRange, // ✅ Determines reordering eligibility
+                        'distance_km' => $distance ? round($distance, 2) : null,
+                        'in_range' => $inRange,
                     ] : [
                         'id' => null,
                         'name' => 'Unknown Restaurant',
@@ -101,18 +100,32 @@ class OrderController extends Controller
                     ],
                     'order_type' => $order->order_type,
                     'order_status' => $order->order_status,
-                    'delivery_status' => optional($order->delivery)->status ?? 'not_assigned', // ✅ Use `optional()` to prevent null errors
-                    'scheduled_time' => $order->scheduled_time ? Carbon::parse($order->scheduled_time)->format('Y-m-d H:i:s') : null, // ✅ Safe conversion
+                    'delivery_status' => optional($order->delivery)->status ?? 'not_assigned',
+                    'scheduled_time' => $order->scheduled_time ? Carbon::parse($order->scheduled_time)->format('Y-m-d H:i:s') : null,
                     'delivery_proof' => $order->delivery && $order->delivery->proof_image
                         ? asset('storage/' . $order->delivery->proof_image)
-                        : null, // ✅ Ensure no error if proof_image is null
+                        : null,
                     'delivered_at' => $order->delivery && $order->delivery->delivery_time
                         ? Carbon::parse($order->delivery->delivery_time)->format('Y-m-d H:i:s')
-                        : null, // ✅ Ensure safe conversion
+                        : null,
                     'total_price' => (float) $order->total_price,
                     'subtotal' => (float) $order->subtotal,
                     'delivery_fee' => (float) $order->delivery_fee,
                     'rider_tip' => (float) $order->rider_tip,
+                    'discount_on_subtotal' => (float) $order->discount_on_subtotal,
+                    'discount_on_shipping' => (float) $order->discount_on_shipping,
+                    'voucher' => $order->usedPromo
+                        ? [
+                            'code' => $order->usedPromo->code,
+                            'type' => $order->usedPromo->type,
+                            'discount_percentage' => $order->usedPromo->discount_percentage,
+                            'discount_amount' => $order->usedPromo->discount_amount,
+                        ]
+                        : [
+                            'code' => null,
+                            'type' => null,
+                            'message' => 'Voucher not recorded (placed before tracking)',
+                        ],
                     'payment' => $order->payment ? [
                         'payment_method' => $order->payment->payment_method,
                         'payment_status' => $order->payment->payment_status,
@@ -140,7 +153,7 @@ class OrderController extends Controller
                         'image_proof' => $order->refund->image_proof,
                         'created_at' => $order->refund->created_at->format('Y-m-d H:i:s'),
                         'updated_at' => $order->refund->updated_at->format('Y-m-d H:i:s'),
-                    ] : null, // ✅ If no refund, return `null`
+                    ] : null,
                     'created_at' => $order->created_at->format('Y-m-d H:i:s'),
                 ];
             });
@@ -205,7 +218,6 @@ class OrderController extends Controller
     {
         Log::info("Checkout Request Payload", $request->all());
 
-        // ✅ Validate request
         $validated = $request->validate([
             'restaurant_id' => 'required|exists:restaurants,id',
             'cart_items' => 'required|array|min:1',
@@ -224,15 +236,13 @@ class OrderController extends Controller
             'scheduled_time' => 'nullable|date|after:now',
         ]);
 
-        $user = Auth::user(); // ✅ Get authenticated user
+        $user = Auth::user();
 
         try {
             DB::beginTransaction();
 
-            // ✅ Fetch Restaurant
             $restaurant = Restaurant::findOrFail($validated['restaurant_id']);
 
-            // ❌ Prevent order if restaurant is closed
             if ($restaurant->status === 'closed') {
                 DB::rollBack();
                 return response()->json([
@@ -241,7 +251,6 @@ class OrderController extends Controller
                 ], 403);
             }
 
-            // ❌ Ensure restaurant supports the selected order type
             if ($validated['order_type'] === 'delivery' && $restaurant->service_type === 'pickup') {
                 DB::rollBack();
                 return response()->json([
@@ -258,14 +267,14 @@ class OrderController extends Controller
                 ], 400);
             }
 
-            // ✅ Compute subtotal dynamically
             $subtotal = collect($validated['cart_items'])->sum(fn($item) => $item['price'] * $item['quantity']);
 
-            // ✅ Ensure discounts have default values
             $validated['discount_on_subtotal'] = $validated['discount_on_subtotal'] ?? 0;
             $validated['discount_on_shipping'] = $validated['discount_on_shipping'] ?? 0;
 
-            // ✅ Apply Vouchers (Prevent duplicate use)
+            // ✅ Handle promo logic
+            $appliedPromoId = null;
+
             foreach ($validated['voucher_codes'] ?? [] as $code) {
                 $promo = Promo::where('code', $code)->first();
 
@@ -278,16 +287,17 @@ class OrderController extends Controller
                         ], 400);
                     }
 
-                    // ✅ Track Promo Usage
                     PromoUsage::create([
                         'user_id' => $user->id,
                         'promo_id' => $promo->id,
                         'used_at' => now(),
                     ]);
+
+                    $appliedPromoId = $promo->id;
+                    break; // ✅ Apply only one promo per order
                 }
             }
 
-            // ✅ **Create Order**
             $customerAddressId = $validated['order_type'] === 'pickup' ? null : $validated['customer_address_id'];
 
             $order = Order::create([
@@ -297,20 +307,19 @@ class OrderController extends Controller
                 'order_type' => $validated['order_type'],
                 'total_price' => $validated['total_price'],
                 'delivery_fee' => $validated['delivery_fee'],
-                'subtotal' => $subtotal, // ✅ Dynamically computed
+                'subtotal' => $subtotal,
                 'discount_on_subtotal' => $validated['discount_on_subtotal'],
                 'discount_on_shipping' => $validated['discount_on_shipping'],
                 'rider_tip' => $validated['rider_tip'],
                 'order_status' => 'pending',
                 'payment_status' => 'pending',
-                'scheduled_time' => $validated['scheduled_time'] ?? null, // ✅ Store the scheduled time if provided
+                'scheduled_time' => $validated['scheduled_time'] ?? null,
+                'used_promo_id' => $appliedPromoId, // ✅ Set used promo here
             ]);
 
-            // ✅ **Insert Order Items & Deduct Stock**
             foreach ($validated['cart_items'] as $item) {
-                $menu = Menu::lockForUpdate()->findOrFail($item['menu_id']); // 🔒 Prevent race conditions
+                $menu = Menu::lockForUpdate()->findOrFail($item['menu_id']);
 
-                // ❌ Prevent ordering if out of stock
                 if ($menu->availability === 'out_of_stock' || $menu->stock < $item['quantity']) {
                     DB::rollBack();
                     return response()->json([
@@ -319,23 +328,20 @@ class OrderController extends Controller
                     ], 400);
                 }
 
-                // ✅ Deduct stock safely
                 $menu->decrement('stock', $item['quantity']);
                 if ($menu->stock <= 0) {
-                    $menu->update(['availability' => 'out_of_stock']); // 🚨 Mark as out of stock
+                    $menu->update(['availability' => 'out_of_stock']);
                 }
 
-                // ✅ Save Order Item
                 OrderItem::create([
                     'order_id' => $order->id,
                     'menu_id' => $item['menu_id'],
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
-                    'subtotal' => $item['price'] * $item['quantity'], // ✅ Always computed
+                    'subtotal' => $item['price'] * $item['quantity'],
                 ]);
             }
 
-            // ✅ **Create Payment Entry**
             Payment::create([
                 'order_id' => $order->id,
                 'user_id' => $user->id,
@@ -344,15 +350,9 @@ class OrderController extends Controller
                 'payment_status' => $validated['payment_method'] === 'cash' ? 'success' : 'failed',
             ]);
 
-            // ✅ **Clear User's Cart After Order**
             Cart::where('user_id', $user->id)->delete();
 
-            // ✅ **Notify Vendor/Rider**
-            // if ($validated['order_type'] === 'delivery') {
-            //     Notification::send($restaurant->owner, new NewDeliveryOrderNotification($order));
-            // } else {
-            //     Notification::send($restaurant->owner, new NewPickupOrderNotification($order));
-            // }
+            // Optional: Notification system (already in comments)
 
             DB::commit();
 
@@ -369,6 +369,7 @@ class OrderController extends Controller
             ], 500);
         }
     }
+
 
     public function getOrders(Request $request)
     {

@@ -291,3 +291,4 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/rider/profile/upload-license-image', [RiderController::class, 'uploadLicenseImage']);
     Route::put('/rider/profile/password', [RiderController::class, 'updatePassword']);
 });
+Route::middleware('auth:sanctum')->get('/voucher-savings', [PromoController::class, 'getVoucherSavings']);

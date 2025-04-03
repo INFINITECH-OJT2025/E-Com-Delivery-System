@@ -25,7 +25,8 @@ class Order extends Model
         'subtotal',
         'delivery_fee',
         'discount_on_subtotal',
-        'discount_on_shipping'
+        'discount_on_shipping',
+        'used_promo_id', // ✅ Added used_promo_id to fillable attributes
     ];
 
     public function customer()
@@ -87,5 +88,9 @@ class Order extends Model
     public function delivery()
     {
         return $this->hasOne(Delivery::class, 'order_id');
+    }
+    public function usedPromo()
+    {
+        return $this->belongsTo(Promo::class, 'used_promo_id');
     }
 }
