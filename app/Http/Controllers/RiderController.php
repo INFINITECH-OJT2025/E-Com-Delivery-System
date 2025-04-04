@@ -712,23 +712,70 @@ class RiderController extends Controller
         }
     }
 
+    // public function uploadProfileImage(Request $request)
+    // {
+    //     $request->validate([
+    //         'profile_image' => 'required|image|max:2048',
+    //     ]);
 
-    public function uploadProfileImage(Request $request)
+    //     $user = $request->user();
+
+    //     $path = $request->file('profile_image')->store('profile_images', 'public');
+
+    //     $user->profile_image = $path;
+    //     $user->save();
+
+    //     return response()->json(['success' => true, 'message' => 'Profile image updated.', 'image_url' => asset('storage/' . $path)]);
+    // }
+
+    public function updateVehicle(Request $request)
     {
-        $request->validate([
-            'profile_image' => 'required|image|max:2048',
+        $user = auth()->user();
+
+        // ✅ Check if the user is a rider
+        if ($user->role !== 'rider') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized access',
+            ], 403);
+        }
+
+        // ✅ Validate the input
+        $validator = Validator::make($request->all(), [
+            'vehicle_type' => 'required|string|in:motorcycle,car,bicycle',
+            'plate_number' => 'required|string|max:20',
         ]);
 
-        $user = $request->user();
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
 
-        $path = $request->file('profile_image')->store('profile_images', 'public');
+        try {
+            // ✅ Update the rider's vehicle info
+            $user->update([
+                'vehicle_type' => $request->vehicle_type,
+                'plate_number' => $request->plate_number,
+            ]);
 
-        $user->profile_image = $path;
-        $user->save();
-
-        return response()->json(['success' => true, 'message' => 'Profile image updated.', 'image_url' => asset('storage/' . $path)]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Vehicle info updated successfully',
+                'data' => [
+                    'vehicle_type' => $user->vehicle_type,
+                    'plate_number' => $user->plate_number,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Something went wrong: ' . $e->getMessage(),
+            ], 500);
+        }
     }
-
     public function uploadLicenseImage(Request $request)
     {
         $request->validate([

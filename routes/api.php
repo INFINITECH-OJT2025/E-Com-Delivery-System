@@ -44,6 +44,7 @@ Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->name('auth.ver
 Route::post('/resend-verification', [AuthController::class, 'resendVerification'])->name('auth.reverify');
 Route::post('/forgot-password', [AuthController::class, 'sendResetLink']);
 Route::get('verify-otp', [AuthController::class, 'showVerificationPage'])->name('verify-otp');
+Route::middleware(['auth:sanctum', 'throttle:5,1'])->post('/change-password', [AuthController::class, 'changePassword'])->name('change-password');
 
 // ✅ Check Email (Throttled to prevent abuse)
 Route::post('/email-check', [AuthController::class, 'checkEmail'])
@@ -291,6 +292,7 @@ Route::prefix('admin/vouchers')->middleware(['auth:sanctum'])->group(function ()
 Route::middleware(['auth:sanctum'])->group(function () {
     // Rider Profile
     Route::post('/rider/profile/update', [RiderController::class, 'updateProfile']);
+    Route::post('/rider/vehicle/update', [RiderController::class, 'updateVehicle']);
     Route::post('/rider/profile/upload-license-image', [RiderController::class, 'uploadLicenseImage']);
     Route::put('/rider/profile/password', [RiderController::class, 'updatePassword']);
 });
