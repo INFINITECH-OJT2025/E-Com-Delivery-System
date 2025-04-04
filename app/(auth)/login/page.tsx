@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 
 import { useState } from "react";
 import { Button, Card, CardBody, Input, Spinner } from "@heroui/react";
@@ -7,20 +8,23 @@ import { FaFacebook, FaApple } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { addToast } from "@heroui/react";
 import { RiderAuthService } from "@/services/riderAuthService";
-import ForgotPasswordModal from "@/components/ForgotPasswordModal"; // ✅ make sure this path is correct
-
+import ForgotPasswordModal from "@/components/ForgotPasswordModal";
+// import GoogleLoginPopupButton from "@/components/GoogleLoginPopupButton";
+import {EyeSlashFilledIcon, EyeFilledIcon } from "@/components/icons";
+import GoogleLoginPopupButton from "@/components/GoogleLoginPopupButton";
+import { authService } from "@/services/authService";
 export default function RiderLogin() {
   const router = useRouter();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [isForgotOpen, setForgotOpen] = useState(false); // ✅ modal toggle state
+  const [isForgotOpen, setForgotOpen] = useState(false);
+  const [isVisible, setIsVisible] = React.useState(false);
 
-  // Handle Input Change
+  const toggleVisibility = () => setIsVisible(!isVisible);
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle Login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -51,62 +55,113 @@ export default function RiderLogin() {
       setLoading(false);
     }
   };
-
+  const handleGooglePopupLogin = async (userInfo: any) => {
+    const result = await authService.loginWithGoogle(userInfo);
+  
+    if (result.success) {
+      // ✅ Store token and user info
+      localStorage.setItem("riderToken", result.data.access_token);
+      localStorage.setItem("rider", JSON.stringify(result.data.user));
+  
+      // ✅ Redirect to rider dashboard
+      router.push("/dashboard");
+  
+      addToast({
+        title: "✅ Welcome",
+        description: `Logged in as ${result.data.user.name}`,
+        color: "success",
+      });
+    } else {
+      // ❌ Show backend message (like: "This login is for riders only.")
+      addToast({
+        title: "❌ Login Failed",
+        description: result.message || "Something went wrong. Please try again.",
+        color: "danger",
+      });
+    }
+  };
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-primary p-4">
-      {/* Logo Section */}
-      <div className="mb-6">
-        <img src="/images/delivery-panda.png" alt="E-Com Delivery" className="w-24 h-24 rounded-full shadow-md bg-white" />
-      </div>
+<div
+  className="min-h-screen flex flex-col items-center justify-center bg-cover bg-center p-4"
+  style={{
+    backgroundImage: "url('/images/blob-scene-haikei-2.svg')"
+  }}
+>
 
-      {/* Login Card */}
-      <Card className="w-full max-w-md p-6 bg-white shadow-lg rounded-2xl">
-        <h2 className="text-2xl font-bold text-center text-primary">Rider Login</h2>
-        <p className="text-gray-500 text-center mb-4">Sign in to start delivering</p>
 
-        <CardBody>
+
+      <Card className="w-full max-w-md p-0 overflow-hidden rounded-2xl shadow-lg">
+        <CardBody className="p-6 bg-white">
+        <h3 className="text-xl font-bold text-center text-primary mb-2">E-Com Delivery <strong className="text-red-500">Rider</strong></h3>
+
+          <div className="flex justify-center mb-4">
+            
+        <img
+    src="/images/delivery-panda.png"
+    alt="Rider Logo"
+    className="w-40 h-40 object-fill"
+  />
+  </div>
+          <p className="text-center text-gray-500 mb-4">Login and start earning</p>
+
           <form onSubmit={handleLogin} className="space-y-4">
-            <Input label="Email" type="email" name="email" placeholder="Enter your email" value={formData.email} onChange={handleChange} isRequired />
-            <Input label="Password" type="password" name="password" placeholder="Enter your password" value={formData.password} onChange={handleChange} isRequired />
-
-            {/* Login Button */}
+            <Input label="Email" name="email" type="email" placeholder="Enter email" value={formData.email} onChange={handleChange} isRequired />
+            <Input label="Password" name="password"  endContent={
+        <button
+          aria-label="toggle password visibility"
+          className="focus:outline-none"
+          type="button"
+          onClick={toggleVisibility}
+        >
+          {isVisible ? (
+            <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+          ) : (
+            <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+          )}
+        </button>
+      }  type={isVisible ? "text" : "password"} placeholder="Enter password" value={formData.password} onChange={handleChange} isRequired />
             <Button type="submit" color="primary" className="w-full" isDisabled={loading}>
-              {loading ? <Spinner size="sm" /> : "Login"}
+              {loading ? "Logging in ...." : "Login"}
             </Button>
           </form>
 
-         {/* Forgot Password */}
-         <p className="text-gray-500 text-center text-sm mt-4">
-            <button type="button" className="text-secondary font-medium" onClick={() => setForgotOpen(true)} >
-              Forgot password?
-            </button>
+          <p className="text-sm text-center mt-3 text-gray-500">
+            <button onClick={() => setForgotOpen(true)} className="text-secondary font-medium">Forgot password?</button>
           </p>
 
-          {/* Divider */}
-          <div className="my-4 border-b border-gray-300"></div>
+          <div className="my-4 border-t"></div>
 
-          {/* Social Login */}
-          <Button className="w-full flex items-center gap-2 bg-white text-black border border-gray-300 hover:bg-gray-100">
-            <FcGoogle className="text-xl" />
-            Continue with Google
-          </Button>
-          <Button className="w-full flex items-center gap-2 bg-blue-600 text-white mt-2 hover:bg-blue-700">
-            <FaFacebook className="text-xl" />
-            Continue with Facebook
-          </Button>
-          <Button className="w-full flex items-center gap-2 bg-black text-white mt-2 hover:bg-gray-900">
-            <FaApple className="text-xl" />
-            Continue with Apple
-          </Button>
+          <GoogleLoginPopupButton onLogin={handleGooglePopupLogin} />
 
-          {/* Sign Up Link */}
-          <p className="text-gray-500 text-center text-sm mt-4">
-            Don’t have an account? <a href="/register" className="text-secondary font-medium">Sign up</a>
+
+          <div className="relative">
+            <Button className="w-full mt-2 flex items-center gap-2 bg-blue-600 text-white opacity-60" isDisabled>
+              <FaFacebook className="text-xl" />
+              Continue with Facebook
+            </Button>
+            <span className="absolute top-0 right-0  text-xs bg-red-500 text-white px-2 py-0.5 rounded-tr-md rounded-bl-md shadow-md z-10">
+              Currently unavailable
+            </span>
+          </div>
+
+          <div className="relative mt-2">
+            <Button className="w-full flex items-center gap-2 bg-black text-white opacity-60" isDisabled>
+              <FaApple className="text-xl" />
+              Continue with Apple
+            </Button>
+            <span className="absolute top-0 right-0  text-xs bg-red-500 text-white px-2 py-0.5 rounded-tr-md rounded-bl-md shadow-md z-10">
+              Currently unavailable
+            </span>
+          </div>
+
+          <p className="text-sm text-center mt-4 text-gray-500">
+            Don’t have an account?{" "}
+            <a href="/register" className="text-secondary font-semibold">Sign up</a>
           </p>
         </CardBody>
       </Card>
-            <ForgotPasswordModal isOpen={isForgotOpen} onClose={() => setForgotOpen(false)} />
 
+      <ForgotPasswordModal isOpen={isForgotOpen} onClose={() => setForgotOpen(false)} />
     </div>
   );
 }

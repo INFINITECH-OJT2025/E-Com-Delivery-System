@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { Button, Card, CardBody, Input, Select, SelectItem, Spinner } from "@heroui/react";
-import Image from "next/image";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { RiderAuthService } from "@/services/riderAuthService"; // Import the RiderAuthService
-import { addToast } from "@heroui/react";
+import { RiderAuthService } from "@/services/riderAuthService";
+import { addToast, Button, Card, CardBody, Form, Input, Select, SelectItem, Spinner } from "@heroui/react";
 import TermsModal from "@/components/TermsModal";
+import { useRef } from "react";
 
-
-export default function RiderRegister() {
+export default function RiderRegisterLogic() {
   const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const profileInputRef = useRef(null);
+  const licenseInputRef = useRef(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -19,166 +22,364 @@ export default function RiderRegister() {
     phone_number: "",
     vehicle_type: "",
     plate_number: "",
-    profile_image: null as File | null,
-    license_image: null as File | null,
+    profile_image: null,
+    license_image: null,
   });
 
-  const [preview, setPreview] = useState({
-    profile: "",
-    license: "",
-  });
-  const [agreed, setAgreed] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
-  
-  const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState({ profile: "", license: "" });
 
-  // Handle Input Changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const emailValid = useMemo(() => {
+    if (!formData.email) return false;
+    return /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email);
+  }, [formData.email]);
+
+  const passwordMatch = formData.password === formData.password_confirmation;
+
+  const validateStep = () => {
+    if (step === 1) {
+      return (
+        formData.name &&
+        emailValid &&
+        formData.password &&
+        passwordMatch
+      );
+    }
+    if (step === 2) {
+      return formData.phone_number && formData.vehicle_type && formData.plate_number;
+    }
+    if (step === 3) {
+
+      return formData.profile_image !== null  && formData.license_image !== null ;
+    }
+    return true;
+  };
+
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle File Uploads (Profile & License)
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e) => {
     const { name, files } = e.target;
-    if (!files || files.length === 0) return;
-
+    if (!files?.[0]) return;
     const file = files[0];
     setFormData((prev) => ({ ...prev, [name]: file }));
-
-    // Show Image Preview
+    
     setPreview((prev) => ({
       ...prev,
       [name === "profile_image" ? "profile" : "license"]: URL.createObjectURL(file),
     }));
+    console.log("Form Data", formData);
+
   };
 
-  // Submit Form
-  // Submit Form
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
+  
     try {
       const form = new FormData();
-      Object.keys(formData).forEach((key) => {
-        const value = formData[key as keyof typeof formData];
+      Object.entries(formData).forEach(([key, value]) => {
         if (value) form.append(key, value);
       });
-
+  
       const response = await RiderAuthService.register(form);
+  
       if (response.status === "success") {
         addToast({
-          title: "🎉 Registration Successful",
-          description: "Check your email for verification.",
+          title: "🎉 Success",
+          description: "Check email for verification.",
           color: "success",
-          timeout: 5000,
         });
-
-        setTimeout(() => router.push("/login"), 2000); // Redirect after 2s
-      } else {
+        setTimeout(() => router.push("/login"), 2000);
+      } else if (response.data && typeof response.data === "object") {
+        const messages = Object.entries(response.data)
+          .map(([field, msgs]) => msgs.join(", "))
+          .join("\n");
+  
         addToast({
-          title: "⚠️ Registration Failed",
-          description: response.message || "Something went wrong. Please try again.",
+          title: "⚠ Validation Error",
+          description: messages,
           color: "danger",
-          timeout: 5000,
         });
+      } else {
+        throw new Error(response.message);
       }
     } catch (error) {
-      addToast({
-        title: "❌ Error",
-        description: "An error occurred. Try again later.",
-        color: "danger",
-        timeout: 5000,
-      });
+      const apiErrors = error?.response?.data?.data;
+      if (apiErrors) {
+        const messages = Object.entries(apiErrors)
+          .map(([field, msgs]) => msgs.join(", "))
+          .join("\n");
+  
+        addToast({
+          title: "⚠ Validation Error",
+          description: messages,
+          color: "danger",
+        });
+      } else {
+        addToast({
+          title: "❌ Error",
+          description: "Something went wrong. Please try again.",
+          color: "danger",
+        });
+      }
     } finally {
       setLoading(false);
     }
   };
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-primary p-4">
-      
-      {/* Logo Section */}
-      <div className="mb-4">
-        <Image src="/images/delivery-panda.png" alt="E-Com Delivery" width={120} height={120} className="rounded-full shadow-md bg-white" />
-      </div>
-
-      {/* Rider Registration Card */}
-      <Card className="w-full max-w-md p-6 bg-white shadow-lg rounded-2xl">
-        <h2 className="text-2xl font-bold text-center text-primary">Become a Rider</h2>
-        <p className="text-gray-500 text-center mb-4">Sign up to start delivering with us</p>
-
-        <CardBody>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            
-            <Input label="Full Name" type="text" name="name" placeholder="Enter full name" value={formData.name} onChange={handleChange} isRequired />
-
-            <Input label="Email" type="email" name="email" placeholder="Enter email" value={formData.email} onChange={handleChange} isRequired />
-
-            <Input label="Password" type="password" name="password" placeholder="Enter password" value={formData.password} onChange={handleChange} isRequired />
-
-            <Input label="Confirm Password" type="password" name="password_confirmation" placeholder="Re-enter password" value={formData.password_confirmation} onChange={handleChange} isRequired />
-
-            <Input label="Phone Number" type="text" name="phone_number" placeholder="09XXXXXXXXX" value={formData.phone_number} onChange={handleChange} isRequired />
-
-            <Select
-  label="Vehicle Type"
-  selectedKeys={new Set([formData.vehicle_type])} // Ensure selected value is properly tracked
-  onSelectionChange={(keys) => {
-    const selectedValue = Array.from(keys)[0]; // Convert Set to array and get first value
-    setFormData((prev) => ({ ...prev, vehicle_type: selectedValue as string }));
-  }}
-  isRequired
->
-  <SelectItem key="motorcycle">Motorcycle</SelectItem>
-  <SelectItem key="bicycle">Bicycle</SelectItem>
-  <SelectItem key="car">Car</SelectItem>
-</Select>
+  
+  
 
 
-            <Input label="Plate Number (Optional)" type="text" name="plate_number" placeholder="Enter plate number" value={formData.plate_number} onChange={handleChange} />
+return (<>
+  <div
+    className="min-h-screen flex flex-col items-center justify-center bg-cover bg-center p-4"
+    style={{ backgroundImage: "url('/images/blob-scene-haikei-2.svg')" }}
+  >
+    <Card className="w-full max-w-md p-0 overflow-hidden rounded-2xl shadow-lg ">
+      <CardBody className="p-6 bg-white">
+        <h3 className="text-xl font-bold text-center text-primary mb-2">
+          E-Com Delivery <strong className="text-red-500">Rider</strong>
+        </h3>
 
-            {/* Profile Image Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Profile Image</label>
-              <Input type="file" name="profile_image" accept="image/*" onChange={handleFileChange} isRequired />
-              {preview.profile && <img src={preview.profile} alt="Profile Preview" className="mt-2 h-16 w-16 object-cover rounded-full border" />}
-            </div>
+        <div className="flex justify-center mb-4">
+          <img
+            src="/images/delivery-panda.png"
+            alt="Rider Logo"
+            className="w-40 h-40 object-fill"
+          />
+        </div>
 
-            {/* Driver’s License Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Driver’s License</label>
-              <Input type="file" name="license_image" accept="image/*" onChange={handleFileChange} isRequired />
-              {preview.license && <img src={preview.license} alt="License Preview" className="mt-2 h-20 w-32 object-cover rounded-lg border" />}
-            </div>
+        <p className="text-center text-gray-500 mb-4">Become a rider</p>
+        <p className="text-center text-gray-500 mb-4 text-sm">Step {step} of 3</p>
 
-            {/* Terms & Conditions */}
-            <p className="text-gray-500 text-center text-sm mt-2">
-              By signing up you agree to our{" "}
-              <label htmlFor="agree">
-            I agree to the{" "}
-            <button
-              type="button"
-              onClick={() => setShowTerms(true)}
-              className="text-secondary hover:underline"
-            >
-              Terms and Conditions
-            </button>
-          </label>
-            </p>
-   
-            {/* Register Button */}
-            <Button type="submit" color="primary" className="w-full" isDisabled={loading}>
-              {loading ? <Spinner size="sm" /> : "Register"}
-            </Button>
-   {/* Sign Up Link */}
-   <p className="text-gray-500 text-center text-sm mt-4">
-            Already registered? <a href="/login" className="text-secondary font-medium">Sign in</a>
-          </p>
-          </form>
-        </CardBody>
-      </Card>  {/* Terms Modal */}
-      <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
+        <Form validationBehavior="aria" onSubmit={handleSubmit} className="space-y-4">
+          {step === 1 && (
+            <>
+              <Input
+                isRequired
+                label="Full Name"
+                name="name"
+                placeholder="Enter full name"
+                value={formData.name}
+                onChange={handleChange}
+              />
+              <Input
+                isRequired
+                label="Email"
+                name="email"
+                type="email"
+                placeholder="Enter email"
+                value={formData.email}
+                onChange={handleChange}
+                validate={(value) =>
+                  /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value)
+                    ? null
+                    : "Please enter a valid email"
+                }
+              />
+              <Input
+                isRequired
+                label="Password"
+                name="password"
+                type="password"
+                placeholder="Enter password"
+                value={formData.password}
+                onChange={handleChange}
+                validate={(val) =>
+                  val.length >= 6 ? null : "Password must be at least 6 characters"
+                }
+              />
+              <Input
+                isRequired
+                label="Confirm Password"
+                name="password_confirmation"
+                type="password"
+                placeholder="Re-enter password"
+                value={formData.password_confirmation}
+                onChange={handleChange}
+                validate={(val) =>
+                  val !== formData.password ? "Passwords do not match" : null
+                }
+              />
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <Input
+                isRequired
+                label="Phone Number"
+                name="phone_number"
+                placeholder="09XXXXXXXXX"
+                value={formData.phone_number}
+                onChange={handleChange}
+                validate={(val) =>
+                  /^09\d{9}$/.test(val) ? null : "Enter valid PH number (e.g., 09XXXXXXXXX)"
+                }
+              />
+              <Select
+                isRequired
+                label="Vehicle Type"
+                selectedKeys={new Set([formData.vehicle_type])}
+                onSelectionChange={(keys) =>
+                  setFormData((prev) => ({ ...prev, vehicle_type: Array.from(keys)[0] }))
+                }
+              >
+                <SelectItem key="motorcycle">Motorcycle</SelectItem>
+                <SelectItem key="bicycle">Bicycle</SelectItem>
+                <SelectItem key="car">Car</SelectItem>
+              </Select>
+              <Input
+               isRequired
+                label="Plate Number"
+                name="plate_number"
+                placeholder="Enter plate number"
+                value={formData.plate_number}
+                onChange={handleChange}
+              />
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+             <div className="w-full">
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Profile Image
+  </label>
+  <Input
+    ref={profileInputRef}
+    isRequired
+    type="file"
+    name="profile_image"
+    accept="image/*"
+    onChange={handleFileChange}
+  />
+  {preview.profile && (
+    <div className="mt-2 flex items-center gap-4">
+      <img
+        src={preview.profile}
+        alt="Profile"
+        className="h-16 w-16 rounded-full border"
+      />
+      <button
+        type="button"
+        onClick={() => {
+          setFormData((prev) => ({ ...prev, profile_image: null }));
+          setPreview((prev) => ({ ...prev, profile: "" }));
+          profileInputRef.current.value = ""; // ✅ Clear input value
+        }}
+        className="text-sm text-red-500 hover:underline"
+      >
+        Remove
+      </button>
     </div>
-  );
+  )}
+</div>
+
+<div className="w-full">
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Driver’s License
+  </label>
+  <Input
+    ref={licenseInputRef}
+    isRequired
+    type="file"
+    name="license_image"
+    accept="image/*"
+    onChange={handleFileChange}
+  />
+  {preview.license && (
+    <div className="mt-2 flex items-center gap-4">
+      <img
+        src={preview.license}
+        alt="License"
+        className="h-20 w-32 rounded border"
+      />
+      <button
+        type="button"
+        onClick={() => {
+          setFormData((prev) => ({ ...prev, license_image: null }));
+          setPreview((prev) => ({ ...prev, license: "" }));
+          licenseInputRef.current.value = ""; // ✅ Clear input value
+        }}
+        className="text-sm text-red-500 hover:underline"
+      >
+        Remove
+      </button>
+    </div>
+  )}
+</div>
+
+
+
+              <p className="text-sm text-gray-500 text-center mt-2">
+                By signing up you agree to our{" "}
+                <button
+                  type="button"
+                  onClick={() => setShowTerms(true)}
+                  className="text-secondary hover:underline"
+                >
+                  Terms and Conditions
+                </button>
+              </p>
+            </>
+          )}
+
+          {step < 3 ? (
+         <Button
+         type="button"
+         color="primary"
+         className="w-full"
+         onClick={(e) => {
+           e.preventDefault(); // ✅ Stop any submit behavior
+           if (validateStep()) setStep(step + 1);
+           else {
+             addToast({
+               title: "⚠️ Validation",
+               description: "Please complete the required fields.",
+               color: "warning",
+             });
+           }
+         }}
+       >
+         Next →
+       </Button>
+         
+          ) : (
+            <Button
+              type="submit"
+              color="primary"
+              className="w-full"
+              isDisabled={loading}
+            >
+              {loading ? "Registering..." : "Register"}
+            </Button>
+          )}
+
+          {step > 1 && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-gray-500"
+              onPress={() => setStep(step - 1)}
+            >
+              ← Back
+            </Button>
+          )}
+
+
+        </Form>          <p className="text-gray-500 text-center text-sm mt-4">
+            Already registered?{" "}
+            <a href="/login" className="text-secondary font-medium">
+              Sign in
+            </a>
+          </p>
+      </CardBody>
+    </Card>
+
+    <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
+  </div></>
+);
 }

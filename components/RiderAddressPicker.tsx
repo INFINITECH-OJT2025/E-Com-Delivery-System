@@ -1,12 +1,19 @@
 "use client";
+
 import { useEffect, useState, useRef } from "react";
 import { GoogleMap, Marker } from "@react-google-maps/api";
 import {
-  Modal, ModalContent, ModalHeader, ModalBody, ModalFooter,
-  Button, Input
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+  Input,
+  Spinner,
 } from "@heroui/react";
 import { googleMapsService } from "@/services/googleMapsService";
-import { IoLocateOutline, IoLocationOutline } from "react-icons/io5";
+import { IoLocateOutline } from "react-icons/io5";
 import { FaMapMarkerAlt } from "react-icons/fa";
 
 const mapContainerStyle = {
@@ -14,19 +21,19 @@ const mapContainerStyle = {
   height: "300px",
 };
 
-const defaultCenter = { lat: 14.5995, lng: 120.9842 }; // Manila Default
+const defaultCenter = { lat: 14.5995, lng: 120.9842 }; // Manila default
 
-export default function RiderAddressPicker({ onSelect }: { 
-  onSelect: (address: string, lat: number, lng: number) => void; 
+export default function RiderAddressPicker({ onSelect }: {
+  onSelect: (address: string, lat: number, lng: number) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
   const [markerPosition, setMarkerPosition] = useState(defaultCenter);
   const [formattedAddress, setFormattedAddress] = useState("Fetching location...");
+  const [isMapLoading, setIsMapLoading] = useState(false);
   const autocompleteRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    // ✅ Fetch Location Immediately on Page Load
     const savedLocation = localStorage.getItem("rider_location");
     if (savedLocation) {
       const { address, lat, lng } = JSON.parse(savedLocation);
@@ -37,34 +44,19 @@ export default function RiderAddressPicker({ onSelect }: {
   }, []);
 
   useEffect(() => {
-    if (isOpen) {
-      loadAutocomplete();
-    }
+    if (isOpen) loadAutocomplete();
   }, [isOpen]);
 
-  // ✅ Get Current Location (GPS)
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
         updateLocation(lat, lng);
-      }, () => {
-        setFormattedAddress("Location permission denied");
-      });
+      }, () => setFormattedAddress("Location permission denied"));
     }
   };
 
-  // ✅ Handle Marker Drag
-  const handleMarkerDragEnd = async (event: google.maps.MapMouseEvent) => {
-    if (event.latLng) {
-      const lat = event.latLng.lat();
-      const lng = event.latLng.lng();
-      updateLocation(lat, lng);
-    }
-  };
-
-  // ✅ Load Google Maps Autocomplete
   const loadAutocomplete = () => {
     if (autocompleteRef.current && window.google?.maps) {
       const autocomplete = new google.maps.places.Autocomplete(autocompleteRef.current, {
@@ -83,20 +75,16 @@ export default function RiderAddressPicker({ onSelect }: {
     }
   };
 
-  // ✅ Update Location (Used for Search, Drag & Current Location)
   const updateLocation = async (lat: number, lng: number, address?: string) => {
-    setMarkerPosition({ lat, lng });
     setMapCenter({ lat, lng });
+    setMarkerPosition({ lat, lng });
 
-    // If address is not provided, fetch it from Google Maps
-    const resolvedAddress = address || await googleMapsService.getAddressFromCoords(lat, lng);
-    setFormattedAddress(resolvedAddress || "Unknown Address");
+    const resolved = address || await googleMapsService.getAddressFromCoords(lat, lng);
+    setFormattedAddress(resolved || "Unknown Address");
 
-    // Save to local storage
-    localStorage.setItem("rider_location", JSON.stringify({ address: resolvedAddress, lat, lng }));
+    localStorage.setItem("rider_location", JSON.stringify({ address: resolved, lat, lng }));
   };
 
-  // ✅ Save Selected Address
   const handleSave = () => {
     onSelect(formattedAddress, markerPosition.lat, markerPosition.lng);
     setIsOpen(false);
@@ -104,41 +92,94 @@ export default function RiderAddressPicker({ onSelect }: {
 
   return (
     <>
-      {/* ✅ Location Selector Button (Always Shows Last Known Address) */}
+      {/* Current Location Preview */}
       <div
         onClick={() => setIsOpen(true)}
-        className="w-full flex items-center gap-3 px-4 py-3 cursor-pointer bg-primary text-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
+        className="w-full flex items-center gap-4 p-4 bg-white rounded-xl shadow-md border hover:shadow-lg cursor-pointer transition"
       >
-        <FaMapMarkerAlt className="text-white text-xl flex-shrink-0" />
-        <p className="text-base font-semibold truncate flex-1">{formattedAddress}</p>
-        <span className="text-sm font-semibold underline">Change</span>
+        <div className="bg-primary p-2 rounded-full text-white">
+          <FaMapMarkerAlt className="text-lg" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-gray-500 font-medium">Current Location</p>
+          <p className="text-sm font-semibold truncate">{formattedAddress}</p>
+        </div>
+        <span className="text-sm font-medium text-primary underline">Change</span>
       </div>
 
-      {/* ✅ Location Picker Modal */}
-      <Modal  isOpen={isOpen} onOpenChange={setIsOpen}   placement="bottom"
-        size="md"  scrollBehavior="inside" classNames={{ base: "h-[100vh] m-0", wrapper: "h-[100vh] m-0 p-0", body: "p-0" } } isDismissable={true}>
-        <ModalContent>
-          <ModalHeader className="flex justify-between p-4">
-            <h2 className="text-lg font-bold">Set Your Delivery Location</h2>
-          </ModalHeader>
-          <ModalBody className="p-4">
-            {/* 📍 Address Search Input */}
-            <Input ref={autocompleteRef} placeholder="Search for an address..." className="mb-3" />
+      {/* Modal */}
+      <Modal
+        isOpen={isOpen}
+        onOpenChange={setIsOpen}
+        scrollBehavior="inside"
+        size="xl"
+        hideCloseButton={true}
+        isDismissable={false}
+      >
+        <ModalContent >
+          {/* Updated Modal Header with bg-primary */}
+          <ModalHeader className="p-4 border-b bg-primary text-white text-center shadow-sm rounded-t-xl relative">
+  <h3 className="text-lg font-bold">📍 Set Delivery Location</h3>
 
-            {/* Google Map - Uses Global GoogleMapsProvider */}
-            <GoogleMap mapContainerStyle={mapContainerStyle} center={mapCenter} zoom={15}>
-              <Marker position={markerPosition} draggable onDragEnd={handleMarkerDragEnd} />
-            </GoogleMap>
+  <button
+    onClick={() => setIsOpen(false)}
+    className="absolute right-4 top-4 text-white text-sm hover:opacity-80"
+  >
+    ✖
+  </button>
+</ModalHeader>
 
-            {/* 📍 Selected Address Display */}
-            <Input readOnly value={formattedAddress} className="mt-3" />
+          <ModalBody className="p-4 space-y-3">
+            <Input
+              ref={autocompleteRef}
+              placeholder="Type to search..."
+              className="placeholder:text-sm placeholder:text-gray-400"
+            />
+
+            {isMapLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <Spinner size="lg" color="primary" />
+              </div>
+            ) : (
+              <GoogleMap
+                mapContainerStyle={mapContainerStyle}
+                center={mapCenter}
+                zoom={15}
+              >
+                <Marker
+                  position={markerPosition}
+                  draggable
+                  onDragEnd={(e) => {
+                    if (e.latLng) {
+                      const lat = e.latLng.lat();
+                      const lng = e.latLng.lng();
+                      updateLocation(lat, lng);
+                    }
+                  }}
+                />
+              </GoogleMap>
+            )}
+
+            <Input
+              readOnly
+              value={formattedAddress}
+              className="text-sm text-gray-700 font-medium bg-gray-100"
+            />
           </ModalBody>
-          <ModalFooter className="p-4 flex justify-between">
-            <Button className="bg-gray-300" onPress={() => setIsOpen(false)}>Cancel</Button>
-            <Button className="bg-danger text-white flex items-center" onPress={getCurrentLocation}>
-              <IoLocateOutline className="mr-2" /> 
+
+          <ModalFooter className="p-4 flex flex-col  gap-2 ">
+            <Button variant="ghost" className="w-full sm:w-auto" onPress={() => setIsOpen(false)}>
+              Cancel
             </Button>
-            <Button className="bg-primary text-white" onPress={handleSave}>Set</Button>
+            <Button
+              className="bg-danger text-white w-full sm:w-auto"
+              onPress={getCurrentLocation}
+            >
+              <IoLocateOutline className="mr-2 text-white" /> Current Location
+            </Button>
+            <Button className="bg-primary text-white w-full sm:w-auto" onPress={handleSave}>
+              Confirm Location
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

@@ -1,16 +1,16 @@
-// app/rider/dashboard/layout.tsx
 "use client";
 
-import MobileNavbar from "@/components/MobileNavbar";
+import RiderHeader from "@/components/RiderHeader";
+import BottomMobileNav from "@/components/BottomMobileNav";
 import { GoogleMapsProvider } from "@/context/GoogleMapsProvider";
 
 export default function RiderDashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Global Mobile Navbar for Riders */}
-      <MobileNavbar />
+    <div className=" pt-16 ">
+      <RiderHeader />
       <GoogleMapsProvider>
-        <main className="pt-16">{children}</main> {/* Push content down below navbar */}
+        <main className="">{children}</main>
+        <BottomMobileNav />
       </GoogleMapsProvider>
     </div>
   );

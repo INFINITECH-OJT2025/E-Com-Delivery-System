@@ -6,7 +6,8 @@ import { fontSans } from "@/config/fonts";
 import Head from "next/head";
 import React from "react";
 import MobileGuard from "./MobileGuard";
-import AuthGuard from "@/context/AuthGuard";
+import AuthGuard from "@/context/AuthGuard";import { GoogleOAuthProvider } from "@react-oauth/google";
+
 export const metadata: Metadata = {
   title: "E-Com Delivery System",
   description: "Fast and reliable food delivery service",
@@ -27,10 +28,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
           {/* ✅ Ensure full-page layout supports scrolling */}
           <AuthGuard>
+          <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
 
           <div className="flex flex-col min-h-screen">
           <MobileGuard>     <main className="flex-grow">{children}</main>  </MobileGuard> 
-          </div>
+          </div>          </GoogleOAuthProvider>
+
           </AuthGuard>
         </Providers>
       </body>

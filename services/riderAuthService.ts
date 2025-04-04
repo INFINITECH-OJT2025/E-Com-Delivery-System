@@ -7,34 +7,43 @@ export const RiderAuthService = {
   async login(email: string, password: string) {
     try {
       const response = await axios.post(`${API_URL}/api/riders/login`, { email, password });
-
-      if (response.data.status) {
-        console.log("Login successful, storing data...");
-        // Store the access token and rider data in localStorage
+  
+      if (response.data.status === "success") {
+        // Save auth info
         localStorage.setItem("riderToken", response.data.data.access_token);
         localStorage.setItem("rider", JSON.stringify(response.data.data.user));
-
-        console.log("Stored Token:", response.data.data.access_token);
-        console.log("Stored Rider:", response.data.data.user);
       }
-
+  
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Rider Login Error:", error);
-      return { success: false, message: "Invalid Credentials" };
+  
+      // ✅ Return the message from backend if available
+      const message = error?.response?.data?.message || "Something went wrong. Please try again.";
+  
+      return { status: "error", message };
     }
   },
+  
 
-  // ✅ Register Rider
-  async register(riderData: any) {
-    try {
-      const response = await axios.post(`${API_URL}/api/riders/register`, riderData);
-      return response.data;
-    } catch (error) {
-      console.error("Register Rider Error:", error);
-      return { success: false, message: "Something went wrong. Please try again." };
+  // ✅ Register Rider (fixed to return actual error response)
+async register(riderData: any) {
+  try {
+    const response = await axios.post(`${API_URL}/api/riders/register`, riderData);
+    return response.data;
+  } catch (error) {
+    console.error("Register Rider Error:", error);
+
+    // ✅ Return the actual error from API if available
+    if (error.response && error.response.data) {
+      return error.response.data;
     }
-  },
+
+    // Fallback generic error
+    return { success: false, message: "Something went wrong. Please try again." };
+  }
+},
+
 
   // ✅ Logout
   async logout() {
