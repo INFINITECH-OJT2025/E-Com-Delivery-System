@@ -24,10 +24,12 @@ export default function RiderPayoutPage() {
   const [expected, setExpected] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+
+  // Form states (currently hidden)
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
     fetchExpected();
@@ -48,42 +50,6 @@ export default function RiderPayoutPage() {
       setHistory(res.data);
     }
     setLoading(false);
-  };
-
-  const handleSubmit = async () => {
-    if (!file || !amount) {
-      return addToast({
-        title: "Missing Fields",
-        description: "Amount and proof image are required",
-        color: "danger",
-      });
-    }
-
-    const response = await RiderOrderService.requestRemittance({
-      amount,
-      remit_date: expected?.since || new Date().toISOString().split("T")[0],
-      file,
-      notes,
-    });
-
-    if (response.status === "success") {
-      addToast({
-        title: "✅ Submitted",
-        description: "Your remittance request has been submitted.",
-        color: "success",
-      });
-      setAmount("");
-      setNotes("");
-      setFile(null);
-      fetchHistory();
-      fetchExpected();
-    } else {
-      addToast({
-        title: "Error",
-        description: response.message || "Failed to submit.",
-        color: "danger",
-      });
-    }
   };
 
   const getDaysSinceLastRemit = () => {
@@ -109,80 +75,97 @@ export default function RiderPayoutPage() {
   const filteredHistory = applyFilter();
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
-      <h1 className="text-lg font-bold">💸 Rider Payout / Remittance</h1>
+    <div className="p-4 max-w-4xl mx-auto space-y-6">
 
       {expected && (
-        <Card className="bg-yellow-50 border border-yellow-300">
+        <Card className="shadow border">
+          <CardHeader className="bg-primary text-white rounded-t-xl">
+            <h3 className="font-semibold text-base">🧾 Expected Remittance</h3>
+          </CardHeader>
           <CardBody className="text-sm space-y-1">
-            <p className="font-semibold">🧾 Expected Remittance</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <span>Delivery Fees Collected: ₱{expected.total_delivery_fees}</span>
-              <span>Tips Received: ₱{expected.total_tips}</span>
-              <span className="font-medium text-green-700">
-                Rider Share: ₱{expected.rider_share}
-              </span>
-              <span className="font-semibold text-red-600">
-                To Remit (10%): ₱{expected.expected_remittance}
-              </span>
-            </div>
-            <details className="text-xs mt-2 text-blue-600 cursor-pointer">
-              <summary>See breakdown</summary>
-              <p className="mt-1">🧮 Expected = Delivery Fee × 10%</p>
-              <p>🔹 90% of delivery fee goes to rider</p>
-              <p>🔹 100% of tips go to rider</p>
-            </details>
+          <div className="grid grid-cols-[3fr_2fr] gap-4 items-center">
+  {/* Left: Remittance details (60%) */}
+  <div className="space-y-1 text-sm text-gray-700">
+    <p>🧾 <span className="font-medium">Delivery Fees Collected:</span> ₱{expected.total_delivery_fees}</p>
+    <p>💰 <span className="font-medium">Tips Received:</span> ₱{expected.total_tips}</p>
+    <p className="text-green-700 font-semibold">
+      ✅ Rider Share: ₱{expected.rider_share}
+    </p>
+    <p className="text-red-600 font-semibold">
+      🚨 To Remit (10%): ₱{expected.expected_remittance}
+    </p>
+  </div>
+
+  {/* Right: Illustration (40%) */}
+  <div className="flex justify-end">
+    <img
+      src="/images/Wavy_Tech-28_Single-02.jpg"
+      alt="Remittance Illustration"
+      className="w-32 h-auto rounded-md "
+    />
+  </div>
+</div>
+
+  <details className="text-xs mt-2 text-blue-600 cursor-pointer">
+    <summary>See breakdown</summary>
+    <p className="mt-1">🧮 Expected = Delivery Fee × 10%</p>
+    <p>🔹 90% of delivery fee goes to rider</p>
+    <p>🔹 100% of tips go to rider</p>
+  </details>
+</CardBody>
+
+        </Card>
+      )}
+
+      {/* Upload form (hidden for now) */}
+      {false && (
+        <Card className="border">
+          <CardHeader className="bg-primary text-white rounded-t-xl">
+            <h2 className="text-base font-semibold">📤 Submit Remittance</h2>
+          </CardHeader>
+          <CardBody className="space-y-3">
+            <Input
+              label="Amount Remitted (₱)"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              type="number"
+              placeholder="Enter amount"
+              isRequired
+            />
+            <Textarea
+              label="Notes (optional)"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Any remarks?"
+            />
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              label="Upload Proof of Payment"
+              isRequired
+            />
+            <Button
+              onPress={() => {}}
+              color="primary"
+              startContent={<FiUploadCloud />}
+              isDisabled={loading}
+            >
+              Submit
+            </Button>
           </CardBody>
         </Card>
       )}
 
-      {/* Upload Form */}
-      <Card className="border">
-        <CardHeader>
-          <h2 className="text-base font-semibold">📤 Submit Remittance</h2>
-        </CardHeader>
-        <CardBody className="space-y-3">
-          <Input
-            label="Amount Remitted (₱)"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            type="number"
-            placeholder="Enter amount"
-            isRequired
-          />
-          <Textarea
-            label="Notes (optional)"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Any remarks?"
-          />
-          <Input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            label="Upload Proof of Payment"
-            isRequired
-          />
-          <Button
-            onPress={handleSubmit}
-            color="primary"
-            startContent={<FiUploadCloud />}
-            isDisabled={loading}
-          >
-            Submit
-          </Button>
-        </CardBody>
-      </Card>
-
       {/* History */}
-      <Card className="shadow">
-        <CardHeader className="flex justify-between items-center">
+      <Card className="shadow border">
+        <CardHeader className="bg-primary text-white flex justify-between items-center rounded-t-xl">
           <h2 className="text-base font-semibold">📜 Remittance History</h2>
           <Select
             size="sm"
             selectedKeys={[filter]}
             onSelectionChange={(keys) => setFilter(Array.from(keys)[0] as string)}
-            className="max-w-[180px] text-black"
+            className="max-w-[150px] text-black"
           >
             <SelectItem key="all">All</SelectItem>
             <SelectItem key="today">Today</SelectItem>

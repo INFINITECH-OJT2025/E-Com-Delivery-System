@@ -31,4 +31,58 @@ export const riderProfileService = {
 
     return await res.json();
   },
+// ✅ New method: update vehicle info
+async updateVehicle(data: {
+  vehicle_type: string;
+  plate_number: string;
+}) {
+  const token = localStorage.getItem("riderToken");
+
+  const res = await fetch(`${API_URL}/api/rider/vehicle/update`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      vehicle_type: data.vehicle_type,
+      plate_number: data.plate_number,
+    }),
+  });
+
+  return await res.json();
+},
+async changePassword(data: { currentPassword: string; newPassword: string }) {
+  const token = localStorage.getItem("riderToken");
+
+  // Ensure the token is available before proceeding
+  if (!token) {
+    return { status: "error", message: "Authentication token not found" };
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/api/change-password`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        current_password: data.currentPassword,
+        new_password: data.newPassword,
+        new_password_confirmation: data.newPassword, // Add confirmation field if needed
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Failed to change password.");
+    }
+
+    return result;
+  } catch (error) {
+    return { status: "error", message: error.message || "An error occurred" };
+  }
+},
 };

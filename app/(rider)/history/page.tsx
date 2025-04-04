@@ -68,7 +68,7 @@ export default function RiderHistoryPage() {
     filtered.reduce((acc: number, curr: any) => acc + parseFloat(curr.earnings), 0).toFixed(2);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4">
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <Spinner size="lg" color="primary" />
@@ -79,8 +79,8 @@ export default function RiderHistoryPage() {
             <h3 className="font-semibold text-base">📦 Completed Deliveries</h3>
             <Select
               size="sm"
-              label="Filter"
-              className="max-w-[180px] text-black"
+          
+              className="max-w-[150px] text-black"
               selectedKeys={[filter]}
               onSelectionChange={(keys) => setFilter(Array.from(keys)[0] as string)}
             >
@@ -120,7 +120,7 @@ export default function RiderHistoryPage() {
 
                         {/* Toggle Breakdown */}
                         <Button
-                          variant="link"
+                          variant="light"
                           size="sm"
                           className="text-blue-600 text-xs px-0 mt-1"
                           onPress={() =>

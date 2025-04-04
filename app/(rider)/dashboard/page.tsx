@@ -162,11 +162,11 @@ export default function RiderDashboard() {
               </div>
             </Tab>
 
-            <Tab title="🔔 Notifications">
+            {/* <Tab title="🔔 Notifications">
               <div className="space-y-4">
                 <NotificationsCard notifications={notifications} />
               </div>
-            </Tab>
+            </Tab> */}
           </Tabs>
         </div>
       )}
