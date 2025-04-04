@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class RiderController extends Controller
 {
@@ -671,19 +672,46 @@ class RiderController extends Controller
     }
     public function updateProfile(Request $request)
     {
-        $user = $request->user();
+        $user = Auth::user();
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'phone_number' => 'nullable|string|max:20',
-            'vehicle_type' => 'nullable|string|max:50',
-            'plate_number' => 'nullable|string|max:50',
+        // ✅ Only allow riders to update
+        if ($user->role !== 'rider') {
+            return ResponseHelper::error("Unauthorized access", 403);
+        }
+
+        // ✅ Validate input including optional image
+        $validator = Validator::make($request->all(), [
+            'name'          => 'required|string|max:255',
+            'phone_number'  => 'required|string|min:10|max:15|unique:users,phone_number,' . $user->id,
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $user->update($request->only(['name', 'phone_number', 'vehicle_type', 'plate_number']));
+        if ($validator->fails()) {
+            return ResponseHelper::error("Validation error", 422, $validator->errors());
+        }
 
-        return response()->json(['success' => true, 'message' => 'Profile updated successfully.']);
+        try {
+            $user->name = $request->name;
+            $user->phone_number = $request->phone_number;
+
+            // ✅ If profile image was uploaded
+            if ($request->hasFile('profile_image')) {
+                $path = $request->file('profile_image')->store('uploads/riders', 'public');
+                $user->profile_image = $path;
+            }
+
+            $user->save();
+
+            return ResponseHelper::success("Profile updated successfully", [
+                'name'          => $user->name,
+                'phone_number'  => $user->phone_number,
+                'profile_image' => $user->profile_image ? asset('storage/' . $user->profile_image) : null,
+            ]);
+        } catch (\Exception $e) {
+            return ResponseHelper::error("Failed to update profile. " . $e->getMessage(), 500);
+        }
     }
+
 
     public function uploadProfileImage(Request $request)
     {

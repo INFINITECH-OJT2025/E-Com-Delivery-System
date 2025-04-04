@@ -21,6 +21,7 @@ use App\Http\Controllers\RemittanceController;
 use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\RestaurantDashboardController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\RiderAnalyticsController;
 use App\Http\Controllers\RiderController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SupportController;
@@ -200,6 +201,9 @@ Route::middleware(['auth:sanctum'])->prefix('vendor')->group(function () {
 Route::post('/riders/register', [AuthController::class, 'registerRider']);
 Route::post('/riders/register', [AuthController::class, 'registerRider']);
 Route::post('/riders/login', [AuthController::class, 'riderLogin']);
+Route::post('riders/login/google', [AuthController::class, 'riderloginWithGoogle'])->name('auth.loginWithGoogle');
+
+
 Route::prefix('riders')->middleware(['auth:sanctum'])->group(function () {
     Route::get('/profile', [RiderController::class, 'getProfile']); // ✅ Fetch Rider Profile
     Route::get('/orders', [RiderController::class, 'getAssignedOrders']); // ✅ Fetch Assigned Orders
@@ -286,9 +290,14 @@ Route::prefix('admin/vouchers')->middleware(['auth:sanctum'])->group(function ()
 });
 Route::middleware(['auth:sanctum'])->group(function () {
     // Rider Profile
-    Route::put('/rider/profile', [RiderController::class, 'updateProfile']);
-    Route::post('/rider/profile/upload-profile-image', [RiderController::class, 'uploadProfileImage']);
+    Route::post('/rider/profile/update', [RiderController::class, 'updateProfile']);
     Route::post('/rider/profile/upload-license-image', [RiderController::class, 'uploadLicenseImage']);
     Route::put('/rider/profile/password', [RiderController::class, 'updatePassword']);
 });
 Route::middleware('auth:sanctum')->get('/voucher-savings', [PromoController::class, 'getVoucherSavings']);
+Route::prefix('rider/analytics')->middleware('auth:sanctum')->group(function () {
+    Route::get('/zones', [RiderAnalyticsController::class, 'topZones']);
+    Route::get('/peak-hours', [RiderAnalyticsController::class, 'peakHours']);
+    Route::get('/completion-rate', [RiderAnalyticsController::class, 'completionRate']);
+    Route::get('/earnings-trend', [RiderAnalyticsController::class, 'earningsTrend']);
+});

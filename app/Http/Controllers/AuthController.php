@@ -881,8 +881,8 @@ class AuthController extends Controller
             return ResponseHelper::error("Email not verified. Please verify via email link.", 403);
         }
         // ✅ Ensure approved
-        if (!$user->status == "approved") {
-            return ResponseHelper::error("Email not approved.", 403);
+        if ($user->status !== "approved") {
+            return ResponseHelper::error("Email not approved by admin.", 403);
         }
         // ✅ Ensure only riders can log in
         if ($user->role !== 'rider') {
@@ -981,6 +981,66 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return ResponseHelper::success("Login successful", [
+            'access_token' => $token,
+            'user' => $user->only(['id', 'name', 'email', 'phone_number', 'role', 'email_verified_at']),
+        ]);
+    }
+
+    public function riderLoginWithGoogle(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'name' => 'required|string',
+        ]);
+
+        $email = $request->email;
+        $name = $request->name;
+
+        $user = User::where('email', $email)->first();
+
+        if (!$user) {
+            try {
+                DB::beginTransaction();
+
+                // Generate Unique Rider ID
+                do {
+                    $riderId = 'RDR-' . now()->format('Y') . rand(1000, 9999);
+                } while (User::where('rider_id', $riderId)->exists());
+
+                $user = User::create([
+                    'name'             => $name,
+                    'email'            => $email,
+                    'phone_number'     => '',
+                    'password'         => Hash::make(Str::random(16)), // Google auth: no manual password
+                    'role'             => 'rider',
+                    'rider_id'         => $riderId,
+                    'vehicle_type'     => null,
+                    'plate_number'     => null,
+                    'rider_status'     => 'pending',
+                    'email_verified_at' => now(),
+                ]);
+
+                DB::commit();
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return ResponseHelper::error("Error creating rider: " . $e->getMessage(), 500);
+            }
+        }
+
+        // Check if rider role
+        if ($user->role !== 'rider') {
+            return ResponseHelper::error("This login is for riders only.", 403);
+        }
+
+        // Check if approved
+        if ($user->status !== 'approved') {
+            return ResponseHelper::error("Your account has not been approved yet.", 403);
+        }
+
+        // Issue token
+        $token = $user->createToken("rider_auth_token")->plainTextToken;
+
+        return ResponseHelper::success("Rider Google login successful", [
             'access_token' => $token,
             'user' => $user->only(['id', 'name', 'email', 'phone_number', 'role', 'email_verified_at']),
         ]);
