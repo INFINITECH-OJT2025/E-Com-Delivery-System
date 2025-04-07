@@ -14,6 +14,7 @@ import {
 } from "@heroui/react";
 import FilterComponent from "@/components/filterComponent"; // ✅ Import Filters Component
 import RestaurantCard from "@/components/restaurantCard"; // ✅ Import Restaurant Card
+import { useCallback } from "react"; // make sure this is at the top
 
 interface SearchModalProps {
     isOpen: boolean;
@@ -114,42 +115,35 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     };
 
     // ✅ Handle Search Submission (Press Enter or Click Search)
-    const handleSearch = async () => {
+    const handleSearch = useCallback(async () => {
         if (searchQuery.trim() === "") return;
-
+      
         setLoading(true);
         setError("");
-        setSearchResults([]); // ✅ Reset search results
+        setSearchResults([]);
         setSimilarRestaurants([]);
         setRelatedMenuRestaurants([]);
-
+      
         try {
-            if (!latitude || !longitude) {
-                setError("Location not found. Please set your address.");
-                setLoading(false);
-                return;
-            }
-
-            console.log("Searching with:", { searchQuery, latitude, longitude, filters });
-
-            const response = await searchService.search(searchQuery, latitude, longitude, filters);
-            console.log("API Response:", response); // ✅ Log full API response
-
-            if (!response.success) throw new Error(response.message);
-
-            // ✅ Ensure arrays before updating state
-            setSearchResults(response.data.restaurants || []);
-            setSimilarRestaurants(response.data.similar_restaurants || []);
-            setRelatedMenuRestaurants(response.data.related_menu_restaurants || []);
-
-            console.log("Updated searchResults:", response.data.restaurants);
-            console.log("Updated similarRestaurants:", response.data.similar_restaurants);
-        } catch (err: any) {
-            setError(err.message || "Failed to fetch search results.");
-        } finally {
+          if (!latitude || !longitude) {
+            setError("Location not found. Please set your address.");
             setLoading(false);
+            return;
+          }
+      
+          const response = await searchService.search(searchQuery, latitude, longitude, filters);
+      
+          if (!response.success) throw new Error(response.message);
+      
+          setSearchResults(response.data.restaurants || []);
+          setSimilarRestaurants(response.data.similar_restaurants || []);
+          setRelatedMenuRestaurants(response.data.related_menu_restaurants || []);
+        } catch (err: any) {
+          setError(err.message || "Failed to fetch search results.");
+        } finally {
+          setLoading(false);
         }
-    };
+      }, [searchQuery, latitude, longitude, filters]);
 
     // ✅ Handle Filters Application
     const handleApplyFilters = (selectedFilters) => {
@@ -157,9 +151,10 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     };
     useEffect(() => {
         if (searchQuery.trim() !== "" && latitude && longitude) {
-            handleSearch();
+          handleSearch();
         }
-    }, [filters]); // ✅ Now runs after filters update
+      }, [searchQuery, filters, latitude, longitude, handleSearch]);
+      
     const handleDeleteRecentSearch = async (query: string) => {
         try {
             const response = await searchService.deleteRecentSearch(query);
@@ -241,15 +236,13 @@ return (
         <div className="space-y-2">
             {recentSearches.map((search, index) => (
                 <div key={index} className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg">
-                    <button
-    className="w-full text-left text-gray-600"
-    onClick={() => {
-        setSearchQuery(search);
-        setTimeout(() => handleSearch(), 50); // ✅ Auto-search after setting
-    }}
+                 <button
+  className="w-full text-left text-gray-600"
+  onClick={() => setSearchQuery(search)}
 >
-    <IoTimeOutline className="mr-2 inline" /> {search}
+  <IoTimeOutline className="mr-2 inline" /> {search}
 </button>
+
 
                     <button
                         className="text-gray-400 hover:text-red-500"
@@ -270,16 +263,14 @@ return (
                                 <h3 className="text-gray-800 font-semibold mb-2">Popular searches</h3>
                                 <div className="flex flex-wrap gap-2">
                                     {popularSearches.map((keyword, index) => (
-                                       <button 
-                                       key={index} 
-                                       className="bg-gray-200 px-3 py-2 rounded-full text-sm" 
-                                       onClick={() => {
-                                           setSearchQuery(keyword);
-                                           setTimeout(() => handleSearch(), 50); // ✅ Auto-search
-                                       }}
-                                   >
-                                       {keyword}
-                                   </button>
+                                  <button 
+                                  key={index} 
+                                  className="bg-gray-200 px-3 py-2 rounded-full text-sm" 
+                                  onClick={() => setSearchQuery(keyword)}
+                                >
+                                  {keyword}
+                                </button>
+                                
                                    
                                     ))}
                                 </div>
