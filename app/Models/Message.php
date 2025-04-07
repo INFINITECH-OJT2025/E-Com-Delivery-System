@@ -4,11 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Message extends Model
 {
-    use HasFactory;
-
+    use HasFactory, LogsActivity;
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['chat_id', 'sender_id', 'message', 'is_read'])
+            ->logOnlyDirty()
+            ->setDescriptionForEvent(fn(string $eventName) => "Message was {$eventName}");
+    }
     protected $fillable = ['chat_id', 'sender_id', 'message', 'is_read'];
 
     public function chat()

@@ -294,7 +294,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/rider/profile/update', [RiderController::class, 'updateProfile']);
     Route::post('/rider/vehicle/update', [RiderController::class, 'updateVehicle']);
     Route::post('/rider/profile/upload-license-image', [RiderController::class, 'uploadLicenseImage']);
-    Route::put('/rider/profile/password', [RiderController::class, 'updatePassword']);
 });
 Route::middleware('auth:sanctum')->get('/voucher-savings', [PromoController::class, 'getVoucherSavings']);
 Route::prefix('rider/analytics')->middleware('auth:sanctum')->group(function () {

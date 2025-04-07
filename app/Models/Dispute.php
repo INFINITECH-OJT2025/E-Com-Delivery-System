@@ -4,11 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Dispute extends Model
 {
-    use HasFactory;
-
+    use HasFactory, LogsActivity;
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['order_id', 'user_id', 'status', 'message'])
+            ->logOnlyDirty()
+            ->setDescriptionForEvent(fn(string $eventName) => "Dispute was {$eventName}");
+    }
     protected $fillable = ['order_id', 'user_id', 'status', 'message'];
 
     /**

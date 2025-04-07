@@ -6,11 +6,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Order extends Model
 {
-    use HasFactory;
-
+    use HasFactory, LogsActivity;
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['customer_id', 'restaurant_id', 'delivery_rider_id', 'customer_address_id', 'total_price', 'order_status', 'payment_status', 'scheduled_time', 'rider_tip', 'order_type', 'subtotal', 'delivery_fee', 'discount_on_subtotal', 'discount_on_shipping'])
+            ->logOnlyDirty()
+            ->setDescriptionForEvent(fn(string $eventName) => "Order was {$eventName}");
+    }
     protected $fillable = [
         'customer_id',
         'restaurant_id',

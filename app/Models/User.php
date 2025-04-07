@@ -8,11 +8,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
+    use LogsActivity;
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'email']) // Track only these fields
+            ->logOnlyDirty() // Only if changed
+            ->dontSubmitEmptyLogs() // Skip empty logs
+            ->setDescriptionForEvent(fn(string $eventName) => "User {$this->name} was {$eventName}");
+    }
 
     /**
      * The attributes that are mass assignable.

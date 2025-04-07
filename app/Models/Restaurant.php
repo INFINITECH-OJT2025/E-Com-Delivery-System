@@ -5,11 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Restaurant extends Model
 {
-    use HasFactory;
-
+    use HasFactory, LogsActivity;
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['owner_id', 'name', 'slug', 'restaurant_category_id', 'description', 'logo', 'banner_image', 'address', 'latitude', 'longitude', 'phone_number', 'status', 'rating', 'service_type'])
+            ->logOnlyDirty()
+            ->setDescriptionForEvent(fn(string $eventName) => "Restaurant with ID {$this->id} was {$eventName}");
+    }
     protected $fillable = [
         'owner_id',
         'name',

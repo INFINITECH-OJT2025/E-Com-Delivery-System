@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Spatie\Activitylog\Models\Activity;
 
 class RiderController extends Controller
 {
@@ -778,36 +779,51 @@ class RiderController extends Controller
     }
     public function uploadLicenseImage(Request $request)
     {
+        // Validate that a license image is uploaded and it's an image
         $request->validate([
-            'license_image' => 'required|image|max:2048',
+            'license_image' => 'required|image|max:2048',  // Ensure the uploaded file is an image
         ]);
 
+        // Get the currently authenticated user
         $user = $request->user();
 
-        $path = $request->file('license_image')->store('license_images', 'public');
+        try {
+            // Handle the file upload
+            if ($request->hasFile('license_image')) {
+                // Store the file in the 'license_images' directory within the 'public' disk
+                $path = $request->file('license_image')->store('license_images', 'public');
 
-        $user->license_image = $path;
-        $user->save();
+                // Log the activity of the document upload with the old and new values (if applicable)
+                activity()
+                    ->performedOn($user)
+                    ->withProperties([
+                        'old_license' => $user->getOriginal('license_image'),  // Get the old license image if it exists
+                        'new_license' => $path,  // The new uploaded license image
+                    ])
+                    ->log('Uploaded new license image');
 
-        return response()->json(['success' => true, 'message' => 'License image uploaded.', 'image_url' => asset('storage/' . $path)]);
-    }
+                // Save the new license image path to the user's record
+                $user->license_image = $path;
+                $user->save();
 
-    public function updatePassword(Request $request)
-    {
-        $request->validate([
-            'current_password' => 'required',
-            'new_password' => 'required|min:6|confirmed',
-        ]);
-
-        $user = $request->user();
-
-        if (!Hash::check($request->current_password, $user->password)) {
-            return response()->json(['success' => false, 'message' => 'Current password is incorrect.'], 422);
+                // Return the response with success message and URL to the uploaded image
+                return response()->json([
+                    'success' => true,
+                    'message' => 'License image uploaded.',
+                    'image_url' => asset('storage/' . $path) // Full URL to the uploaded image
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No file uploaded.'
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            // Handle any exceptions that might occur during the file upload
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to upload license image: ' . $e->getMessage()
+            ], 500);
         }
-
-        $user->password = Hash::make($request->new_password);
-        $user->save();
-
-        return response()->json(['success' => true, 'message' => 'Password updated successfully.']);
     }
 }
