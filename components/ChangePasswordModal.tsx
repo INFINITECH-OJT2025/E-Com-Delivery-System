@@ -1,95 +1,186 @@
 "use client";
 
 import { useState } from "react";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Input, Spinner } from "@heroui/react";
-import { userService } from "@/services/userService";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+  Input,
+  Spinner,
+  addToast,
+} from "@heroui/react";
+import { authService } from "@/services/authService";
+import { EyeSlashFilledIcon, EyeFilledIcon } from "@/components/icons";
 
-interface ChangePasswordModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-}
+export default function ChangePasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
-    const [formData, setFormData] = useState({
-        current_password: "",
-        new_password: "",
-        confirm_password: "",
-    });
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+  const [isCurrentVisible, setIsCurrentVisible] = useState(false);
+  const [isNewVisible, setIsNewVisible] = useState(false);
+  const [isConfirmVisible, setIsConfirmVisible] = useState(false);
 
-    /** ✅ Handle Input Change */
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+  const [currentError, setCurrentError] = useState("");
+  const [newError, setNewError] = useState("");
+  const [confirmError, setConfirmError] = useState("");
+  const [apiError, setApiError] = useState("");
 
-    /** ✅ Save Password Change */
-    const handleSave = async () => {
-        setError("");
-        setLoading(true);
+  const toggleVisibility = (field: string) => {
+    if (field === "current") setIsCurrentVisible(!isCurrentVisible);
+    if (field === "new") setIsNewVisible(!isNewVisible);
+    if (field === "confirm") setIsConfirmVisible(!isConfirmVisible);
+  };
 
-        if (formData.new_password !== formData.confirm_password) {
-            setError("New passwords do not match.");
-            setLoading(false);
-            return;
-        }
+  const handleBlur = (field: string) => {
+    if (field === "current") {
+      setCurrentError(currentPassword ? "" : "Current password is required");
+    }
 
-        const response = await userService.changePassword(formData);
-        if (response.success) {
-            onClose();
-        } else {
-            setError(response.message || "Failed to change password.");
-        }
+    if (field === "new") {
+      if (!newPassword) {
+        setNewError("New password is required");
+      } else if (newPassword.length < 6) {
+        setNewError("Password must be at least 6 characters");
+      } else {
+        setNewError("");
+      }
+    }
 
-        setLoading(false);
-    };
+    if (field === "confirm") {
+      if (!confirmPassword) {
+        setConfirmError("Please confirm your password");
+      } else if (newPassword !== confirmPassword) {
+        setConfirmError("Passwords do not match");
+      } else {
+        setConfirmError("");
+      }
+    }
+  };
 
-    return (
-        <Modal isOpen={isOpen} onOpenChange={onClose}>
-            <ModalContent>
-                <ModalHeader className="flex justify-between items-center p-4 border-b">
-                    <h2 className="text-md font-bold text-gray-900">Change Password</h2>
-                </ModalHeader>
+  const handleSave = async () => {
+    setApiError(""); // clear old API errors
 
-                <ModalBody className="p-4 flex flex-col gap-4">
-                    <Input 
-                        type="password"
-                        label="Current Password"
-                        name="current_password"
-                        value={formData.current_password}
-                        onChange={handleChange}
-                        placeholder="Enter current password"
-                    />
+    handleBlur("current");
+    handleBlur("new");
+    handleBlur("confirm");
 
-                    <Input 
-                        type="password"
-                        label="New Password"
-                        name="new_password"
-                        value={formData.new_password}
-                        onChange={handleChange}
-                        placeholder="Enter new password"
-                    />
+    if (!currentPassword || !newPassword || !confirmPassword) return;
 
-                    <Input 
-                        type="password"
-                        label="Confirm New Password"
-                        name="confirm_password"
-                        value={formData.confirm_password}
-                        onChange={handleChange}
-                        placeholder="Confirm new password"
-                    />
+    if (currentError || newError || confirmError) return;
 
-                    {/* 🔴 Error Message */}
-                    {error && <p className="text-red-600 text-sm">{error}</p>}
-                </ModalBody>
+    setLoading(true);
+    try {
+      const response = await authService.changePassword({
+        currentPassword,
+        newPassword,
+      });
 
-                <ModalFooter className="p-4 flex justify-between border-t">
-                    <Button variant="ghost" onClick={onClose}>Cancel</Button>
-                    <Button className="bg-primary text-white px-6 py-2" onClick={handleSave} disabled={loading}>
-                        {loading ? <Spinner size="sm" color="white" /> : "Save Changes"}
-                    </Button>
-                </ModalFooter>
-            </ModalContent>
-        </Modal>
-    );
+      if (response.status === "success") {
+        addToast({
+          title: "✅ Password Updated",
+          description: "Your password has been successfully updated.",
+          color: "success",
+        });
+        onClose();
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        setApiError(response.message || "Failed to update password.");
+      }
+    } catch (err) {
+      setApiError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onOpenChange={onClose}>
+      <ModalContent>
+        <ModalHeader className="p-4 text-center shadow-sm rounded-t-xl">
+          <h3 className="text-lg font-bold">🔒 Change Password</h3>
+        </ModalHeader>
+
+        <ModalBody className="space-y-4 p-4">
+          {apiError && (
+            <div className="bg-red-100 text-red-700 text-sm px-3 py-2 rounded-md">
+              {apiError}
+            </div>
+          )}
+
+          <Input
+            label="Current Password"
+            type={isCurrentVisible ? "text" : "password"}
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            onBlur={() => handleBlur("current")}
+            errorMessage={currentError}
+            isInvalid={!!currentError}
+            endContent={
+              <button onClick={() => toggleVisibility("current")} type="button">
+                {isCurrentVisible ? (
+                  <EyeSlashFilledIcon className="text-2xl text-default-400" />
+                ) : (
+                  <EyeFilledIcon className="text-2xl text-default-400" />
+                )}
+              </button>
+            }
+          />
+
+          <Input
+            label="New Password"
+            type={isNewVisible ? "text" : "password"}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            onBlur={() => handleBlur("new")}
+            errorMessage={newError}
+            isInvalid={!!newError}
+            endContent={
+              <button onClick={() => toggleVisibility("new")} type="button">
+                {isNewVisible ? (
+                  <EyeSlashFilledIcon className="text-2xl text-default-400" />
+                ) : (
+                  <EyeFilledIcon className="text-2xl text-default-400" />
+                )}
+              </button>
+            }
+          />
+
+          <Input
+            label="Confirm New Password"
+            type={isConfirmVisible ? "text" : "password"}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            onBlur={() => handleBlur("confirm")}
+            errorMessage={confirmError}
+            isInvalid={!!confirmError}
+            endContent={
+              <button onClick={() => toggleVisibility("confirm")} type="button">
+                {isConfirmVisible ? (
+                  <EyeSlashFilledIcon className="text-2xl text-default-400" />
+                ) : (
+                  <EyeFilledIcon className="text-2xl text-default-400" />
+                )}
+              </button>
+            }
+          />
+        </ModalBody>
+
+        <ModalFooter className="p-4 flex justify-between">
+          <Button variant="ghost" onPress={onClose} isDisabled={loading}>
+            Cancel
+          </Button>
+          <Button color="primary" onPress={handleSave} isDisabled={loading}>
+            {loading ? <Spinner size="sm" color="white" /> : "Update"}
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
 }

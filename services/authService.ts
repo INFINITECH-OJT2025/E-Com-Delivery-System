@@ -218,5 +218,38 @@ verifyOtp: async (email: string, otp: string) => {
             return { success: false, message: "Something went wrong. Please try again later." };
         }
     },
-    
+    async changePassword(data: { currentPassword: string; newPassword: string }) {
+        const token = localStorage.getItem("auth_token");
+      
+        // Ensure the token is available before proceeding
+        if (!token) {
+          return { status: "error", message: "Authentication token not found" };
+        }
+      
+        try {
+          const response = await fetch(`${API_URL}/api/change-password`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              current_password: data.currentPassword,
+              new_password: data.newPassword,
+              new_password_confirmation: data.newPassword, // Add confirmation field if needed
+            }),
+          });
+      
+          const result = await response.json();
+      
+          if (!response.ok) {
+            throw new Error(result.message || "Failed to change password.");
+          }
+      
+          return result;
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : "An error occurred";
+          return { status: "error", message: errorMessage };
+        }
+      },
 };

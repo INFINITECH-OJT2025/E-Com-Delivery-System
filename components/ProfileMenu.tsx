@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { Card } from "@heroui/react";
-import { Gift, HelpCircle, Ticket, Users } from "lucide-react";
+import { Gift, HelpCircle, Key, Ticket, Users } from "lucide-react";
 import HelpCenterModal from "@/components/HelpCenterModal"; // ✅ Import the Help Center Modal
 import VoucherSavingsModal from "@/components/VoucherSavingsModal";
-
+import ChangePasswordModal from "./ChangePasswordModal";
 export default function ProfileMenu() {
     const [isHelpCenterOpen, setHelpCenterOpen] = useState(false);
     const [isVoucherOpen, setVoucherOpen] = useState(false);
+
+    const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
 
     return (
         <div className="m-4">
@@ -27,12 +29,15 @@ export default function ProfileMenu() {
                 <h3 className="text-sm font-bold text-gray-700">General</h3>
                 <div className="mt-3 space-y-2">
                     <MenuItem icon={HelpCircle} text="Help Center" onClick={() => setHelpCenterOpen(true)} />
+                    <MenuItem icon={Key} text="Change Password" onClick={() => setPasswordModalOpen(true)} />
+
                 </div>
             </Card>
 
             {/* ✅ Help Center Modal */}
             <HelpCenterModal isOpen={isHelpCenterOpen} onClose={() => setHelpCenterOpen(false)} />
             <VoucherSavingsModal isOpen={isVoucherOpen} onClose={() => setVoucherOpen(false)} />
+            <ChangePasswordModal isOpen={isPasswordModalOpen} onClose={() => setPasswordModalOpen(false)} />
 
         </div>
     );
