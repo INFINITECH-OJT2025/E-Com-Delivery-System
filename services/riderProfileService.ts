@@ -31,6 +31,27 @@ export const riderProfileService = {
 
     return await res.json();
   },
+   // ✅ New method for uploading license image
+   async uploadLicenseImage(file: File) {
+    const token = localStorage.getItem("riderToken");
+
+    if (!file) {
+      return { status: "error", message: "No file selected" };
+    }
+
+    const formData = new FormData();
+    formData.append("license_image", file);
+
+    const res = await fetch(`${API_URL}/api/rider/profile/upload-license-image`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    return await res.json();
+  },
 // ✅ New method: update vehicle info
 async updateVehicle(data: {
   vehicle_type: string;

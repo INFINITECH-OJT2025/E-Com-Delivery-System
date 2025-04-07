@@ -18,11 +18,12 @@ import { FaMapMarkerAlt } from "react-icons/fa";
 
 // ✅ Import reusable NearbyOrdersCard component
 import NearbyOrdersCard from "@/components/NearbyOrdersCard";
+import ActiveOrdersCard from "@/components/ActiveOrdersCard";
 
 export default function OrdersPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [activeOrder, setActiveOrder] = useState<any>(null);
+  const [orders, setOrders] = useState<any[]>([]); // Initialize as an empty array
   const [availableOrders, setAvailableOrders] = useState<any[]>([]);
   const isMounted = useRef(false);
 
@@ -33,22 +34,25 @@ export default function OrdersPage() {
     }
   }, []);
 
+  // Fetch assigned orders and nearby orders (similar to RiderDashboard)
   const fetchOrdersData = async () => {
     setLoading(true);
     try {
-      // ✅ Fetch Active Order
-      const activeOrderData = await RiderOrderService.getAssignedOrders();
-      if (activeOrderData.success && activeOrderData.data.length > 0) {
-        setActiveOrder(activeOrderData.data[0]);
+      // Fetch Active Order
+      const ordersResponse = await RiderOrderService.getAssignedOrders();
+      
+      // Ensure response data is an array
+      if (ordersResponse.success && Array.isArray(ordersResponse.data)) {
+        setOrders(ordersResponse.data); // Set the orders data
       } else {
-        setActiveOrder(null);
+        setOrders([]); // In case it's not an array, set to empty array
       }
 
-      // ✅ Fetch Nearby Unassigned Orders
+      // Fetch Nearby Unassigned Orders
       const savedLocation = localStorage.getItem("rider_location");
       if (savedLocation) {
         const { lat, lng } = JSON.parse(savedLocation);
-        fetchNearbyOrders(lat, lng);
+        fetchNearbyOrders(lat, lng); // Function for nearby orders
       }
 
       setLoading(false);
@@ -62,6 +66,7 @@ export default function OrdersPage() {
     }
   };
 
+  // Fetch nearby orders based on rider's saved location
   const fetchNearbyOrders = async (lat: number, lng: number) => {
     const response = await RiderOrderService.getNearbyOrders(lat, lng);
     if (response.success) {
@@ -78,7 +83,7 @@ export default function OrdersPage() {
         description: `You have successfully accepted Order #${orderId}.`,
         color: "success",
       });
-      fetchOrdersData(); // 🔁 Refresh orders
+      fetchOrdersData(); // 🔁 Refresh orders after accepting an order
     } else {
       addToast({
         title: "❌ Failed to Accept Order",
@@ -100,41 +105,12 @@ export default function OrdersPage() {
         </div>
       ) : (
         <div className="max-w-4xl mx-auto space-y-6">
-
           {/* 🚀 Active Order */}
-          <Card className="shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-              <h3 className="flex items-center gap-2 font-semibold">
-                <FaMotorcycle size={18} /> Active Order
-              </h3>
-            </CardHeader>
-            <Divider />
-            <CardBody>
-              {activeOrder ? (
-                <Card className="p-3 my-2 bg-gray-100 shadow-sm">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-semibold">Order #{activeOrder.order_id}</h4>
-                      <p className="text-sm text-gray-500">📍 {activeOrder.restaurant_name}</p>
-                      <p className="text-sm text-gray-500">🏠 {activeOrder.customer_address}</p>
-                      <Chip color="primary" className="capitalize mt-1">
-                        {activeOrder.order_status.replace("_", " ")}
-                      </Chip>
-                    </div>
-                    <Button
-                      size="sm"
-                      color="primary"
-                      onPress={() => handleViewRoute(activeOrder.order_id)}
-                    >
-                      View
-                    </Button>
-                  </div>
-                </Card>
-              ) : (
-                <p className="text-gray-500 text-center">No active order.</p>
-              )}
-            </CardBody>
-          </Card>
+          {orders.length > 0 ? (
+            <ActiveOrdersCard orders={orders} />
+          ) : (
+            <div>No active orders</div>
+          )}
 
           {/* ✅ Reusable Nearby Orders Component */}
           <NearbyOrdersCard

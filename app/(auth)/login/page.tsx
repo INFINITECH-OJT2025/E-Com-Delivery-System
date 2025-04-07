@@ -82,10 +82,10 @@ export default function RiderLogin() {
   };
   return (
 <div
-  className="min-h-screen flex flex-col items-center justify-center bg-cover bg-center p-4"
-  style={{
-    backgroundImage: "url('/images/blob-scene-haikei-2.svg')"
-  }}
+  className="min-h-screen flex flex-col items-center justify-center bg-primary bg-cover bg-center p-4"
+  // style={{
+  //   backgroundImage: "url('/images/blob-scene-haikei-2.svg')"
+  // }}
 >
 
 
@@ -134,25 +134,26 @@ export default function RiderLogin() {
           <GoogleLoginPopupButton onLogin={handleGooglePopupLogin} />
 
 
-          <div className="relative">
-            <Button className="w-full mt-2 flex items-center gap-2 bg-blue-600 text-white opacity-60" isDisabled>
-              <FaFacebook className="text-xl" />
-              Continue with Facebook
-            </Button>
-            <span className="absolute top-0 right-0  text-xs bg-red-500 text-white px-2 py-0.5 rounded-tr-md rounded-bl-md shadow-md z-10">
-              Currently unavailable
-            </span>
-          </div>
+          <div className="relative opacity-60 mt-2">
+  <Button className="w-full flex items-center gap-2 bg-blue-600 text-white" isDisabled>
+    <FaFacebook className="text-xl" />
+    Continue with Facebook
+  </Button>
+  <span className="absolute top-0 right-0 text-xs bg-red-500 text-white px-2 py-0.5 rounded-tr-md rounded-bl-md shadow-md z-10">
+    Currently unavailable
+  </span>
+</div>
 
-          <div className="relative mt-2">
-            <Button className="w-full flex items-center gap-2 bg-black text-white opacity-60" isDisabled>
-              <FaApple className="text-xl" />
-              Continue with Apple
-            </Button>
-            <span className="absolute top-0 right-0  text-xs bg-red-500 text-white px-2 py-0.5 rounded-tr-md rounded-bl-md shadow-md z-10">
-              Currently unavailable
-            </span>
-          </div>
+<div className="relative opacity-60 mt-2">
+  <Button className="w-full flex items-center gap-2 bg-black text-white" isDisabled>
+    <FaApple className="text-xl" />
+    Continue with Apple
+  </Button>
+  <span className="absolute top-0 right-0 text-xs bg-red-500 text-white px-2 py-0.5 rounded-tr-md rounded-bl-md shadow-md z-10">
+    Currently unavailable
+  </span>
+</div>
+
 
           <p className="text-sm text-center mt-4 text-gray-500">
             Don’t have an account?{" "}

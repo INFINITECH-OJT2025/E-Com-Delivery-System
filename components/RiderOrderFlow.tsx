@@ -186,7 +186,7 @@ const RiderOrderUI = () => {
       ) : (
         <Card className="shadow-xl flex-1 overflow-auto relative">
           <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-            <h2 className="text-xl font-bold">Order #{order.order_id}</h2>
+            <h2 className="text-lg">Order #{order.order_id}-</h2>
             <p className="capitalize">{step.replace('_', ' ')}</p>
           </CardHeader>
 

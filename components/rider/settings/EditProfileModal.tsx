@@ -115,19 +115,29 @@ export default function EditProfileModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onClose} isDismissable={!loading}>
-      <ModalContent>
-        <ModalHeader className="p-4 bg-primary text-white rounded-t-xl relative">
-          <h3 className="text-base font-semibold">👤 Edit Profile</h3>
-          <button
-            onClick={onClose}
-            className="absolute right-4 top-4 text-white hover:opacity-80"
-          >
-            <HiX size={18} />
-          </button>
-        </ModalHeader>
-
-        <ModalBody className="space-y-4 p-4">
+    <Modal
+    isOpen={isOpen}
+    size="full"
+    onOpenChange={onClose}
+    isDismissable={!loading}
+    classNames={{
+      base: "h-[100dvh] flex flex-col", // Full height + flex layout
+      wrapper: "h-full",
+      body: "flex-grow overflow-y-auto p-4 space-y-4", // Scrollable body
+    }}
+  >
+    <ModalContent className="flex flex-col h-full">
+      <ModalHeader className="p-4 bg-primary text-white relative">
+        <h3 className="text-base font-semibold">👤 Edit Profile</h3>
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 text-white hover:opacity-80"
+        >
+          <HiX size={18} />
+        </button>
+      </ModalHeader>
+  
+      <ModalBody className="flex-grow overflow-y-auto p-4 space-y-4">
           <Input
             label="Full Name"
             name="name"
@@ -174,17 +184,19 @@ export default function EditProfileModal({
               />
             )}
           </div>
-        </ModalBody>
-
-        <ModalFooter className="p-4">
-          <Button variant="ghost" onPress={onClose} isDisabled={loading}>
-            Cancel
-          </Button>
-          <Button color="primary" onPress={handleSave} isDisabled={loading}>
-            {loading ? "Saving ..." : "Save Changes"}
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+     
+      </ModalBody>
+  
+      <ModalFooter className="p-4 sticky bottom-0 bg-white border-t">
+        <Button variant="ghost" onPress={onClose} isDisabled={loading}>
+          Cancel
+        </Button>
+        <Button color="primary" onPress={handleSave} isDisabled={loading}>
+          {loading ? "Saving ..." : "Save Changes"}
+        </Button>
+      </ModalFooter>
+    </ModalContent>
+  </Modal>
+  
   );
 }

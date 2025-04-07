@@ -146,7 +146,13 @@ export default function RiderSettingsPage() {
       </Button>
 
       {/* 🔒 Modals */}
-      <UploadDocumentsModal isOpen={modal === "upload"} onClose={() => setModal(null)} />
+      <UploadDocumentsModal
+  isOpen={modal === "upload"}
+  onClose={() => setModal(null)}
+  licenseImage={rider.license_image}
+  onUploadSuccess={fetchProfile} // ✅ Pass refetch function
+
+/>
       <EditVehicleModal
   isOpen={modal === "vehicle"}
   onClose={() => setModal(null)}

@@ -134,8 +134,8 @@ export default function RiderRegisterLogic() {
 
 return (<>
   <div
-    className="min-h-screen flex flex-col items-center justify-center bg-cover bg-center p-4"
-    style={{ backgroundImage: "url('/images/blob-scene-haikei-2.svg')" }}
+    className="min-h-screen bg-primary flex flex-col items-center justify-center bg-cover bg-center p-4"
+    // style={{ backgroundImage: "url('/images/blob-scene-haikei-2.svg')" }}
   >
     <Card className="w-full max-w-md p-0 overflow-hidden rounded-2xl shadow-lg ">
       <CardBody className="p-6 bg-white">
