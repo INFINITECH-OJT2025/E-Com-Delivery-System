@@ -14,15 +14,36 @@ class MenuController extends Controller
     /**
      * ✅ Fetch all menu items for the authenticated vendor
      */
+
     public function getMenu(Request $request)
     {
         $vendor = $request->user();
-        $menuItems = Menu::whereHas('restaurant', function ($query) use ($vendor) {
-            $query->where('owner_id', $vendor->id);
-        })->get();
+
+        $menuItems = Menu::with('category') // ✅ eager load category
+            ->whereHas('restaurant', function ($query) use ($vendor) {
+                $query->where('owner_id', $vendor->id);
+            })
+            ->get()
+            ->map(function ($menu) {
+                return [
+                    'id' => $menu->id,
+                    'name' => $menu->name,
+                    'slug' => $menu->slug,
+                    'description' => $menu->description,
+                    'price' => $menu->price,
+                    'image' => $menu->image,
+                    'availability' => $menu->availability,
+                    'stock' => $menu->stock,
+                    'menu_category_id' => $menu->menu_category_id,
+                    'category_name' => optional($menu->category)->name, // ✅ include category name
+                    'created_at' => $menu->created_at,
+                    'updated_at' => $menu->updated_at,
+                ];
+            });
 
         return response()->json($menuItems);
     }
+
 
     /**
      * ✅ Create a new menu item
