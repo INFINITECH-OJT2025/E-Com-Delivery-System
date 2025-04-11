@@ -56,7 +56,7 @@ export default function VendorLogin() {
   return (
     <div
       className="relative flex flex-col lg:flex-row items-center justify-center bg-cover bg-center min-h-screen px-4 py-10 overflow-y-auto"
-      style={{ backgroundImage: 'url("/images/we-serve-best-cakes.jpg")' }}
+      style={{ backgroundImage: 'url("/images/chat-bg-1.png")' }}
     >
       {/* Overlay */}
       <div className="absolute inset-0 bg-black opacity-50"></div>

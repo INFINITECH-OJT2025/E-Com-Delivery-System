@@ -1,71 +1,81 @@
 "use client";
+
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
-import { FaHome, FaUser, FaClipboardList, FaBoxOpen, FaCog, FaAngleLeft, FaAngleRight } from "react-icons/fa";
-import { Button } from "@heroui/react"; // Hero UI Button
+import {
+  FaTachometerAlt,
+  FaClipboardList,
+  FaUtensils,
+  FaInfoCircle,
+  FaStar,
+  FaBars,
+  FaChevronLeft,
+} from "react-icons/fa";
 
 export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(true); // Manage sidebar toggle state
+  const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+  const [isVendor, setIsVendor] = useState(false);
 
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen); // Toggle sidebar visibility
-  };
+  useEffect(() => {
+    const token = localStorage.getItem("vendorToken");
+    setIsVendor(!!token);
+  }, [pathname]);
+
+  if (!isVendor) return null;
+
+  const navItems = [
+    { href: "/dashboard", label: "Dashboard", icon: <FaTachometerAlt /> },
+    { href: "/orders", label: "Orders", icon: <FaClipboardList /> },
+    { href: "/menu", label: "Menu", icon: <FaUtensils /> },
+    { href: "/restaurant/details", label: "Restaurant Details", icon: <FaInfoCircle /> },
+    { href: "/reviews", label: "Reviews", icon: <FaStar /> },
+  ];
 
   return (
-    <div
-      className={`h-screen flex flex-col bg-white text-gray-900 p-6 border-r border-gray-300 shadow-lg transition-all ${isOpen ? 'w-64' : 'w-20'}`}
+    <aside
+      className={`sticky top-0 h-screen border-r bg-primary-600 text-white shadow-lg transition-all duration-300 
+        ${collapsed ? "w-20" : "w-64"}
+      `}
     >
-      {/* Sidebar Header with Toggle Button */}
-      <div className="flex items-center justify-between mb-8">
-        <h2
-          className={`text-2xl font-semibold transition-all ${!isOpen ? 'opacity-0' : 'opacity-100'} text-primary`}
+      {/* Sidebar header & collapse button */}
+      <div className="flex items-center justify-between p-4 border-b border-primary-500">
+        {!collapsed && (
+          <span className="text-lg font-bold tracking-wide">E-Com Vendor</span>
+        )}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="text-white hover:text-primary-100 transition"
         >
-          E-Com Delivery
-        </h2>
-
-        <Button
-          onPress={toggleSidebar}
-          color="primary"
-          className="p-2 rounded-md text-white bg-primary hover:bg-primary-dark transition-all"
-        >
-          {/* Collapse/Expand icon */}
-          {isOpen ? <FaAngleLeft /> : <FaAngleRight />}
-        </Button>
+          {collapsed ? <FaBars /> : <FaChevronLeft />}
+        </button>
       </div>
 
-      {/* Sidebar Links */}
-      <ul className="space-y-6">
-        <li>
-          <Link href="/dashboard" className="flex items-center text-lg hover:bg-primary hover:text-white p-2 rounded-md transition-all">
-            <FaHome className="mr-3" />
-            {isOpen && "Dashboard"}
-          </Link>
-        </li>
-        <li>
-          <Link href="/orders" className="flex items-center text-lg hover:bg-primary hover:text-white p-2 rounded-md transition-all">
-            <FaClipboardList className="mr-3" />
-            {isOpen && "Orders"}
-          </Link>
-        </li>
-        <li>
-          <Link href="/menus" className="flex items-center text-lg hover:bg-primary hover:text-white p-2 rounded-md transition-all">
-            <FaBoxOpen className="mr-3" />
-            {isOpen && "Menus"}
-          </Link>
-        </li>
-        <li>
-          <Link href="/settings" className="flex items-center text-lg hover:bg-primary hover:text-white p-2 rounded-md transition-all">
-            <FaCog className="mr-3" />
-            {isOpen && "Settings"}
-          </Link>
-        </li>
-        <li>
-          <Link href="/profile" className="flex items-center text-lg hover:bg-primary hover:text-white p-2 rounded-md transition-all">
-            <FaUser className="mr-3" />
-            {isOpen && "Profile"}
-          </Link>
-        </li>
-      </ul>
-    </div>
+      {/* Nav */}
+      <nav className="flex flex-col gap-2 mt-6 px-3">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all
+                ${
+                  isActive
+                    ? "bg-white text-primary-700 shadow"
+                    : "hover:bg-primary-500/70 text-white"
+                }
+                ${collapsed ? "justify-center px-0" : ""}
+              `}
+            >
+              <span className="text-lg">{item.icon}</span>
+              {!collapsed && <span className="text-sm">{item.label}</span>}
+            </Link>
+          );
+        })}
+      </nav>
+    </aside>
   );
 }
