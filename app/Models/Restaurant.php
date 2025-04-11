@@ -33,8 +33,9 @@ class Restaurant extends Model
         'status',
         'rating',
         'service_type',
-        'minimum_order_for_delivery' // ✅ New field added (No base_delivery_fee)
-
+        'minimum_order_for_delivery', // ✅ New field added (No base_delivery_fee)
+        'opening_time',        // ✅ Added
+        'closing_time',        // ✅ Added
     ];
     public static function boot()
     {

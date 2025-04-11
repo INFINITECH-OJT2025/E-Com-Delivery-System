@@ -141,10 +141,10 @@ Route::prefix('/vendor/auth')->group(function () {
     Route::post('/login', [AuthController::class, 'vendorLogin'])->name('vendor.auth.login'); // Vendor Login
 });
 Route::middleware(['auth:sanctum'])->prefix('vendor')->group(function () {
-    Route::get('/dashboard/total-orders', [RestaurantDashboardController::class, 'totalOrders']);
-    Route::get('/dashboard/pending-orders', [RestaurantDashboardController::class, 'pendingOrders']);
-    Route::get('/dashboard/total-revenue', [RestaurantDashboardController::class, 'totalRevenue']);
-    Route::get('/dashboard/recent-orders', [RestaurantDashboardController::class, 'recentOrders']);
+    // Route::get('/dashboard/total-orders', [RestaurantDashboardController::class, 'totalOrders']);
+    // Route::get('/dashboard/pending-orders', [RestaurantDashboardController::class, 'pendingOrders']);
+    // Route::get('/dashboard/total-revenue', [RestaurantDashboardController::class, 'totalRevenue']);
+    // Route::get('/dashboard/recent-orders', [RestaurantDashboardController::class, 'recentOrders']);
 
     // 📊 New Analytics
     Route::get('/dashboard/top-selling-menus', [RestaurantDashboardController::class, 'topSellingMenus']);
@@ -154,6 +154,16 @@ Route::middleware(['auth:sanctum'])->prefix('vendor')->group(function () {
     Route::get('/dashboard/order-type-distribution', [RestaurantDashboardController::class, 'orderTypeDistribution']);
     Route::get('/dashboard/payment-method-stats', [RestaurantDashboardController::class, 'paymentMethodStats']);
     Route::get('/dashboard/refund-summary', [RestaurantDashboardController::class, 'refundSummary']);
+
+    //new and imporved analytics 
+    Route::get('dashboard/overview', [RestaurantDashboardController::class, 'overview']);
+    Route::get('dashboard/store-status', [RestaurantDashboardController::class, 'storeStatus']);
+    Route::get('dashboard/revenue-overview', [RestaurantDashboardController::class, 'revenueOverview']);
+    Route::get('dashboard/orders-by-status', [RestaurantDashboardController::class, 'ordersByStatus']);
+    Route::get('dashboard/recent-orders', [RestaurantDashboardController::class, 'recentOrders']);
+    Route::get('dashboard/popular-items', [RestaurantDashboardController::class, 'popularItems']);
+    Route::get('dashboard/performance', [RestaurantDashboardController::class, 'performance']);
+    Route::get('dashboard/recent-reviews', [RestaurantDashboardController::class, 'recentReviews']);
 });
 // 🔒 Rider-only access
 Route::middleware(['auth:sanctum'])->prefix('rider')->group(function () {
