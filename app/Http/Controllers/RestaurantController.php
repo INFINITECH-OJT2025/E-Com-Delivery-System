@@ -152,57 +152,70 @@ class RestaurantController extends Controller
 
     public function updateDetails(Request $request)
     {
-        // Get authenticated vendor
         $vendor = $request->user();
 
-        // Find the restaurant associated with the vendor
         $restaurant = Restaurant::where('owner_id', $vendor->id)->firstOrFail();
 
-        // Handle file uploads for logo and banner image
-        $logoPath = $restaurant->logo; // Default to the old logo if no new file is uploaded
-        $bannerPath = $restaurant->banner_image; // Default to the old banner image if no new file is uploaded
-
-        // ✅ Ensure storage is set to public so images are accessible
+        $logoPath = $restaurant->logo;
+        $bannerPath = $restaurant->banner_image;
         $storageDisk = 'public';
 
-        // ✅ Fix logo upload
+        // ✅ Handle logo upload
         if ($request->hasFile('logo')) {
             if ($restaurant->logo && Storage::disk($storageDisk)->exists($restaurant->logo)) {
                 Storage::disk($storageDisk)->delete($restaurant->logo);
             }
-            // Store new logo in public storage
             $logoPath = $request->file('logo')->store('restaurants', $storageDisk);
         }
 
-        // ✅ Fix banner image upload
+        // ✅ Handle banner upload
         if ($request->hasFile('banner_image')) {
             if ($restaurant->banner_image && Storage::disk($storageDisk)->exists($restaurant->banner_image)) {
                 Storage::disk($storageDisk)->delete($restaurant->banner_image);
             }
-            // Store new banner image in public storage
             $bannerPath = $request->file('banner_image')->store('restaurants', $storageDisk);
         }
 
-        // ✅ Update restaurant details with provided input
+        // ✅ Check if custom category should be created
+        $categoryId = $request->input('restaurant_category_id');
+
+        if (is_null($categoryId) && $request->filled('custom_category_name')) {
+            $categoryName = trim($request->input('custom_category_name'));
+            $existing = RestaurantCategory::where('name', $categoryName)->first();
+
+            if ($existing) {
+                $categoryId = $existing->id;
+            } else {
+                $newCategory = RestaurantCategory::create([
+                    'name' => $categoryName,
+                    // slug is auto-generated in model boot()
+                ]);
+                $categoryId = $newCategory->id;
+            }
+        }
+
+        // ✅ Update restaurant fields
         $restaurant->update([
             'name' => $request->input('name', $restaurant->name),
             'description' => $request->input('description', $restaurant->description),
             'phone_number' => $request->input('phone_number', $restaurant->phone_number),
             'status' => $request->input('status', $restaurant->status),
-            'restaurant_category_id' => $request->input('restaurant_category_id', $restaurant->restaurant_category_id),
+            'restaurant_category_id' => $categoryId,
             'service_type' => $request->input('service_type', $restaurant->service_type),
             'minimum_order_for_delivery' => $request->input('minimum_order_for_delivery', $restaurant->minimum_order_for_delivery),
             'logo' => $logoPath,
             'banner_image' => $bannerPath,
+            'visibility' => $request->input('visibility', $restaurant->visibility),
+            'custom_schedule_json' => $request->input('custom_schedule_json', $restaurant->custom_schedule_json),
         ]);
 
-        // ✅ Return success response
         return response()->json([
             'message' => 'Restaurant details updated successfully.',
             'logo_url' => Storage::url($logoPath),
             'banner_url' => Storage::url($bannerPath),
         ]);
     }
+
 
 
 

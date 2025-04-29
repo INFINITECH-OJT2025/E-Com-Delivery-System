@@ -26,6 +26,7 @@ use App\Http\Controllers\RiderController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ActivityLogController;
 use Illuminate\Support\Facades\Http;
 
 Route::prefix('google-maps')->group(function () {
@@ -312,3 +313,4 @@ Route::prefix('rider/analytics')->middleware('auth:sanctum')->group(function () 
     Route::get('/completion-rate', [RiderAnalyticsController::class, 'completionRate']);
     Route::get('/earnings-trend', [RiderAnalyticsController::class, 'earningsTrend']);
 });
+Route::get('/admin/logs', [ActivityLogController::class, 'index'])->name('admin.logs.index');

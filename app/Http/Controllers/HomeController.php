@@ -19,17 +19,21 @@ class HomeController extends Controller
         $userId = Auth::id();
         $latitude = $request->query('lat');
         $longitude = $request->query('lng');
-        $radius = 10; // ✅ Default search radius (10km)
+        $radius = 10; // Default search radius (10km)
 
-        // ✅ Sorting & Filtering Parameters
-        $sortBy = $request->query('sort_by', 'relevance'); // Default sorting: relevance
-        $categoryId = $request->query('category'); // Category filter
-        $rating4Plus = $request->query('rating_4_plus', false) === "true"; // ✅ Filter for rating 4+
-        $serviceType = $request->query('service_type', 'all'); // ✅ Service type filter (delivery, pickup, or both)
+        // ✅ Auto update open/close status for all restaurants
+        Restaurant::all()->each->checkAndUpdateStatusBasedOnSchedule();
 
-        // ✅ Fetch Nearby Restaurants (Only If No Extra Filters Applied)
+        // Sorting & Filtering Parameters
+        $sortBy = $request->query('sort_by', 'relevance');
+        $categoryId = $request->query('category');
+        $rating4Plus = $request->query('rating_4_plus', false) === "true";
+        $serviceType = $request->query('service_type', 'all');
+
+        // 🔍 No filters: Return optimized home data
         if (!$categoryId && !$rating4Plus && $sortBy === 'relevance' && $serviceType === 'all') {
-            $baseRestaurantsQuery = Restaurant::selectRaw("
+            $baseRestaurantsQuery = Restaurant::visibleActive()
+                ->selectRaw("
                     id, name, slug, logo, banner_image, rating, status, service_type, restaurant_category_id, latitude, longitude,
                     (6371 * acos(cos(radians(?)) * cos(radians(latitude)) 
                     * cos(radians(longitude) - radians(?)) + sin(radians(?)) 
@@ -37,21 +41,15 @@ class HomeController extends Controller
                 ", [$latitude, $longitude, $latitude])
                 ->with(['category:id,name,slug'])
                 ->withCount(['reviews', 'orders'])
-                ->havingRaw("distance <= ?", [$radius]); // ✅ Always filter nearby
+                ->havingRaw("distance <= ?", [$radius]);
 
-            // ✅ Fetch All Nearby Restaurants
             $allRestaurants = $baseRestaurantsQuery->orderBy('distance', 'asc')->get();
 
-            // ✅ 🔥 Fast Delivery: Nearest restaurants sorted by distance
             $fastDelivery = $allRestaurants->sortBy('distance')->take(6)->map(fn($r) => $this->formatRestaurant($r))->values();
-
-            // ✅ 🔥 Explore Restaurants (Default Nearby)
             $exploreRestaurants = $allRestaurants->take(12)->map(fn($r) => $this->formatRestaurant($r))->values();
-
-            // ✅ 🔥 Top Restaurants (Only Nearby)
             $topRestaurants = $allRestaurants->sortByDesc('rating')->take(6)->map(fn($r) => $this->formatRestaurant($r))->values();
 
-            // ✅ 🔥 Order Again (Only If User Logged In)
+            // Order Again
             $orderAgain = [];
             if ($userId) {
                 $orderAgain = Order::where('customer_id', $userId)
@@ -61,14 +59,15 @@ class HomeController extends Controller
                     ->groupBy('restaurant_id')
                     ->orderByDesc('latest_order')
                     ->with(['restaurant' => function ($query) use ($latitude, $longitude, $radius) {
-                        $query->selectRaw("
-                            id, name, slug, logo, banner_image, rating, status, latitude, longitude,
-                            (6371 * acos(cos(radians(?)) * cos(radians(latitude)) 
-                            * cos(radians(longitude) - radians(?)) + sin(radians(?)) 
-                            * sin(radians(latitude)))) AS distance
-                        ", [$latitude, $longitude, $latitude])
+                        $query->visibleActive()
+                            ->selectRaw("
+                                id, name, slug, logo, banner_image, rating, status, latitude, longitude,
+                                (6371 * acos(cos(radians(?)) * cos(radians(latitude)) 
+                                * cos(radians(longitude) - radians(?)) + sin(radians(?)) 
+                                * sin(radians(latitude)))) AS distance
+                            ", [$latitude, $longitude, $latitude])
                             ->withCount('reviews')
-                            ->havingRaw("distance <= ?", [$radius]); // ✅ Filter by distance
+                            ->havingRaw("distance <= ?", [$radius]);
                     }])
                     ->limit(5)
                     ->get()
@@ -87,34 +86,35 @@ class HomeController extends Controller
             ]);
         }
 
-        // ✅ 🔥 Explore Restaurants with Filters (Only When Filters Exist)
-        $exploreQuery = Restaurant::selectRaw("
-            id, name, slug, logo, banner_image, rating, status, service_type, restaurant_category_id, latitude, longitude,
-            (6371 * acos(cos(radians(?)) * cos(radians(latitude)) 
-            * cos(radians(longitude) - radians(?)) + sin(radians(?)) 
-            * sin(radians(latitude)))) AS distance
-        ", [$latitude, $longitude, $latitude])
+        // 🔍 With Filters
+        $exploreQuery = Restaurant::visibleActive()
+            ->selectRaw("
+                id, name, slug, logo, banner_image, rating, status, service_type, restaurant_category_id, latitude, longitude,
+                (6371 * acos(cos(radians(?)) * cos(radians(latitude)) 
+                * cos(radians(longitude) - radians(?)) + sin(radians(?)) 
+                * sin(radians(latitude)))) AS distance
+            ", [$latitude, $longitude, $latitude])
             ->with(['category:id,name,slug'])
             ->withCount(['reviews', 'orders'])
-            ->havingRaw("distance <= ?", [$radius]); // ✅ Always fetch only nearby
+            ->havingRaw("distance <= ?", [$radius]);
 
-        // ✅ Apply Category Filter (Supports Multiple Categories)
+        // Category Filter
         if ($categoryId) {
             $categoryIds = explode(',', $categoryId);
             $exploreQuery->whereIn('restaurant_category_id', $categoryIds);
         }
 
-        // ✅ Apply Service Type Filter (Delivery, Pickup, or Both)
+        // Service Type Filter
         if ($serviceType !== 'all') {
             $exploreQuery->where('service_type', $serviceType);
         }
 
-        // ✅ Apply Rating Filter (4+)
+        // Rating Filter
         if ($rating4Plus) {
             $exploreQuery->where('rating', '>=', 4);
         }
 
-        // ✅ Apply Sorting
+        // Sorting
         if ($sortBy === 'top_rated') {
             $exploreQuery->orderByDesc('rating');
         } elseif ($sortBy === 'most_orders') {
@@ -122,10 +122,9 @@ class HomeController extends Controller
         } elseif ($sortBy === 'fast_delivery') {
             $exploreQuery->orderBy('distance', 'asc');
         } else {
-            $exploreQuery->orderBy('distance', 'asc'); // Default: nearest first
+            $exploreQuery->orderBy('distance', 'asc'); // default
         }
 
-        // ✅ Fetch & Format Explore Restaurants
         $exploreRestaurants = $exploreQuery->limit(12)->get()->map(fn($r) => $this->formatRestaurant($r))->values();
 
         return ResponseHelper::success("Explore restaurants retrieved", [
@@ -133,6 +132,7 @@ class HomeController extends Controller
             'explore_restaurants' => $exploreRestaurants,
         ]);
     }
+
 
     /**
      * ✅ Helper function to format restaurant data.
