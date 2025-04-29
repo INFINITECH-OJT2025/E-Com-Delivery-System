@@ -1,17 +1,21 @@
-// pages/index.tsx
-import VendorRegister from "@/components/restaurantRegistration/VendorRegistrationForm";
-import { OpportunitiesSection } from "@/components/restaurantRegistration/OpportunitiesSection";
-import { PartnerSection } from "@/components/restaurantRegistration/PartnerSection";
-import { TestimonialSection } from "@/components/restaurantRegistration/TestimonialSection";
-import {FAQSection} from "@/components/restaurantRegistration/FAQSection";
-const HomePage = () => (
-  <div>
-       <VendorRegister />
-       <OpportunitiesSection />
-       <PartnerSection/>
-       <TestimonialSection />
-       <FAQSection/>
-  </div>
-);
+import HeroSection from "@/components/landing/HeroSection";
+import FeatureHighlights from "@/components/landing/FeatureHighlights";
+import HowItWorks from "@/components/landing/HowItWorks";
+import BenefitsCTA from "@/components/landing/BenefitsCTA";
+import FaqSection from "@/components/landing/FaqSection";
+import StatsSection from "@/components/landing/StatsSection";
+import Testimonials from "@/components/landing/Testimonials";
 
-export default HomePage;
+export default function LandingPage() {
+  return (
+    <main className="">
+      <HeroSection />
+      <StatsSection />
+      <FeatureHighlights />
+      <HowItWorks />
+      <Testimonials/>
+      <FaqSection />
+      <BenefitsCTA />
+    </main>
+  );
+}

@@ -41,12 +41,12 @@ export default function Navbar() {
       {/* Right Side Utilities */}
       {!loading && (
         <div className="flex items-center gap-4">
-          <ThemeSwitch />
+          {/* <ThemeSwitch /> */}
 
           {vendor ? (
             <>
               {/* Notifications */}
-              <button
+              {/* <button
                 className="relative hover:text-primary-100 transition"
                 title="Notifications"
               >
@@ -54,16 +54,16 @@ export default function Navbar() {
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
                   3
                 </span>
-              </button>
+              </button> */}
 
               {/* Profile (optional avatar or icon) */}
-              <button
+              {/* <button
                 className="hover:text-primary-100 transition"
                 title="Profile"
                 onClick={() => router.push("/profile")}
               >
                 <FiUser size={20} />
-              </button>
+              </button> */}
 
               {/* Logout */}
               <Button

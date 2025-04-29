@@ -233,7 +233,9 @@ export default function OrdersPage() {
       {/* Orders View */}
       <div className="mb-6">
         {loading ? (
-          <Spinner size="lg" />
+        <div className="flex items-center justify-center ">
+        <Spinner size="lg" />
+      </div>
         ) : tabKey === "grid" ? (
           <OrderGrid
             orders={paginatedOrders}

@@ -10,6 +10,8 @@ import Navbar from "@/components/navbar";
 import Sidebar from "@/components/sidebar";
 import Head from "next/head";
 
+import Footer from "@/components/landing/Footer";
+
 export const metadata: Metadata = {
   title: {
     default: siteConfig.name,
@@ -62,7 +64,7 @@ export default function RootLayout({
                 <div className="">
                   {children}
                 </div>
-                <footer className="mt-auto w-full bg-gray-100 py-6 border-t border-gray-300">
+                <footer className="mt-auto w-full bg-gray-900 py-6 border-t border-gray-300">
                   <div className="container mx-auto flex flex-col md:flex-row items-center justify-between px-6">
                     <div className="flex items-center space-x-2">
                       <img
@@ -70,11 +72,11 @@ export default function RootLayout({
                         alt="E-Com Vendor"
                         className="h-8 w-auto"
                       />
-                      <span className="text-lg font-semibold text-gray-800">
+                      <span className="text-lg font-semibold text-white">
                         E-Com Vendor
                       </span>
                     </div>
-                    <div className="text-sm text-gray-500 mt-3 md:mt-0">
+                    <div className="text-sm text-white mt-3 md:mt-0">
                       © {new Date().getFullYear()} E-Com Vendor. All rights reserved.
                     </div>
                   </div>

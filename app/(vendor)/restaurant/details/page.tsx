@@ -1,73 +1,62 @@
 "use client";
-import { useState, useEffect } from "react";
-import { RestaurantService } from "@/services/restaurantService";
-import { useVendorAuth } from "@/context/AuthContext";
-import { FaSave } from "react-icons/fa";
+
+import { useEffect, useState, useRef } from "react";
+import { Tabs, Tab, Card, CardBody, Button } from "@heroui/react";
 import Image from "next/image";
 import { addToast } from "@heroui/toast";
+import { RestaurantService } from "@/services/restaurantService";
+import { useVendorAuth } from "@/context/AuthContext";
 
-interface Restaurant {
-  id: number;
-  name: string;
-  description: string;
-  address: string;
-  phone_number: string;
-  status: "open" | "closed";
-  slug: string;
-  rating: number | null;
-  service_type: "delivery" | "pickup" | "both";
-  minimum_order_for_delivery: number;
-  logo: string | null;
-  banner_image: string | null;
-  restaurant_category_id: number | null;
-}
+import RestaurantBasicInfo from "@/components/restaurantDetails/RestaurantBasicInfo";
+import RestaurantLocationForm from "@/components/restaurantDetails/RestaurantLocationForm";
+import RestaurantHoursForm from "@/components/restaurantDetails/RestaurantHoursForm";
+import RestaurantSettingsForm from "@/components/restaurantDetails/RestaurantSettingsForm";
 
-interface Category {
-  id: number;
-  name: string;
-}
+const IMAGE_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/storage/`;
 
 export default function RestaurantDetailsPage() {
   const { vendor } = useVendorAuth();
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [restaurant, setRestaurant] = useState<any>(null);
+  const [originalRestaurant, setOriginalRestaurant] = useState<any>(null);
+  const [categories, setCategories] = useState([]);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const restaurantData = await RestaurantService.getRestaurantDetails();
-        setRestaurant(restaurantData); // Set restaurant details when fetched
-      } catch (error) {
-        setError("Failed to fetch restaurant details.");
+        const res = await RestaurantService.getRestaurantDetails();
+        setRestaurant(res);
+        setOriginalRestaurant(res);
+        setLogoPreview(res.logo ? IMAGE_BASE_URL + res.logo : null);
+        setBannerPreview(res.banner_image ? IMAGE_BASE_URL + res.banner_image : null);
+      } catch {
+        addToast({ title: "Error", description: "Failed to fetch restaurant data.", color: "danger" });
       }
 
       try {
-        const categoriesData = await RestaurantService.getCategories();
-        setCategories(categoriesData);
-      } catch (error) {
-        setError("Failed to fetch categories.");
-      } finally {
-        setLoading(false);
+        const cats = await RestaurantService.getCategories();
+        setCategories(cats);
+      } catch {
+        addToast({ title: "Error", description: "Failed to fetch categories.", color: "danger" });
       }
     };
 
     if (vendor) fetchData();
   }, [vendor]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setRestaurant((prev) =>
-      prev ? { ...prev, [e.target.name]: e.target.value } : prev
-    );
+  const handleChange = (key: string, value: any) => {
+    setRestaurant((prev: any) => ({ ...prev, [key]: value }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: "logo" | "banner_image") => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, type: "logo" | "banner") => {
     const file = e.target.files?.[0];
     if (file) {
       const previewUrl = URL.createObjectURL(file);
@@ -81,230 +70,204 @@ export default function RestaurantDetailsPage() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!restaurant) return;
+
     setIsSaving(true);
 
     try {
-      const updatedData = await RestaurantService.updateRestaurantDetails(
-        restaurant,
-        logoFile,
-        bannerFile
-      );
+      await RestaurantService.updateRestaurantDetails(restaurant, logoFile, bannerFile);
 
-      // Fetch the updated restaurant details again
-      const refreshedRestaurant = await RestaurantService.getRestaurantDetails();
-      setRestaurant(refreshedRestaurant); // Update with the latest restaurant data
+      const updated = await RestaurantService.getRestaurantDetails();
+      const updatedCategories = await RestaurantService.getCategories();
 
-      // Success Toast
-      addToast({
-        title: "Restaurant Details Updated",
-        description: "Your restaurant details were successfully updated.",
-        color: "success",
-      });
-    } catch (error) {
-      setError("Failed to update restaurant details.");
+      setRestaurant(updated);
+      setOriginalRestaurant(updated);
+      setCategories(updatedCategories);
+      setIsEditing(false);
 
-      // Error Toast
-      addToast({
-        title: "Update Failed",
-        description: "There was an issue updating the restaurant details.",
-        color: "danger",
-      });
+      addToast({ title: "Restaurant Updated", description: "Your changes were saved.", color: "success" });
+    } catch {
+      addToast({ title: "Update Failed", description: "Could not save changes.", color: "danger" });
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="p-6 bg-gray-100 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-semibold mb-6">Restaurant Details</h1>
-        <div className="space-y-6">
-          <div className="w-full h-12 rounded-md bg-gray-300 animate-pulse"></div>
-          <div className="w-full h-12 rounded-md bg-gray-300 animate-pulse"></div>
-          <div className="w-full h-12 rounded-md bg-gray-300 animate-pulse"></div>
-          <div className="w-full h-12 rounded-md bg-gray-300 animate-pulse"></div>
-        </div>
-      </div>
-    );
+  const handleCancel = () => {
+    setRestaurant(originalRestaurant);
+    setLogoPreview(originalRestaurant?.logo ? IMAGE_BASE_URL + originalRestaurant.logo : null);
+    setBannerPreview(originalRestaurant?.banner_image ? IMAGE_BASE_URL + originalRestaurant.banner_image : null);
+    setLogoFile(null);
+    setBannerFile(null);
+    setIsEditing(false);
+  };
+
+  const handleAccountDeletion = async () => {
+    console.log("🚨 Placeholder: account deletion trigger here.");
+    addToast({ title: "Feature Coming Soon", description: "Account deletion logic will be added.", color: "warning" });
+  };
+
+  const handleViewPublicProfile = () => {
+    if (restaurant?.slug) {
+      window.open(`/restaurants/${restaurant.slug}`, "_blank");
+    }
+  };
+
+  if (!restaurant) {
+    return <p className="p-6 text-center text-gray-500">Loading restaurant info...</p>;
   }
 
   return (
-<div className="p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-md max-w-3xl mx-auto transition-all">
-<h1 className="text-3xl font-semibold mb-6 text-center">Restaurant Details</h1>
-
-      <div className="space-y-6">
-        {/* Restaurant Info Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-Restaurant Name</label>
-            <input
-              type="text"
-              name="name"
-              value={restaurant.name}
-              onChange={handleChange}
-              className="w-full mt-2 p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            />
+    <form onSubmit={handleSave} className="p-6 mx-auto  space-y-8">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Restaurant Details</h1>
+          <p className="text-gray-500">Manage your restaurant profile</p>
+        </div>
+        {isEditing ? (
+          <div className="flex gap-3">
+            <Button type="button" variant="bordered" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button type="submit" color="primary" isLoading={isSaving}>
+              Save Changes
+            </Button>
           </div>
+        ) : (
+          <Button onClick={() => setIsEditing(true)} color="primary" startContent="✏️">
+            Edit Details
+          </Button>
+        )}
+      </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-Slug (SEO-friendly URL)</label>
-            <input
-              type="text"
-              name="slug"
-              value={restaurant.slug}
-              onChange={handleChange}
-              className="w-full mt-2 p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            />
+      {/* Banner */}
+      <div className="relative bg-gray-100 border rounded-xl h-64 flex items-center justify-center overflow-hidden">
+        {bannerPreview ? (
+          <Image src={bannerPreview} alt="Banner" layout="fill" objectFit="cover" />
+        ) : (
+          <div className="text-gray-400">No banner uploaded</div>
+        )}
+        {isEditing && (
+          <div className="absolute bottom-4 right-4">
+            <input type="file" accept="image/*" onChange={(e) => handleImageChange(e, "banner")} className="hidden" ref={bannerInputRef} />
+            <Button size="sm" onPress={() => bannerInputRef.current?.click()} className="bg-black/70 text-white">
+              Change Banner
+            </Button>
           </div>
-        </div>
+        )}
+      </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-Description</label>
-          <textarea
-            name="description"
-            value={restaurant.description || ""}
-            onChange={handleChange}
-            className="w-full mt-2 p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            rows={4}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-Address</label>
-          <input
-            type="text"
-            name="address"
-            value={restaurant.address}
-            onChange={handleChange}
-            className="w-full mt-2 p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-Phone Number</label>
-          <input
-            type="text"
-            name="phone_number"
-            value={restaurant.phone_number}
-            onChange={handleChange}
-            className="w-full mt-2 p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-Status</label>
-          <select
-            name="status"
-            value={restaurant.status}
-            onChange={handleChange}
-            className="w-full mt-2 p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+      {/* Logo */}
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+        <div className="relative w-28 h-28">
+          <input type="file" accept="image/*" onChange={(e) => handleImageChange(e, "logo")} className="hidden" ref={logoInputRef} />
+          <div
+            onClick={() => isEditing && logoInputRef.current?.click()}
+            className={`w-28 h-28 bg-gray-200 rounded-full overflow-hidden cursor-pointer shadow-md border-4 border-white relative ${
+              isEditing ? "hover:opacity-80" : "cursor-default"
+            }`}
           >
-            <option value="open">Open</option>
-            <option value="closed">Closed</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-Service Type</label>
-          <select
-            name="service_type"
-            value={restaurant.service_type}
-            onChange={handleChange}
-            className="w-full mt-2 p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="delivery">Delivery</option>
-            <option value="pickup">Pickup</option>
-            <option value="both">Both</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-Minimum Order for Delivery</label>
-          <input
-            type="number"
-            name="minimum_order_for_delivery"
-            value={restaurant.minimum_order_for_delivery}
-            onChange={handleChange}
-            className="w-full mt-2 p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-          />
-        </div>
-
-        {/* Category Select */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-Category</label>
-          <select
-            name="restaurant_category_id"
-            value={restaurant.restaurant_category_id || ""}
-            onChange={handleChange}
-            className="w-full mt-2 p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="">Select Category</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Image Previews */}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-Logo</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFileChange(e, "logo")}
-              className="w-full mt-2 p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            />
-            {logoPreview && (
-              <div className="mt-2 p-4 border border-gray-200 rounded-md bg-gray-50 text-center">
-                <Image src={logoPreview} alt="Logo Preview" width={200} height={200} className="mx-auto" />
-              </div>
+            {logoPreview ? (
+              <Image src={logoPreview} alt="Logo" width={112} height={112} className="object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">📷</div>
             )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-Banner Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFileChange(e, "banner_image")}
-              className="w-full mt-2 p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            />
-            {bannerPreview && (
-              <div className="mt-2 p-4 border border-gray-200 rounded-md bg-gray-50 text-center">
-                <Image src={bannerPreview} alt="Banner Preview" width={600} height={200} className="mx-auto" />
+            {isEditing && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                <span className="text-white text-xl">📷</span>
               </div>
             )}
           </div>
         </div>
-
-        {/* Save Button */}
-        <div className="mt-6 text-center">
-          <button
-            onClick={handleSave}
-            className="inline-flex block items-center justify-center px-6 py-3 bg-indigo-600 text-white rounded-md shadow-md hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-            disabled={isSaving}
-          >
-            <FaSave className="mr-2" />
-            {isSaving ? "Saving..." : "Save"}
-          </button>
+        <div className="flex-1 space-y-1">
+          <h2 className="text-xl font-bold">{restaurant.name}</h2>
+          <p className="text-sm text-gray-600">{restaurant.address}</p>
+          <p className="text-sm text-gray-600">{restaurant.phone_number}</p>
+          <p className="text-sm text-gray-600">Service: {restaurant.service_type}</p>
         </div>
       </div>
+
+      {/* Tabs */}
+      <Tabs aria-label="Restaurant Tabs" className="w-full">
+        <Tab key="basic" title="Basic Info">
+          <Card>
+            <CardBody>
+              <RestaurantBasicInfo isEditing={isEditing} restaurant={restaurant} categories={categories} onChange={handleChange} />
+            </CardBody>
+          </Card>
+        </Tab>
+        <Tab key="location" title="Location">
+          <Card>
+            <CardBody>
+              <RestaurantLocationForm isEditing={isEditing} restaurant={restaurant} onChange={handleChange} />
+            </CardBody>
+          </Card>
+        </Tab>
+        <Tab key="hours" title="Business Hours">
+          <Card>
+            <CardBody>
+              <RestaurantHoursForm isEditing={isEditing} restaurant={restaurant} onChange={handleChange} setRestaurant={setRestaurant} />
+            </CardBody>
+          </Card>
+        </Tab>
+        <Tab key="settings" title="Settings">
+          <Card>
+            <CardBody>
+              <RestaurantSettingsForm isEditing={isEditing} restaurant={restaurant} onChange={handleChange} />
+            </CardBody>
+          </Card>
+        </Tab>
+      </Tabs>
+
+      {/* Footer Section (Additional Info) */}
+      <Card>
+  <CardBody className="space-y-4 p-6">
+    {/* Section Title */}
+    <h2 className="text-lg font-semibold">Additional Information</h2>
+
+    {/* Metadata */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div>
+        <p className="text-sm text-gray-500">Restaurant ID</p>
+        <p className="font-semibold">{restaurant.id}</p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Created On</p>
+        <p className="font-semibold">
+          {new Date(restaurant.created_at).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">Last Updated</p>
+        <p className="font-semibold">
+          {new Date(restaurant.updated_at).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+        </p>
+      </div>
     </div>
+
+    {/* Footer Buttons */}
+    {/* <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+      <Button color="danger" variant="bordered" onPress={handleAccountDeletion}>
+        Request Account Deletion
+      </Button>
+      <Button color="primary" variant="bordered" onPress={handleViewPublicProfile}>
+        View Public Profile
+      </Button>
+    </div> */}
+  </CardBody>
+</Card>
+
+    </form>
   );
 }

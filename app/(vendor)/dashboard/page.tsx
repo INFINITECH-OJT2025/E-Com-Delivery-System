@@ -9,11 +9,13 @@ import PopularItems from "@/components/dashboard/PopularItems";
 import PerformanceMetrics from "@/components/dashboard/PerformanceMetrics";
 import RecentReviews from "@/components/dashboard/RecentReviews";
 import { DashboardService } from "@/services/dashboardService";
+import { useRouter } from "next/navigation";
 
 export default function VendorDashboardPage() {
   const [restaurantName, setRestaurantName] = useState("...");
   const [isOpen, setIsOpen] = useState(true);
   const [closingTime, setClosingTime] = useState("...");
+  const router = useRouter(); // 🛠️ Setup router
 
   useEffect(() => {
     async function fetchStoreDetails() {
@@ -47,14 +49,21 @@ export default function VendorDashboardPage() {
                 {isOpen ? "Open" : "Closed"}
               </span>
             </p>
-            <p className="text-xs text-gray-500">Until {closingTime}</p>
+            <p className="text-xs text-gray-500">
+  {closingTime === "N/A" ? "24/7" : `Until ${closingTime}`}
+</p>
           </div>
         </div>
         <div className="flex gap-2">
-          <button className="px-4 py-1 rounded border text-sm border-gray-300">View Store Hours</button>
-          <button className="px-4 py-1 rounded bg-red-500 text-white text-sm">
+        <button
+  onClick={() => router.push("/restaurant/details")}
+  className="px-4 py-1 rounded border text-sm border-gray-300"
+>
+  View Store Hours
+</button>
+          {/* <button className="px-4 py-1 rounded bg-red-500 text-white text-sm">
             {isOpen ? "Set as Closed" : "Open Store"}
-          </button>
+          </button> */}
         </div>
       </div>
 

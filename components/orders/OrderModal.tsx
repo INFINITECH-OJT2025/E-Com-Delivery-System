@@ -1,5 +1,6 @@
 "use client";
 
+import { orderService } from "@/services/orderService";
 import {
   Modal,
   ModalContent,
@@ -321,12 +322,21 @@ export default function OrderModal({
               </>
             )}
             {selectedOrder.order_status === "confirmed" && (
-              <Button
-                color="success"
-                onPress={() => openConfirmModal(selectedOrder, "preparing")}
-              >
-                <FaClipboardCheck className="mr-2" /> Mark as Preparing
-              </Button>
+             <Button
+             color="success"
+             onPress={async () => {
+               if (selectedOrder && selectedOrder.id) { // <-- double check id is there
+                 await orderService.updateOrderStatus(selectedOrder.id, "preparing");
+                 closeAllModals();
+                 window.location.reload(); // ✅ Force full page reload
+                } else {
+                 console.error("Selected order ID is missing!");
+               }
+             }}
+           >
+             <FaClipboardCheck className="mr-2" /> Mark as Preparing
+           </Button>
+           
             )}
           </div>
         </ModalBody>

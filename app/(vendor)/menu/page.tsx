@@ -166,7 +166,10 @@ export default function MenuPage() {
       {/* Tab Content */}
       <div className="mb-6">
         {loading ? (
-          <Spinner size="lg" />
+        <div className="flex items-center justify-center ">
+        <Spinner size="lg" />
+      </div>
+      
         ) : tabKey === "grid" ? (
           <MenuGrid items={paginatedItems} onEdit={handleEdit} onDelete={handleDelete} />
         ) : (
