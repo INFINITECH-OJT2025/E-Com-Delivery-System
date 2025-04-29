@@ -28,6 +28,7 @@ import {
   LogIn,
   HandCoins,
   TicketPercent,
+  FileText,
 } from 'lucide-react';
 
 interface AdminRoute {
@@ -80,10 +81,11 @@ export default function AdminNavbar() {
       icon: <HandCoins size={18} />,
     },
     {
-      name: 'Vouchers',
-      path: '/admin/vouchers',
-      icon: <TicketPercent size={18} />,
+      name: 'Logs',
+      path: '/admin/logs',
+      icon: <FileText size={18} />, // 📝 Use a good icon for logs
     },
+    
   ];
 
   const guestRoutes: AdminRoute[] = [
