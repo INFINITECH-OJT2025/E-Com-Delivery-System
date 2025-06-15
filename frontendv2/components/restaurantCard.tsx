@@ -1,0 +1,102 @@
+"use client";
+
+import { IoHeartOutline, IoHeart } from "react-icons/io5";
+import { useRouter } from "next/navigation";
+import { useFavorite } from "@/context/favoriteContext";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+interface RestaurantProps {
+    restaurant: {
+        id: number;
+        slug: string;
+        name: string;
+        banner_image: string;
+        rating: number;
+        total_reviews: number;
+        is_open: boolean;
+        distance_km?: number;
+        delivery_fee?: number;
+        estimated_time?: string;
+    };
+}
+
+export default function RestaurantCard({ restaurant }: RestaurantProps) {
+    const router = useRouter();
+    const { favorites, toggleFavorite } = useFavorite();
+
+    const isFavorited = favorites.some(
+        (fav) => fav.favoritable_id === restaurant.id && fav.favoritable_type === "restaurant"
+    );
+
+    const imageUrl = restaurant.banner_image?.startsWith("http")
+        ? restaurant.banner_image
+        : `${API_URL}/storage/${restaurant.banner_image}` || "/images/default-restaurant.jpg";
+
+    const handleClick = () => {
+        router.push(`/restaurant/${restaurant.slug}`);
+    };
+
+    return (
+        <div
+            className="relative bg-white rounded-xl shadow-md overflow-hidden transform transition-all duration-300 hover:-translate-y-1 hover:shadow-lg active:translate-y-0 cursor-pointer"
+            onClick={handleClick}
+        >
+            {/* 📍 Restaurant Image */}
+            <div className="relative">
+                <img
+                    src={imageUrl}
+                    alt={restaurant.name}
+                    className="w-full h-40 object-cover rounded-t-xl"
+                    loading="lazy"
+                />
+
+                {/* 🔴 Closed Overlay */}
+                {!restaurant.is_open && (
+                    <div className="absolute inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center text-white text-sm font-semibold">
+                        Closed
+                    </div>
+                )}
+            </div>
+
+            {/* ❤️ Favorite Icon */}
+            <button
+                className="absolute top-3 right-3 text-xl transition"
+                aria-label="Toggle favorite"
+                onClick={(e) => {
+                    e.stopPropagation(); // ✅ Prevent triggering the card click
+                    toggleFavorite("restaurant", restaurant.id);
+                }}
+            >
+                {isFavorited ? (
+                    <IoHeart className="text-red-500" />
+                ) : (
+                    <IoHeartOutline className="text-gray-700 hover:text-red-500" />
+                )}
+            </button>
+
+            {/* 📍 Restaurant Info */}
+            <div className="p-4">
+                <h3 className="text-lg font-bold text-gray-900">{restaurant.name}</h3>
+                <p className="text-sm text-gray-600">
+                    {restaurant.rating} ⭐ ({restaurant.total_reviews ?? 0} reviews)
+                </p>
+
+                {/* 📍 Show Distance Only If Available */}
+                {restaurant.distance_km !== undefined && (
+                    <p className="text-sm text-gray-700">📍 {restaurant.distance_km.toFixed(2)} km away</p>
+                )}
+
+                {/* 🚚 Delivery Fee */}
+                <p className="text-sm text-gray-700 font-bold">
+                    🚚 Delivery Fee: {restaurant.delivery_fee !== undefined ? `₱${restaurant.delivery_fee}` : "N/A"}
+                </p>
+
+                {/* ⏳ Estimated Time */}
+                {restaurant.estimated_time && (
+                    <p className="text-sm text-gray-700">⏳ ETA: {restaurant.estimated_time}</p>
+                )}
+            </div>
+        </div>
+    );
+}
